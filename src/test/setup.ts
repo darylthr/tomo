@@ -35,6 +35,8 @@ class ResizeObserverStub {
 }
 globalThis.ResizeObserver ??= ResizeObserverStub as unknown as typeof ResizeObserver;
 
+Element.prototype.scrollIntoView ??= function () {};
+
 if (typeof HTMLDialogElement !== 'undefined') {
   HTMLDialogElement.prototype.showModal ??= function (this: HTMLDialogElement) {
     this.open = true;

@@ -1,0 +1,117 @@
+.page {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: minmax(0, 1fr);
+  padding: 2px 0 16px;
+}
+
+.vertical {
+  grid-template-rows: auto 1fr;
+  padding-bottom: 0;
+}
+
+.shelfWrap {
+  position: relative;
+  min-height: 0;
+}
+
+.position {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  text-align: center;
+  font-size: 11px;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.message {
+  height: 100%;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 16px;
+  padding: 24px;
+  text-align: center;
+}
+
+.messageTitle {
+  margin: 0;
+  max-width: 28ch;
+  font-size: 17px;
+  font-weight: 600;
+  text-wrap: balance;
+}
+
+.messageActions {
+  display: flex;
+  gap: 8px;
+}
+
+.button,
+.ghost {
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  font-weight: 600;
+  cursor: pointer;
+  transition: scale 150ms ease-out;
+}
+
+.button {
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.ghost {
+  background: var(--glass);
+  box-shadow: var(--glass-ring);
+  color: var(--ink);
+}
+
+.button:not(:disabled):active,
+.ghost:not(:disabled):active {
+  scale: 0.96;
+}
+
+.skeleton {
+  grid-row: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 22px;
+  padding-bottom: 40px;
+}
+
+.skeleton span {
+  width: 26%;
+  max-width: 170px;
+  aspect-ratio: 0.68;
+  border-radius: 4px;
+  background: oklch(1 0 0 / 0.06);
+}
+
+.skeleton span:nth-child(2) {
+  width: 34%;
+  max-width: 220px;
+  background: oklch(1 0 0 / 0.09);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton span {
+    animation: pulse 1400ms ease-in-out infinite alternate;
+  }
+}
+
+@keyframes pulse {
+  from {
+    opacity: 0.6;
+  }
+  to {
+    opacity: 1;
+  }
+}
