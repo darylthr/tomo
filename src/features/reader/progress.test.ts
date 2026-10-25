@@ -1,4 +1,4 @@
-import { createProgressSync, startPage, type ProgressPatch } from './progress';
+import { createProgressSync, savesSettled, startPage, type ProgressPatch } from './progress';
 
 const sender = () => vi.fn<(id: number, patch: ProgressPatch) => Promise<void>>(async () => {});
 
@@ -86,4 +86,30 @@ describe('startPage', () => {
   it('ignores a saved page past the end', () => {
     expect(startPage({ ...chapter, lastPage: 12 }, 8)).toBe(0);
   });
+});
+
+it('retries a page that failed to save on the next flush', async () => {
+  const send = sender().mockRejectedValueOnce(new Error('offline'));
+  const sync = createProgressSync(11, 8, send);
+  sync.pageChanged(2);
+  await sync.flush();
+  await sync.flush();
+  expect(send).toHaveBeenCalledTimes(2);
+  expect(send).toHaveBeenLastCalledWith(11, { lastPage: 2 });
+  sync.dispose();
+});
+
+it('lets readers of chapter lists wait for saves still on their way', async () => {
+  let done = () => {};
+  const send = sender().mockImplementationOnce(() => new Promise<void>((r) => (done = r)));
+  const sync = createProgressSync(11, 8, send);
+  sync.pageChanged(2);
+  void sync.flush();
+  let settled = false;
+  void savesSettled().then(() => (settled = true));
+  await Promise.resolve();
+  expect(settled).toBe(false);
+  done();
+  await vi.waitFor(() => expect(settled).toBe(true));
+  sync.dispose();
 });

@@ -11,43 +11,54 @@ export function startPage(chapter: Pick<Chapter, 'read' | 'lastPage'>, pageCount
   return !chapter.read && chapter.lastPage > 0 && chapter.lastPage < pageCount ? chapter.lastPage : 0;
 }
 
+let saving: Promise<unknown> = Promise.resolve();
+
+/** Resolves once every progress save already started has finished (or failed). */
+export function savesSettled(): Promise<void> {
+  return saving.then(() => undefined);
+}
+
 /**
  * Saves the reading position to Suwayomi. Page turns are debounced; reaching the last page
  * marks the chapter read straight away (once). Pending pages are saved when the app is hidden,
- * the page is left, or the sync is disposed.
+ * the page is left, or the sync is disposed. A failed save stays pending for the next flush.
  */
 export function createProgressSync(chapterId: number, pageCount: number, send: Send = setProgress, initialPage = -1) {
   let lastSent = initialPage;
-  let pending: number | null = null;
-  let readSent = false;
+  let pending: { page: number; read: boolean } | null = null;
+  let readDone = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
-
-  const post = (patch: ProgressPatch) => send(chapterId, patch).catch(() => {});
 
   const flush = (): Promise<void> => {
     clearTimeout(timer);
-    if (pending === null) return Promise.resolve();
-    const page = pending;
+    if (!pending) return Promise.resolve();
+    const job = pending;
     pending = null;
-    lastSent = page;
-    return post({ lastPage: page });
+    lastSent = job.page;
+    if (job.read) readDone = true;
+    const request = send(chapterId, job.read ? { lastPage: job.page, read: true } : { lastPage: job.page }).catch(() => {
+      if (job.read) readDone = false;
+      if (pending) pending.read ||= job.read;
+      else pending = job;
+      lastSent = -1;
+    });
+    saving = Promise.allSettled([saving, request]);
+    return request;
   };
 
   const pageChanged = (index: number) => {
-    if (index === pageCount - 1 && !readSent) {
-      clearTimeout(timer);
-      pending = null;
-      readSent = true;
-      lastSent = index;
-      void post({ lastPage: index, read: true });
-      return;
-    }
     clearTimeout(timer);
-    if (index === lastSent) {
+    if (index === pageCount - 1 && !readDone) {
+      pending = { page: index, read: true };
+      void flush();
+      return;
+    }
+    const read = pending?.read ?? false;
+    if (index === lastSent && !read) {
       pending = null;
       return;
     }
-    pending = index;
+    pending = { page: index, read };
     timer = setTimeout(() => void flush(), DEBOUNCE_MS);
   };
 

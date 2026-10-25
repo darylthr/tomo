@@ -53,6 +53,15 @@ export function WebtoonView({ nextChapter }: Props) {
   const onScroll = () => {
     const root = scroller.current;
     if (!root) return;
+    // Scrolled to the end: a short last page may never cross the current line, so count it here.
+    if (root.scrollTop + root.clientHeight >= root.scrollHeight - 2 && pages.length) {
+      const last = pages.length - 1;
+      if (useReader.getState().index !== last) {
+        reported.current = last;
+        useReader.getState().goTo(last);
+      }
+      return;
+    }
     const line = root.getBoundingClientRect().top + root.clientHeight * CURRENT_LINE;
     for (const el of root.querySelectorAll<HTMLElement>('[data-page]')) {
       const r = el.getBoundingClientRect();
@@ -98,6 +107,9 @@ export function WebtoonView({ nextChapter }: Props) {
             className={styles.endButton}
             onClick={(e) => {
               e.stopPropagation();
+              // Finishing the strip marks it read before moving on.
+              reported.current = pages.length - 1;
+              useReader.getState().goTo(pages.length - 1);
               nextChapter();
             }}
           >

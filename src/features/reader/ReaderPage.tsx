@@ -35,7 +35,8 @@ export function ReaderPage() {
   const [load, setLoad] = useState<Load>({ state: 'loading' });
   const [caughtUp, setCaughtUp] = useState(false);
   const [opening, setOpening] = useState<OpeningFrom | null>(() => useUi.getState().openingFrom);
-  const firstPage = useReader((s) => s.pages[0]);
+  // Only this chapter's first page; the store may still hold the previous session's pages.
+  const firstPage = useReader((s) => (s.chapter?.id === chapterId ? s.pages[0] : undefined));
 
   useEffect(() => {
     useUi.setState({ openingFrom: null });
