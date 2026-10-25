@@ -49,5 +49,5 @@
 
 .switch[aria-checked='true'] .thumb {
   transform: translateX(18px);
-  background: var(--chrome);
+  background: var(--on-ink);
 }

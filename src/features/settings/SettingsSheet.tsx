@@ -215,7 +215,7 @@ export function SettingsSheet() {
           {theme.mode === 'custom' && (
             <>
               {(['bg', 'ink', 'accent'] as const).map((key) => {
-                const name = { bg: 'Background', ink: 'Text', accent: 'Accent' }[key];
+                const name = { bg: 'Background color', ink: 'Text color', accent: 'Accent color' }[key];
                 return (
                   <Row key={key} label={name}>
                     <input

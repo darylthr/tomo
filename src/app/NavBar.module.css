@@ -24,7 +24,7 @@
   width: 0;
   height: 32px;
   border-radius: 999px;
-  background: var(--ink);
+  background: var(--chrome-ink);
   pointer-events: none;
 }
 
@@ -43,7 +43,7 @@
   justify-items: center;
   align-content: center;
   gap: 2px;
-  color: color-mix(in oklch, var(--ink) 60%, transparent);
+  color: color-mix(in oklch, var(--chrome-ink) 60%, transparent);
   text-decoration: none;
   border-radius: 12px;
   transition: color 150ms ease-out;
@@ -79,7 +79,7 @@
 }
 
 .tab[aria-selected='true'] {
-  color: var(--ink);
+  color: var(--chrome-ink);
 }
 
 .tab[aria-selected='true'] .ic {
@@ -88,10 +88,10 @@
 
 @media (hover: hover) {
   .tab:not([aria-selected='true']):hover {
-    color: var(--ink);
+    color: var(--chrome-ink);
   }
   .tab:not([aria-selected='true']):hover .ic {
-    background: oklch(1 0 0 / 0.08);
+    background: color-mix(in oklch, var(--chrome-ink) 8%, transparent);
   }
 }
 

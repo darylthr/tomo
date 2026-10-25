@@ -47,7 +47,7 @@
 }
 
 .option[aria-checked='true'] {
-  color: var(--chrome);
+  color: var(--on-ink);
 }
 
 @media (hover: hover) {
