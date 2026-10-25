@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useSettings } from '../../shared/settings/store';
 import styles from './ReaderPage.module.css';
 import { useReader } from './readerStore';
@@ -20,7 +20,8 @@ export function PagedView() {
   const vertical = mode === 'vertical';
 
   // Keyboard: arrows follow the reading direction; Space / PageDown always go forward.
-  useEffect(() => {
+  // Layout effect so the keys work as soon as the first page is on screen.
+  useLayoutEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (isTyping(e.target) || e.altKey || e.ctrlKey || e.metaKey) return;
       const { next: fwd, prev: back, mode: m } = useReader.getState();
