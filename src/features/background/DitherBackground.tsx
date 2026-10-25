@@ -50,21 +50,26 @@ export function DitherBackground() {
     const canvas = canvasRef.current;
     if (!canvas || !img) return;
     let gl: GlRenderer | null = null;
-    if (mode === 'gl') {
-      gl = createGlRenderer(canvas);
-      if (gl) gl.onContextLost(() => setMode('cpu'));
-    }
-    const useCpu = !gl;
     let frame = 0;
 
     const draw = () => {
       frame = 0;
+      if (mode === 'gl' && !gl) {
+        gl = createGlRenderer(canvas);
+        if (!gl) {
+          // GL may have claimed this canvas before failing (shader compile, lost at creation),
+          // and a claimed canvas can't give a 2D context: fall back on a fresh element.
+          setMode('cpu');
+          return;
+        }
+        gl.onContextLost(() => setMode('cpu'));
+      }
       const host = canvas.parentElement ?? canvas;
       const rect = host.getBoundingClientRect();
       canvas.width = Math.max(1, Math.ceil(rect.width / cell));
       canvas.height = Math.max(1, Math.ceil(rect.height / cell));
       if (gl) gl.render(img, { levels });
-      else if (useCpu) renderCpu(canvas, img, levels);
+      else renderCpu(canvas, img, levels);
     };
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(draw);

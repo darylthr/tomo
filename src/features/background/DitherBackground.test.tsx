@@ -60,6 +60,27 @@ it('falls back to the CPU path when WebGL2 is unavailable', async () => {
   expect(container.querySelector('canvas')).not.toBeNull();
 });
 
+it('draws on the CPU when GL setup fails after it already claimed the canvas', async () => {
+  // Like a browser: once a canvas has a webgl2 context it can never give a 2d one.
+  const claimed = new WeakSet<HTMLCanvasElement>();
+  vi.mocked(HTMLCanvasElement.prototype.getContext).mockImplementation(function (this: HTMLCanvasElement, type: string) {
+    if (type === 'webgl2') {
+      claimed.add(this);
+      return null;
+    }
+    return claimed.has(this) ? null : fake2d;
+  } as typeof HTMLCanvasElement.prototype.getContext);
+  const gl = await import('./glRenderer');
+  vi.mocked(gl.createGlRenderer).mockImplementation((canvas) => {
+    canvas.getContext('webgl2'); // got a context, then shader compile failed
+    return null;
+  });
+  fake2d.putImageData.mockClear();
+  useSettings.getState().update({ background: { enabled: true, imageKey: 'background' } });
+  await renderBackground();
+  await waitFor(() => expect(fake2d.putImageData).toHaveBeenCalled());
+});
+
 it('switches to the CPU path after the GL context is lost', async () => {
   const gl = await import('./glRenderer');
   vi.mocked(gl.createGlRenderer).mockImplementation(() => ({
