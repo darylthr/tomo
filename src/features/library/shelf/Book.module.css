@@ -1,0 +1,149 @@
+/* Sizes come from the parent: --w, --h, --d (px). --dim (0–0.6) darkens books away from the centre. */
+.book {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: var(--w);
+  height: var(--h);
+  margin-left: calc(var(--w) / -2);
+  transform-style: preserve-3d;
+  transform-origin: 50% 50%;
+}
+
+.fill {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+.face {
+  position: absolute;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.front {
+  inset: 0;
+  border-radius: 2px 5px 5px 2px;
+  background: #222;
+  transform: translateZ(calc(var(--d) / 2));
+  overflow: hidden;
+}
+
+.cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* 1px image outline (better-ui), then the dim overlay and a soft hinge shade — matte, no gloss */
+.front::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  outline: 1px solid oklch(1 0 0 / 0.1);
+  outline-offset: -1px;
+  z-index: 2;
+}
+
+.front::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(rgb(0 0 0 / var(--dim, 0)), rgb(0 0 0 / var(--dim, 0))),
+    linear-gradient(90deg, oklch(0 0 0 / 0.22), transparent 6%, transparent 94%, oklch(0 0 0 / 0.08));
+}
+
+.placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 12%;
+  text-align: center;
+  font-weight: 700;
+  font-size: calc(var(--w, 120px) * 0.11);
+  line-height: 1.15;
+  color: var(--spine-ink);
+  background: var(--spine);
+  text-wrap: balance;
+}
+
+.back {
+  inset: 0;
+  background: var(--spine);
+  transform: rotateY(180deg) translateZ(calc(var(--d) / 2));
+  border-radius: 5px 2px 2px 5px;
+}
+
+.spine {
+  top: 0;
+  height: 100%;
+  width: var(--d);
+  left: calc(50% - var(--d) / 2);
+  transform: rotateY(-90deg) translateZ(calc(var(--w) / 2));
+  background:
+    linear-gradient(rgb(0 0 0 / var(--dim, 0)), rgb(0 0 0 / var(--dim, 0))),
+    linear-gradient(90deg, oklch(0 0 0 / 0.3), transparent 30%, transparent 70%, oklch(0 0 0 / 0.28)),
+    var(--spine);
+  color: var(--spine-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 3px;
+}
+
+.spine span {
+  writing-mode: vertical-rl;
+  font-size: clamp(9px, calc(var(--d) * 0.36), 15px);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  max-height: 84%;
+}
+
+.pages {
+  top: 3px;
+  height: calc(100% - 6px);
+  width: calc(var(--d) - 4px);
+  left: calc(50% - var(--d) / 2 + 2px);
+  transform: rotateY(90deg) translateZ(calc(var(--w) / 2 - 3px));
+  background:
+    linear-gradient(rgb(0 0 0 / var(--dim, 0)), rgb(0 0 0 / var(--dim, 0))),
+    linear-gradient(90deg, oklch(0 0 0 / 0.28), transparent 18%, transparent 82%, oklch(0 0 0 / 0.32)),
+    repeating-linear-gradient(90deg, #f3efe6 0 1px, #d6cfc0 1px 2px, #ebe6db 2px 3px);
+}
+
+.top {
+  left: 3px;
+  width: calc(100% - 6px);
+  height: calc(var(--d) - 4px);
+  top: calc(50% - var(--d) / 2 + 2px);
+  transform: rotateX(90deg) translateZ(calc(var(--h) / 2 - 3px));
+  background:
+    linear-gradient(rgb(0 0 0 / var(--dim, 0)), rgb(0 0 0 / var(--dim, 0))),
+    linear-gradient(oklch(0 0 0 / 0.28), transparent 20%, transparent 80%, oklch(0 0 0 / 0.28)),
+    repeating-linear-gradient(0deg, #f3efe6 0 1px, #d6cfc0 1px 2px, #ebe6db 2px 3px);
+}
+
+.lite .spine {
+  width: calc(var(--d) * 0.5);
+  left: calc(50% - var(--d) / 4);
+}
+
+.flat .front {
+  border-radius: 6px;
+  box-shadow: 0 14px 30px -10px oklch(0 0 0 / 0.75);
+}
