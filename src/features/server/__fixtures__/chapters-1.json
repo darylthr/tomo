@@ -1,0 +1,11 @@
+{
+  "data": {
+    "chapters": {
+      "nodes": [
+        { "id": 12, "name": "Chapter 3: Last Stop", "mangaId": 1, "chapterNumber": 3, "sourceOrder": 3, "isRead": false, "isBookmarked": false, "lastPageRead": 0, "pageCount": 0, "uploadDate": "1792800000000", "scanlator": "Dusk Scans" },
+        { "id": 11, "name": "Chapter 2: Platform", "mangaId": 1, "chapterNumber": 2, "sourceOrder": 2, "isRead": false, "isBookmarked": false, "lastPageRead": 3, "pageCount": 8, "uploadDate": "1792700000000", "scanlator": null },
+        { "id": 10, "name": "Chapter 1: Dusk", "mangaId": 1, "chapterNumber": 1, "sourceOrder": 1, "isRead": true, "isBookmarked": false, "lastPageRead": 7, "pageCount": 8, "uploadDate": "1792600000000", "scanlator": null }
+      ]
+    }
+  }
+}

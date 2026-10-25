@@ -1,0 +1,36 @@
+{
+  "data": {
+    "mangas": {
+      "nodes": [
+        {
+          "id": 1, "title": "Blue Hour", "thumbnailUrl": "/api/v1/manga/1/thumbnail",
+          "author": "Aoi Mizu", "artist": null, "description": "A night train that only runs at dusk.",
+          "genre": ["Drama", "Slice of Life"], "status": "ONGOING", "unreadCount": 4, "inLibrary": true,
+          "initialized": true, "source": { "displayName": "MangaDex (EN)" }, "chapters": { "totalCount": 3 },
+          "categories": { "nodes": [{ "id": 1 }] }
+        },
+        {
+          "id": 2, "title": "Kintsugi", "thumbnailUrl": "/api/v1/manga/2/thumbnail",
+          "author": "Ren Ito", "artist": "Ren Ito", "description": "",
+          "genre": [], "status": "PUBLISHING_FINISHED", "unreadCount": 0, "inLibrary": true,
+          "initialized": true, "source": { "displayName": "Local source" }, "chapters": { "totalCount": 12 },
+          "categories": { "nodes": [] }
+        },
+        {
+          "id": 3, "title": "Night Tram", "thumbnailUrl": null,
+          "author": null, "artist": null, "description": null,
+          "genre": ["Action"], "status": "ON_HIATUS", "unreadCount": 12, "inLibrary": true,
+          "initialized": false, "source": { "displayName": "Comick (EN)" }, "chapters": { "totalCount": 0 },
+          "categories": { "nodes": [] }
+        }
+      ]
+    },
+    "categories": {
+      "nodes": [
+        { "id": 0, "name": "Default", "order": 0 },
+        { "id": 1, "name": "Reading", "order": 1 },
+        { "id": 2, "name": "Plan to read", "order": 2 }
+      ]
+    }
+  }
+}
