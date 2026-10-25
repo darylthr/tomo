@@ -19,13 +19,14 @@ async function contrastOf(page: Page, selector: string, backgroundSelector: stri
 }
 
 async function chooseTheme(page: Page, mode: 'Light' | 'Custom') {
-  await page.getByRole('button', { name: 'Settings' }).click();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await page.getByRole('radio', { name: mode }).click();
 }
 
 for (const mode of ['Light', 'Custom'] as const) {
   test(`${mode} theme keeps panel and settings text readable`, async ({ page }) => {
-    await page.goto('/');
+    // A page with a panel heading (the library itself draws on the shelf, not a panel).
+    await page.goto('/updates');
     await chooseTheme(page, mode);
     if (mode === 'Custom') {
       await page.getByLabel('Background color').fill('#ffffff');
