@@ -46,3 +46,21 @@ it('patches one title in place', async () => {
   useLibrary.getState().patchTitle(1, { unread: 3 });
   expect(useLibrary.getState().titles.find((t) => t.id === 1)?.unread).toBe(3);
 });
+
+it('a refresh replaces a request that is still hanging, and the stale answer is ignored', async () => {
+  let releaseFirst: (r: Response) => void = () => {};
+  const empty = { data: { mangas: { nodes: [] }, categories: { nodes: [] } } };
+  const fetch = vi
+    .fn()
+    .mockImplementationOnce(() => new Promise<Response>((r) => (releaseFirst = r)))
+    .mockImplementationOnce(async () => new Response(JSON.stringify(libraryFixture)));
+  vi.stubGlobal('fetch', fetch);
+  const first = useLibrary.getState().load();
+  await useLibrary.getState().refresh();
+  expect(fetch).toHaveBeenCalledTimes(2);
+  expect(useLibrary.getState().titles).toHaveLength(3);
+  releaseFirst(new Response(JSON.stringify(empty)));
+  await first;
+  expect(useLibrary.getState().titles).toHaveLength(3);
+  expect(useLibrary.getState().status).toBe('ready');
+});
