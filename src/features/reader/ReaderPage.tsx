@@ -4,10 +4,12 @@ import type { Chapter, ReaderMode, Title } from '../../shared/model/types';
 import { useSettings } from '../../shared/settings/store';
 import { useUi, type OpeningFrom } from '../../shared/ui/uiStore';
 import { loadChapters } from '../library/continueReading';
-import { getChapter, getPages, getTitle } from '../server/api';
+import { useLibrary } from '../library/libraryStore';
+import { getChapter, getPages, getTitle, setProgress } from '../server/api';
 import { ServerError } from '../server/client';
 import { playOpening } from './opening';
 import { PagedView } from './PagedView';
+import { createProgressSync, startPage } from './progress';
 import { ReaderChrome } from './ReaderChrome';
 import styles from './ReaderPage.module.css';
 import { useReader } from './readerStore';
@@ -15,11 +17,6 @@ import { WebtoonView } from './WebtoonView';
 
 type Loaded = { title: Title; chapter: Chapter; chapters: Chapter[] };
 type Load = { state: 'loading' } | { state: 'error'; message: string } | ({ state: 'ready' } & Loaded);
-
-/** Where to start: the saved page for an unfinished chapter, otherwise the first page. */
-export function startPage(chapter: Chapter, pageCount: number): number {
-  return !chapter.read && chapter.lastPage > 0 && chapter.lastPage < pageCount ? chapter.lastPage : 0;
-}
 
 function neighbours(chapters: Chapter[], current: Chapter) {
   const byOrder = [...chapters].sort((a, b) => a.order - b.order);
@@ -46,13 +43,36 @@ export function ReaderPage() {
 
   useEffect(() => {
     let cancelled = false;
+    let stopSync = () => {};
     (async () => {
       const chapter = await getChapter(chapterId);
       const [title, chapters, pages] = await Promise.all([getTitle(chapter.titleId), loadChapters(chapter.titleId), getPages(chapterId)]);
       if (cancelled) return;
       const settings = useSettings.getState().settings.reader;
       const chosen = settings.modes[String(title.id)] ?? settings.defaultMode;
-      useReader.getState().open(chapter, pages, startPage(chapter, pages.length), chosen);
+      const start = startPage(chapter, pages.length);
+      useReader.getState().open(chapter, pages, start, chosen);
+      const sync = createProgressSync(
+        chapter.id,
+        pages.length,
+        async (id, patch) => {
+          await setProgress(id, patch);
+          if (patch.read && !chapter.read) {
+            const t = useLibrary.getState().titles.find((x) => x.id === chapter.titleId);
+            if (t) useLibrary.getState().patchTitle(t.id, { unread: Math.max(0, t.unread - 1) });
+          }
+        },
+        start,
+      );
+      // A chapter that opens on its last page (one-pagers, or resumed at the end) is finished already.
+      if (start === pages.length - 1) sync.pageChanged(start);
+      const unsubscribe = useReader.subscribe((s, prev) => {
+        if (s.index !== prev.index && s.chapter?.id === chapter.id) sync.pageChanged(s.index);
+      });
+      stopSync = () => {
+        unsubscribe();
+        sync.dispose();
+      };
       setCaughtUp(false);
       setLoad({ state: 'ready', title, chapter, chapters });
     })().catch((e) => {
@@ -60,6 +80,7 @@ export function ReaderPage() {
     });
     return () => {
       cancelled = true;
+      stopSync();
     };
   }, [chapterId]);
 
