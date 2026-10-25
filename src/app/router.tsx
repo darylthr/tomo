@@ -1,6 +1,7 @@
 import type { RouteObject } from 'react-router-dom';
 import { HistoryPage } from '../features/history/HistoryPage';
 import { LibraryPage } from '../features/library/LibraryPage';
+import { ReaderPage } from '../features/reader/ReaderPage';
 import { SearchPage } from '../features/search/SearchPage';
 import { TitlePage } from '../features/title/TitlePage';
 import { UpdatesPage } from '../features/updates/UpdatesPage';
@@ -18,4 +19,6 @@ export const routes: RouteObject[] = [
       { path: '*', element: <LibraryPage /> },
     ],
   },
+  // The reader takes the whole screen, outside the app frame.
+  { path: 'read/:chapterId', element: <ReaderPage /> },
 ];

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import type { Title } from '../../shared/model/types';
 import { useSettings } from '../../shared/settings/store';
 import { useUi } from '../../shared/ui/uiStore';
+import { openBook } from '../reader/opening';
 import { CategoryBar, type CategoryFilter } from './CategoryBar';
 import { loadChapters, pickContinueChapter } from './continueReading';
 import { LibraryGrid } from './LibraryGrid';
@@ -50,10 +51,12 @@ export function LibraryPage() {
     [titles, filter],
   );
 
-  const continueReading = async (title: Title) => {
+  const continueReading = async (title: Title, coverEl?: HTMLElement | null) => {
+    const cover = coverEl ?? document.querySelector<HTMLElement>(`[data-title-id="${title.id}"] [data-cover]`);
     try {
       const chapter = pickContinueChapter(await loadChapters(title.id));
-      navigate(chapter ? `/read/${chapter.id}` : `/title/${title.id}`);
+      if (chapter) openBook(navigate, title, chapter.id, cover);
+      else navigate(`/title/${title.id}`);
     } catch {
       navigate(`/title/${title.id}`);
     }
@@ -111,7 +114,7 @@ export function LibraryPage() {
         }}
       />
       {vertical ? (
-        <LibraryGrid titles={shown} display={library.display} lite={lite} onOpen={(t) => void continueReading(t)} />
+        <LibraryGrid titles={shown} display={library.display} lite={lite} onOpen={(t, el) => void continueReading(t, el)} />
       ) : (
         <>
           <div className={styles.shelfWrap}>
@@ -122,7 +125,7 @@ export function LibraryPage() {
               lite={lite}
               fadeSides={library.fadeSides}
               onCenterChange={setCenter}
-              onOpen={(t) => void continueReading(t)}
+              onOpen={(t, el) => void continueReading(t, el)}
             />
             <div className={styles.position} aria-live="off">
               {Math.min(center + 1, shown.length).toLocaleString()} / {shown.length.toLocaleString()}
