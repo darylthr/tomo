@@ -33,6 +33,19 @@ it('searches all sources after a short pause in typing', async () => {
   expect(screen.getByTestId('location')).toHaveTextContent('/search?q=blue');
 });
 
+it('goes back to the screen the search started from', async () => {
+  const { router } = renderWithRouter(<Header />, '/updates');
+  const u = user();
+  await u.click(screen.getByRole('button', { name: 'Search all sources' }));
+  await u.type(screen.getByRole('searchbox'), 'moon');
+  act(() => vi.advanceTimersByTime(280));
+  await u.type(screen.getByRole('searchbox'), 'light');
+  act(() => vi.advanceTimersByTime(280));
+  expect(screen.getByTestId('location')).toHaveTextContent('/search?q=moonlight');
+  await act(() => router.navigate(-1));
+  expect(screen.getByTestId('location')).toHaveTextContent('/updates');
+});
+
 it('closes and clears on Escape, returning focus to the search button', async () => {
   renderWithRouter(<Header />);
   const u = user();

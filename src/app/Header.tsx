@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { IconBook, IconClose, IconSearch, IconSettings } from '../shared/ui/icons';
 import { useUi } from '../shared/ui/uiStore';
 import styles from './Header.module.css';
@@ -14,6 +14,7 @@ function isTyping(target: EventTarget | null): boolean {
 /** Floating header: settings on the left, brand centered, search icon that expands into a field. */
 export function Header() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const openSettings = useUi((s) => s.openSettings);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -38,7 +39,8 @@ export function Header() {
     clearTimeout(timer.current);
     timer.current = setTimeout(() => {
       const q = value.trim();
-      navigate(q ? `/search?q=${encodeURIComponent(q)}` : '/search', { replace: true });
+      // Push when arriving from another screen so Back returns there; replace while refining.
+      navigate(q ? `/search?q=${encodeURIComponent(q)}` : '/search', { replace: pathname === '/search' });
     }, SEARCH_DEBOUNCE_MS);
   };
 
