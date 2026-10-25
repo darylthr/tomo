@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { DitherBackground } from '../features/background/DitherBackground';
+import { SettingsSheet } from '../features/settings/SettingsSheet';
 import styles from './AppFrame.module.css';
 import { Header } from './Header';
 import { NavBar } from './NavBar';
@@ -16,6 +17,7 @@ export function AppFrame() {
         </div>
       </main>
       <NavBar />
+      <SettingsSheet />
     </div>
   );
 }
