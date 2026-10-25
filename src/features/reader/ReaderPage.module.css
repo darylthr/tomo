@@ -18,6 +18,11 @@
   touch-action: pan-y pinch-zoom;
 }
 
+/* vertical swipes turn pages, so the browser may only pan sideways */
+.pagedVertical {
+  touch-action: pan-x pinch-zoom;
+}
+
 .page {
   display: block;
   user-select: none;

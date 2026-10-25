@@ -89,3 +89,16 @@ it('names each page for screen readers', () => {
   show('rtl', 2);
   expect(screen.getByRole('img', { name: 'Page 3 of 5' })).toBeInTheDocument();
 });
+
+it('a tap right after a touch swipe still turns the page', () => {
+  const surface = show('ltr', 0);
+  // A touch swipe: no click follows it.
+  fireEvent.pointerDown(surface, { clientX: 600, clientY: 500 });
+  fireEvent.pointerUp(surface, { clientX: 300, clientY: 500 });
+  expect(index()).toBe(1);
+  // Then a tap on the right third.
+  fireEvent.pointerDown(surface, { clientX: 900, clientY: 500 });
+  fireEvent.pointerUp(surface, { clientX: 900, clientY: 500 });
+  fireEvent.click(surface, { clientX: 900, clientY: 500 });
+  expect(index()).toBe(2);
+});

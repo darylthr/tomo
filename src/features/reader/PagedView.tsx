@@ -69,6 +69,8 @@ export function PagedView() {
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
+    // Touch swipes are not followed by a click, so a new press starts fresh.
+    swiped.current = false;
     start.current = { x: e.clientX, y: e.clientY, t: e.timeStamp };
   };
   const onPointerUp = (e: React.PointerEvent) => {
@@ -91,11 +93,12 @@ export function PagedView() {
   const src = pages[index];
   return (
     <div
-      className={`${styles.paged} ${styles[`fit-${fit}`]}`}
+      className={`${styles.paged} ${vertical ? styles.pagedVertical : ''} ${styles[`fit-${fit}`]}`}
       data-reader-surface=""
       onClick={onClick}
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}
+      onPointerCancel={() => (start.current = null)}
     >
       {src && (
         <img
