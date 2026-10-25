@@ -34,3 +34,19 @@ it('chooses the login mode', async () => {
   await userEvent.click(screen.getByRole('radio', { name: 'Basic' }));
   expect(useSettings.getState().settings.server.authMode).toBe('basic_auth');
 });
+
+it('fills in http:// for a bare address', async () => {
+  render(<ServerSection />);
+  await userEvent.type(screen.getByRole('textbox', { name: 'Server address' }), '192.168.1.10:4567');
+  await userEvent.tab();
+  expect(useSettings.getState().settings.server.url).toBe('http://192.168.1.10:4567');
+  expect(screen.getByRole('textbox', { name: 'Server address' })).toHaveValue('http://192.168.1.10:4567');
+});
+
+it('keeps an invalid address out of the settings and says why', async () => {
+  render(<ServerSection />);
+  await userEvent.type(screen.getByRole('textbox', { name: 'Server address' }), 'not an address');
+  await userEvent.tab();
+  expect(useSettings.getState().settings.server.url).toBe('');
+  expect(screen.getByText(/Enter an address like http:\/\/192\.168\.1\.10:4567/)).toBeVisible();
+});

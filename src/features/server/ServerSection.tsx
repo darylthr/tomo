@@ -4,7 +4,7 @@ import { Segmented } from '../../shared/ui/Segmented';
 import styles from '../settings/SettingsSheet.module.css';
 import { getAbout } from './api';
 import { ServerError } from './client';
-import { resolveUrl } from './config';
+import { normalizeServerUrl, resolveUrl } from './config';
 
 type Check = { state: 'idle' | 'checking' } | { state: 'ok'; version: string } | { state: 'failed'; message: string; details?: string };
 
@@ -14,17 +14,23 @@ export function ServerSection() {
   const update = useSettings((s) => s.update);
   const [draft, setDraft] = useState(server.url);
   const [check, setCheck] = useState<Check>({ state: 'idle' });
+  const [invalid, setInvalid] = useState(false);
 
+  /** Saves the address in its full form; returns false when it isn't a web address. */
   const saveUrl = (value: string) => {
-    const url = value.trim();
-    if (url === server.url && server.configured) return;
+    const url = normalizeServerUrl(value);
+    setInvalid(url === null);
+    if (url === null) return false;
+    setDraft(url);
+    if (url === server.url && server.configured) return true;
     update({ server: { url, configured: true } });
     // Reload the shelf from the new address (lazy import keeps this section free of library code).
     void import('../library/libraryStore').then(({ useLibrary }) => useLibrary.getState().refresh());
+    return true;
   };
 
   const test = async () => {
-    saveUrl(draft);
+    if (!saveUrl(draft)) return;
     setCheck({ state: 'checking' });
     try {
       const about = await getAbout();
@@ -51,11 +57,18 @@ export function ServerSection() {
           spellCheck={false}
           placeholder="Same address as Tomo"
           value={draft}
+          aria-invalid={invalid || undefined}
+          aria-describedby={invalid ? 'server-url-error' : undefined}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={(e) => saveUrl(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
         />
       </div>
+      {invalid && (
+        <p id="server-url-error" className={styles.error} role="alert">
+          Enter an address like http://192.168.1.10:4567
+        </p>
+      )}
       <div className={styles.row}>
         <span className={styles.label}>Login</span>
         <Segmented

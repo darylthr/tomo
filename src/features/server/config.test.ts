@@ -1,5 +1,5 @@
 import { useSettings } from '../../shared/settings/store';
-import { loadServerConfig, resolveUrl } from './config';
+import { loadServerConfig, normalizeServerUrl, resolveUrl } from './config';
 
 const json = (body: unknown, status = 200) =>
   vi.fn(async () => new Response(typeof body === 'string' ? body : JSON.stringify(body), { status }));
@@ -52,4 +52,34 @@ describe('loadServerConfig', () => {
     await loadServerConfig(vi.fn(async () => Promise.reject(new TypeError('offline'))));
     expect(useSettings.getState().settings.server.configured).toBe(false);
   });
+});
+
+describe('normalizeServerUrl', () => {
+  it('adds http:// to a bare address and port', () => {
+    expect(normalizeServerUrl('192.168.1.10:4567')).toBe('http://192.168.1.10:4567');
+    expect(normalizeServerUrl(' nas.local:4567/ ')).toBe('http://nas.local:4567');
+  });
+
+  it('keeps a full address and its path', () => {
+    expect(normalizeServerUrl('https://tomo.home/suwayomi/')).toBe('https://tomo.home/suwayomi');
+  });
+
+  it('leaves an empty address empty (same address as Tomo)', () => {
+    expect(normalizeServerUrl('  ')).toBe('');
+  });
+
+  it('rejects what is not a web address', () => {
+    expect(normalizeServerUrl('ftp://nas.local')).toBeNull();
+    expect(normalizeServerUrl('http://')).toBeNull();
+    expect(normalizeServerUrl('not an address')).toBeNull();
+  });
+});
+
+it('resolves against an address saved without http://', () => {
+  expect(resolveUrl('/api/graphql', 'nas.local:4567')).toBe('http://nas.local:4567/api/graphql');
+});
+
+it('normalizes the address from the config file', async () => {
+  await loadServerConfig(json({ suwayomiUrl: '192.168.1.10:4567' }));
+  expect(useSettings.getState().settings.server.url).toBe('http://192.168.1.10:4567');
 });
