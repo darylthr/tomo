@@ -202,6 +202,11 @@
   color: var(--ink);
   font-weight: 600;
   cursor: pointer;
+  transition: scale 150ms ease-out;
+}
+
+.more:active {
+  scale: 0.96;
 }
 
 .genres {
@@ -264,6 +269,11 @@
   text-align: left;
   cursor: pointer;
   transition: background-color 150ms ease-out;
+}
+
+/* full-width rows show a pressed tint instead of scaling */
+.open:active {
+  background: oklch(1 0 0 / 0.06);
 }
 
 @media (hover: hover) {
