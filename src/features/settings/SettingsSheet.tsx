@@ -7,6 +7,7 @@ import { Segmented } from '../../shared/ui/Segmented';
 import { Switch } from '../../shared/ui/Switch';
 import { useUi } from '../../shared/ui/uiStore';
 import { clearBackgroundImage, saveBackgroundImage } from '../background/backgroundImage';
+import { ServerSection } from '../server/ServerSection';
 import styles from './SettingsSheet.module.css';
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
@@ -96,6 +97,8 @@ export function SettingsSheet() {
             <IconClose />
           </button>
         </header>
+
+        <ServerSection />
 
         <section className={styles.section} aria-label="Library">
           <h3 className={styles.heading}>Library</h3>
