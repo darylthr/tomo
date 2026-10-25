@@ -1,0 +1,22 @@
+.app {
+  position: fixed;
+  inset: 0;
+}
+
+.frame {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + var(--gap));
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  left: var(--gap);
+  right: var(--gap);
+  border-radius: var(--frame-radius);
+  overflow: hidden;
+  background: var(--panel);
+  box-shadow: var(--frame-ring);
+  isolation: isolate;
+}
+
+.view {
+  position: absolute;
+  inset: var(--top-h) 0 0 0;
+}

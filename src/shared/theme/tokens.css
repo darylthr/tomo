@@ -69,6 +69,11 @@ select {
   color: inherit;
 }
 
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
