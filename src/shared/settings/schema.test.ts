@@ -18,6 +18,23 @@ describe('parseSettings', () => {
     });
   });
 
+  it('has server and reader defaults', () => {
+    expect(DEFAULTS.server).toEqual({ url: '', webUiUrl: '', authMode: 'none', configured: false });
+    expect(DEFAULTS.reader).toEqual({
+      defaultMode: 'rtl',
+      modes: {},
+      fit: 'screen',
+      brightness: 1,
+      warm: 0,
+      pageTransitions: true,
+    });
+  });
+
+  it('keeps reader values in range', () => {
+    expect(parseSettings({ reader: { brightness: 5, warm: -1 } }).reader).toMatchObject({ brightness: 1, warm: 0 });
+    expect(parseSettings({ reader: { modes: { 12: 'webtoon', 13: 'sideways' } } }).reader.modes).toEqual({ 12: 'webtoon' });
+  });
+
   it('resets an invalid value to its default', () => {
     expect(parseSettings({ background: { levels: 7 } }).background.levels).toBe(6);
   });
