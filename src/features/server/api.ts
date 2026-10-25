@@ -12,7 +12,8 @@ export async function getAbout(): Promise<{ name: string; version: string }> {
 export async function getLibrary(): Promise<{ titles: Title[]; categories: Category[] }> {
   const data = await gql<{ mangas: { nodes: RawTitle[] }; categories: { nodes: RawCategory[] } }>(op.LIBRARY);
   return {
-    titles: data.mangas.nodes.map(toTitle),
+    // Sorted here: the server's `order` argument only exists in newer Suwayomi versions.
+    titles: data.mangas.nodes.map(toTitle).sort((a, b) => a.title.localeCompare(b.title)),
     categories: data.categories.nodes.map(toCategory).sort((a, b) => a.order - b.order),
   };
 }
@@ -49,7 +50,8 @@ export async function setProgress(chapterId: number, patch: { lastPage?: number;
   const body: { lastPageRead?: number; isRead?: boolean } = {};
   if (patch.lastPage !== undefined) body.lastPageRead = patch.lastPage;
   if (patch.read !== undefined) body.isRead = patch.read;
-  await gql(op.UPDATE_CHAPTER, { id: chapterId, patch: body });
+  // keepalive: saves made as the app is hidden or closed still reach the server.
+  await gql(op.UPDATE_CHAPTER, { id: chapterId, patch: body }, { keepalive: true });
 }
 
 export async function setInLibrary(titleId: number, inLibrary: boolean): Promise<void> {

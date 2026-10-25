@@ -83,3 +83,24 @@ it('adds a title to the library', async () => {
   await setInLibrary(3, true);
   expect(calls[0]!.variables).toEqual({ id: 3, inLibrary: true });
 });
+
+it('sorts the library by title itself instead of relying on server ordering', async () => {
+  const nodes = [...libraryFixture.data.mangas.nodes].reverse();
+  serve({ LIBRARY: { data: { ...libraryFixture.data, mangas: { nodes } } } });
+  const { titles } = await getLibrary();
+  expect(titles.map((t) => t.title)).toEqual([...titles.map((t) => t.title)].sort((a, b) => a.localeCompare(b)));
+  expect(calls[0]!.query).not.toMatch(/\border:/);
+});
+
+it('does not ask the server to order chapters', async () => {
+  serve({ CHAPTERS: chaptersFixture });
+  await getChapters(1);
+  expect(calls[0]!.query).not.toMatch(/\border:/);
+});
+
+it('keeps progress saves alive while the page unloads', async () => {
+  serve({ UPDATE_CHAPTER: { data: { updateChapter: { chapter: { id: 11 } } } } });
+  await setProgress(11, { lastPage: 2 });
+  const init = (vi.mocked(fetch).mock.calls[0] as unknown as [string, RequestInit])[1];
+  expect(init.keepalive).toBe(true);
+});

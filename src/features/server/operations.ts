@@ -41,8 +41,8 @@ export const ABOUT = `query ABOUT { aboutServer { name version } }`;
 export const LIBRARY = `
   ${TITLE_FIELDS}
   query LIBRARY {
-    mangas(condition: { inLibrary: true }, order: [{ by: TITLE }]) { nodes { ...TITLE_FIELDS } }
-    categories(order: [{ by: ORDER }]) { nodes { id name order } }
+    mangas(condition: { inLibrary: true }) { nodes { ...TITLE_FIELDS } }
+    categories { nodes { id name order } }
   }
 `;
 
@@ -54,7 +54,7 @@ export const TITLE = `
 export const CHAPTERS = `
   ${CHAPTER_FIELDS}
   query CHAPTERS($mangaId: Int!) {
-    chapters(condition: { mangaId: $mangaId }, order: [{ by: SOURCE_ORDER, byType: DESC }]) {
+    chapters(condition: { mangaId: $mangaId }) {
       nodes { ...CHAPTER_FIELDS }
     }
   }

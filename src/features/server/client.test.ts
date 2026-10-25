@@ -65,3 +65,20 @@ it('passes other GraphQL errors through as details', async () => {
   expect(e.message).toBe('The server returned an error');
   expect(e.details).toBe('boom');
 });
+
+it('keeps partial data when only some fields failed', async () => {
+  vi.stubGlobal('fetch', respond({ data: { mangas: { nodes: [] } }, errors: [{ message: 'Source not found' }] }));
+  await expect(gql('{ mangas { nodes { id } } }')).resolves.toEqual({ mangas: { nodes: [] } });
+});
+
+it('still fails when a top-level field came back empty', async () => {
+  vi.stubGlobal('fetch', respond({ data: { updateChapter: null }, errors: [{ message: 'Chapter not found' }] }));
+  expect((await errorOf(gql('mutation { updateChapter }'))).kind).toBe('server');
+});
+
+it('can keep a request alive while the page unloads', async () => {
+  const fetch = respond({ data: { ok: true } });
+  vi.stubGlobal('fetch', fetch);
+  await gql('{ ok }', undefined, { keepalive: true });
+  expect((fetch.mock.calls[0] as unknown as [string, RequestInit])[1].keepalive).toBe(true);
+});

@@ -26,7 +26,7 @@ const SCHEMA_MISMATCH = /FieldUndefined|Cannot query field|Unknown type|is undef
 export async function gql<T>(
   query: string,
   variables?: Record<string, unknown>,
-  opts: { signal?: AbortSignal } = {},
+  opts: { signal?: AbortSignal; keepalive?: boolean } = {},
 ): Promise<T> {
   let res: Response;
   try {
@@ -36,6 +36,7 @@ export async function gql<T>(
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({ query, variables }),
       signal: opts.signal,
+      keepalive: opts.keepalive,
     });
   } catch (e) {
     if (e instanceof DOMException && e.name === 'AbortError') throw e;
@@ -49,6 +50,14 @@ export async function gql<T>(
     body = await res.json();
   } catch {
     throw new ServerError(res.ok ? 'server' : 'unreachable', `HTTP ${res.status}`);
+  }
+
+  // GraphQL can answer with data and errors for a few fields (an uninstalled source, say);
+  // keep the data when every top-level field arrived.
+  const complete = !!body.data && Object.values(body.data as object).every((v) => v !== null);
+  if (body.errors?.length && complete && res.ok) {
+    console.warn('Suwayomi reported field errors:', body.errors.map((e) => e.message).join('\n'));
+    return body.data as T;
   }
 
   if (body.errors?.length) {
