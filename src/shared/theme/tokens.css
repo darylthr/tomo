@@ -33,6 +33,13 @@
   color-scheme: light;
 }
 
+/* better-ui: no press scaling under reduced motion; color and opacity cues remain */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scale: none !important;
+  }
+}
+
 [data-no-transitions] *,
 [data-no-transitions] *::before,
 [data-no-transitions] *::after {

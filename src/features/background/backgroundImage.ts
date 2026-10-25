@@ -5,8 +5,8 @@ const KEY_PREFIX = 'background:';
 const MAX_EDGE = 2560;
 
 export class BackgroundImageError extends Error {
-  constructor() {
-    super("Couldn't read that image");
+  constructor(message = "Couldn't read that image") {
+    super(message);
     this.name = 'BackgroundImageError';
   }
 }
@@ -66,7 +66,11 @@ export async function saveBackgroundImage(file: Blob): Promise<string> {
   const updatedAt = Date.now();
   const key = `${KEY_PREFIX}${updatedAt}`;
   const previous = useSettings.getState().settings.background.imageKey;
-  await db.blobs.put({ key, blob, updatedAt });
+  try {
+    await db.blobs.put({ key, bytes: await blob.arrayBuffer(), type: blob.type, updatedAt });
+  } catch {
+    throw new BackgroundImageError("Couldn't save that image");
+  }
   useSettings.getState().update({ background: { imageKey: key, enabled: true } });
   if (previous && previous !== key) await db.blobs.delete(previous);
   return key;
@@ -76,7 +80,7 @@ export async function loadBackgroundImage(key: string): Promise<ImageBitmap | nu
   const row = await db.blobs.get(key);
   if (!row) return null;
   try {
-    return await createImageBitmap(row.blob);
+    return await createImageBitmap(new Blob([row.bytes], { type: row.type }));
   } catch {
     return null;
   }

@@ -1,6 +1,7 @@
 import Dexie, { type EntityTable } from 'dexie';
 
-export type BlobRow = { key: string; blob: Blob; updatedAt: number };
+/** Binary files kept as raw bytes: Safari's private mode can't store Blob objects in IndexedDB. */
+export type BlobRow = { key: string; bytes: ArrayBuffer; type: string; updatedAt: number };
 
 export class TomoDB extends Dexie {
   blobs!: EntityTable<BlobRow, 'key'>;

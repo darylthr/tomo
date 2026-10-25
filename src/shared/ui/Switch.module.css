@@ -41,6 +41,12 @@
     background-color 150ms ease-out;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .thumb {
+    transition: background-color 150ms ease-out;
+  }
+}
+
 .switch[aria-checked='true'] .thumb {
   transform: translateX(18px);
   background: var(--chrome);

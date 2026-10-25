@@ -78,6 +78,24 @@ describe('saveBackgroundImage', () => {
     expect(useSettings.getState().settings.background.imageKey).toBe(second);
   });
 
+  it('stores raw bytes, since Safari private mode cannot keep Blobs in IndexedDB', async () => {
+    stubBitmap(800, 600);
+    const key = await saveBackgroundImage(new Blob(['raw']));
+    const row = await db.blobs.get(key);
+    // fake-indexeddb clones into Node's realm, so check the type tag rather than instanceof
+    expect(Object.prototype.toString.call(row?.bytes)).toBe('[object ArrayBuffer]');
+    expect(row?.type).toBe('image/webp');
+    expect(row).not.toHaveProperty('blob');
+  });
+
+  it('reports a storage failure in plain words', async () => {
+    stubBitmap(800, 600);
+    const put = vi.spyOn(db.blobs, 'put').mockRejectedValueOnce(new Error('UnknownError: Error preparing Blob/File data'));
+    await expect(saveBackgroundImage(new Blob(['raw']))).rejects.toThrow("Couldn't save that image");
+    put.mockRestore();
+    expect(useSettings.getState().settings.background.imageKey).toBeNull();
+  });
+
   it('leaves the previous image untouched when the new one cannot be read', async () => {
     stubBitmap(800, 600);
     const key = await saveBackgroundImage(new Blob(['first']));

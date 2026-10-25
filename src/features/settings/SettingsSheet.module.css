@@ -112,7 +112,7 @@
   transition: scale 150ms ease-out;
 }
 
-.close:active {
+.close:not(:disabled):active {
   scale: 0.96;
 }
 
@@ -168,7 +168,7 @@
     background-color 150ms ease-out;
 }
 
-.ghost:active {
+.ghost:not(:disabled):active {
   scale: 0.96;
 }
 
