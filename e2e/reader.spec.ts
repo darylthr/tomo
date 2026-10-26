@@ -48,3 +48,21 @@ test('Back returns to the library', async ({ page }) => {
   await page.getByRole('button', { name: 'Back' }).click();
   await expect(page.getByRole('region', { name: 'Selected title' }).getByRole('heading', { name: 'Blue Hour' })).toBeVisible();
 });
+
+// A tall manga page (800x1200) on a landscape screen: Screen and Height fit must show all of it.
+const TALL_PAGE = '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200"><rect width="800" height="1200" fill="#eee"/></svg>';
+for (const fit of ['screen', 'height'] as const) {
+  test(`${fit} fit shows the whole of a tall page without scrolling`, async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await seedSettings(page, { reader: { fit } });
+    await mockSuwayomi(page);
+    await page.route('**/chapter/*/page/*', (route) => route.fulfill({ contentType: 'image/svg+xml', body: TALL_PAGE }));
+    await page.goto('/read/11');
+    const img = pageImage(page, 4);
+    await expect(img).toBeVisible();
+    await expect.poll(async () => (await img.boundingBox())?.height).toBeGreaterThan(0);
+    const box = (await img.boundingBox())!;
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.y + box.height).toBeLessThanOrEqual(800);
+  });
+}
