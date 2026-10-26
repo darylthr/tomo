@@ -8,7 +8,7 @@ import { ServerError } from '../server/client';
 import { CoverTile } from './CoverTile';
 import { FilterSheet } from './FilterSheet';
 import { filterChanges, type FilterState } from './filters';
-import searchStyles from './Search.module.css';
+import list from '../../shared/ui/List.module.css';
 import { LangTag, SourceIcon } from './SourceIcon';
 import styles from './SourcePage.module.css';
 import { loadSources, useSources } from './sourcesStore';
@@ -137,7 +137,7 @@ function SourceBrowser({ sourceId }: { sourceId: string }) {
         </header>
 
         {missing ? (
-          <div className={searchStyles.state}>This source isn't installed in Suwayomi anymore.</div>
+          <div className={list.state}>This source isn't installed in Suwayomi anymore.</div>
         ) : (
           <>
             <div className={styles.tools}>
@@ -229,15 +229,15 @@ function Listing({ browse }: { browse: ReturnType<typeof useBrowse> }) {
   }
   if (status === 'error') {
     return (
-      <div className={`${searchStyles.state} ${searchStyles.stateError}`} role="alert">
+      <div className={`${list.state} ${list.stateError}`} role="alert">
         <span>{error}</span>
-        <button type="button" className={searchStyles.ghost} onClick={retry}>
+        <button type="button" className={list.ghost} onClick={retry}>
           Retry
         </button>
       </div>
     );
   }
-  if (!items.length) return <div className={searchStyles.state}>No titles found</div>;
+  if (!items.length) return <div className={list.state}>No titles found</div>;
 
   return (
     <>
@@ -250,14 +250,14 @@ function Listing({ browse }: { browse: ReturnType<typeof useBrowse> }) {
       </ul>
       {status === 'more' && (
         <div className={styles.more}>
-          <span className={searchStyles.spinner} aria-hidden="true" />
+          <span className={list.spinner} aria-hidden="true" />
           Loading more…
         </div>
       )}
       {status === 'moreError' && (
-        <div className={`${searchStyles.state} ${searchStyles.stateError} ${styles.moreError}`} role="alert">
+        <div className={`${list.state} ${list.stateError} ${styles.moreError}`} role="alert">
           <span>{error}</span>
-          <button type="button" className={searchStyles.ghost} onClick={retry}>
+          <button type="button" className={list.ghost} onClick={retry}>
             Retry
           </button>
         </div>

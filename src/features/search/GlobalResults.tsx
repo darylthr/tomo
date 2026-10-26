@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import type { Source } from '../../shared/model/types';
 import { CoverTile } from './CoverTile';
 import { retryGlobalSource, startGlobalSearch, useGlobalSearch, type SourceSearch } from './globalSearch';
+import list from '../../shared/ui/List.module.css';
 import styles from './Search.module.css';
 import { LangTag, SourceIcon } from './SourceIcon';
 import { loadSources, useSources } from './sourcesStore';
@@ -18,16 +19,16 @@ export function GlobalResults({ query }: { query: string }) {
 
   if (state === 'error') {
     return (
-      <div className={`${styles.state} ${styles.stateError}`} role="alert">
+      <div className={`${list.state} ${list.stateError}`} role="alert">
         <span>{error}</span>
-        <button type="button" className={styles.ghost} onClick={() => void loadSources(true)}>
+        <button type="button" className={list.ghost} onClick={() => void loadSources(true)}>
           Retry
         </button>
       </div>
     );
   }
   if (state === 'ready' && !sources.length) {
-    return <div className={styles.state}>No sources to search. Install extensions in Suwayomi first.</div>;
+    return <div className={list.state}>No sources to search. Install extensions in Suwayomi first.</div>;
   }
 
   return (
@@ -35,7 +36,7 @@ export function GlobalResults({ query }: { query: string }) {
       {sources.map((s) => (
         <SourceResults key={s.id} source={s} query={query} result={results?.[s.id]} />
       ))}
-      <p className={styles.note}>Searching every source installed in Suwayomi. “See all” opens that source.</p>
+      <p className={list.note}>Searching every source installed in Suwayomi. “See all” opens that source.</p>
     </>
   );
 }
@@ -48,13 +49,13 @@ function SourceResults({ source, query, result }: { source: Source; query: strin
       <header className={styles.resultsHead}>
         <span className={styles.resultsName}>
           <SourceIcon source={source} size="sm" />
-          <span className={styles.rowTitle}>{source.name}</span>
+          <span className={list.rowTitle}>{source.name}</span>
           <LangTag lang={source.lang} />
         </span>
         {found && (
           <Link
             to={`/search/source/${source.id}?q=${encodeURIComponent(query)}`}
-            className={styles.ghost}
+            className={list.ghost}
             aria-label={`See all from ${source.name}`}
           >
             See all
@@ -70,17 +71,17 @@ function SourceResults({ source, query, result }: { source: Source; query: strin
           ))}
         </ul>
       ) : status === 'done' ? (
-        <div className={styles.state}>No results</div>
+        <div className={list.state}>No results</div>
       ) : status === 'error' ? (
-        <div className={`${styles.state} ${styles.stateError}`}>
+        <div className={`${list.state} ${list.stateError}`}>
           <span>Couldn't reach {source.name}</span>
-          <button type="button" className={styles.ghost} onClick={() => retryGlobalSource(source.id)}>
+          <button type="button" className={list.ghost} onClick={() => retryGlobalSource(source.id)}>
             Retry
           </button>
         </div>
       ) : (
-        <div className={styles.state}>
-          <span className={styles.spinner} aria-hidden="true" />
+        <div className={list.state}>
+          <span className={list.spinner} aria-hidden="true" />
           Searching…
         </div>
       )}

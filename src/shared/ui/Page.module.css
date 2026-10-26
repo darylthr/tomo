@@ -30,3 +30,61 @@
   margin: 8px 4px 0;
   text-wrap: pretty;
 }
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.head .title {
+  min-width: 0;
+}
+
+.action {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0 12px;
+}
+
+/* Pull-to-refresh: grows with the pull, then holds a spinner while refreshing. */
+.pull {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.pullSpinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid oklch(1 0 0 / 0.2);
+  border-top-color: var(--ink);
+  transition: rotate 150ms ease-out;
+}
+
+.pull[data-armed] .pullSpinner {
+  rotate: 180deg;
+}
+
+.pullSpinner[data-spinning] {
+  animation: pullSpin 800ms linear infinite;
+}
+
+@keyframes pullSpin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pullSpinner {
+    transition: none;
+  }
+
+  .pullSpinner[data-spinning] {
+    animation-duration: 2400ms;
+  }
+}

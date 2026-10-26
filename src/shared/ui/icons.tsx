@@ -131,3 +131,20 @@ export function IconFilter(p: Omit<IconProps, "filled">) {
     </Svg>
   );
 }
+
+export function IconPlay(p: Omit<IconProps, "filled">) {
+  return (
+    <Svg fill="currentColor" stroke="none" {...p}>
+      <path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.2-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z" />
+    </Svg>
+  );
+}
+
+export function IconRefresh(p: Omit<IconProps, "filled">) {
+  return (
+    <Svg strokeWidth={1.9} {...p}>
+      <path d="M20 11a8 8 0 0 0-14.6-4.5M4 4v3.5h3.5" />
+      <path d="M4 13a8 8 0 0 0 14.6 4.5M20 20v-3.5h-3.5" />
+    </Svg>
+  );
+}
