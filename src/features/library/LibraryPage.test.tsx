@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import type { Title } from '../../shared/model/types';
@@ -24,6 +24,9 @@ const title = (id: number, patch: Partial<Title> = {}): Title => ({
   categoryIds: [],
   sourceName: 'MangaDex',
   initialized: true,
+  logoUrl: null,
+  bannerUrl: null,
+  readingMode: null,
   ...patch,
 });
 
@@ -133,5 +136,29 @@ describe('pickContinueChapter', () => {
 
   it('has nothing to continue without chapters', () => {
     expect(pickContinueChapter([])).toBeNull();
+  });
+});
+
+describe('title logos', () => {
+  const withLogo = title(7, { title: 'Blue Hour', logoUrl: 'https://tomo.home/tomo-meta/7/logo.png' });
+
+  it('shows the official logo in place of the name, named for screen readers', () => {
+    render(<TitleInfo title={withLogo} onContinue={() => {}} onChapters={() => {}} />);
+    const heading = screen.getByRole('heading', { name: 'Blue Hour' });
+    expect(within(heading).getByRole('img', { name: 'Blue Hour' })).toHaveAttribute('src', withLogo.logoUrl);
+  });
+
+  it('shows the plain name when styled logos are off', () => {
+    useSettings.getState().update({ library: { styledLogos: false } });
+    render(<TitleInfo title={withLogo} onContinue={() => {}} onChapters={() => {}} />);
+    expect(screen.queryByRole('img', { name: 'Blue Hour' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Blue Hour' })).toHaveTextContent('Blue Hour');
+  });
+
+  it('falls back to the name when the logo fails to load', () => {
+    render(<TitleInfo title={withLogo} onContinue={() => {}} onChapters={() => {}} />);
+    fireEvent.error(screen.getByRole('img', { name: 'Blue Hour' }));
+    expect(screen.queryByRole('img', { name: 'Blue Hour' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Blue Hour' })).toHaveTextContent('Blue Hour');
   });
 });

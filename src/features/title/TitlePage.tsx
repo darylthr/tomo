@@ -6,6 +6,7 @@ import { ServerError } from '../server/client';
 import { loadChapters, pickContinueChapter } from '../library/continueReading';
 import { useLibrary } from '../library/libraryStore';
 import styles from './TitlePage.module.css';
+import { TitleName } from '../../shared/ui/TitleName';
 
 const STATUS: Record<TitleStatus, string> = {
   ongoing: 'Ongoing',
@@ -89,7 +90,9 @@ export function TitlePage() {
             {title.coverUrl ? <img src={title.coverUrl} alt="" /> : <span>{title.title}</span>}
           </div>
           <div className={styles.facts}>
-            <h1 className={styles.name}>{title.title}</h1>
+            <h1 className={styles.name}>
+              <TitleName title={title} size="lg" />
+            </h1>
             {title.author && <p className={styles.author}>{title.author}</p>}
             <p className={styles.meta}>
               <span className={`${styles.status} ${styles[title.status]}`}>

@@ -14,7 +14,15 @@
           "author": "Ren Ito", "artist": "Ren Ito", "description": "",
           "genre": [], "status": "PUBLISHING_FINISHED", "unreadCount": 0, "inLibrary": true,
           "initialized": true, "source": { "displayName": "Local source" }, "chapters": { "totalCount": 12 },
-          "categories": { "nodes": [] }
+          "categories": { "nodes": [] },
+          "meta": [
+            { "key": "tomo.cover", "value": "/tomo-meta/2/cover.jpg" },
+            { "key": "tomo.logo", "value": "/tomo-meta/2/logo.png" },
+            { "key": "tomo.title", "value": "Kintsugi: Golden Seams" },
+            { "key": "tomo.mode", "value": "webtoon" },
+            { "key": "tomo.anilistId", "value": "123" },
+            { "key": "flutter_reader_mode", "value": "1" }
+          ]
         },
         {
           "id": 3, "title": "Night Tram", "thumbnailUrl": null,

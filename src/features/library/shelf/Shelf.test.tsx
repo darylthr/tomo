@@ -17,6 +17,9 @@ const title = (id: number): Title => ({
   categoryIds: [],
   sourceName: '',
   initialized: true,
+  logoUrl: null,
+  bannerUrl: null,
+  readingMode: null,
 });
 
 const many = Array.from({ length: 2000 }, (_, i) => title(i + 1));

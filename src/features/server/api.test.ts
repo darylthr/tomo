@@ -104,3 +104,34 @@ it('keeps progress saves alive while the page unloads', async () => {
   const init = (vi.mocked(fetch).mock.calls[0] as unknown as [string, RequestInit])[1];
   expect(init.keepalive).toBe(true);
 });
+
+describe('Tomo metadata from the server job', () => {
+  it('uses the matched cover, logo, display title and reading mode', async () => {
+    serve({ LIBRARY: libraryFixture });
+    const { titles } = await getLibrary();
+    expect(titles.find((t) => t.id === 2)).toMatchObject({
+      title: 'Kintsugi: Golden Seams',
+      coverUrl: 'https://tomo.home/tomo-meta/2/cover.jpg',
+      logoUrl: 'https://tomo.home/tomo-meta/2/logo.png',
+      readingMode: 'webtoon',
+    });
+  });
+
+  it('falls back to what the source gave when nothing was matched', async () => {
+    serve({ LIBRARY: libraryFixture });
+    const { titles } = await getLibrary();
+    expect(titles.find((t) => t.id === 1)).toMatchObject({
+      title: 'Blue Hour',
+      coverUrl: 'https://tomo.home/api/v1/manga/1/thumbnail',
+      logoUrl: null,
+      bannerUrl: null,
+      readingMode: null,
+    });
+  });
+
+  it('asks for the metadata with every title', async () => {
+    serve({ LIBRARY: libraryFixture });
+    await getLibrary();
+    expect(calls[0]!.query).toMatch(/meta\s*\{\s*key\s+value\s*\}/);
+  });
+});

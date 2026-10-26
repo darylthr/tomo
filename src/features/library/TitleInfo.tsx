@@ -1,5 +1,6 @@
 import type { Title, TitleStatus } from '../../shared/model/types';
 import styles from './TitleInfo.module.css';
+import { TitleName } from '../../shared/ui/TitleName';
 
 const STATUS_LABEL: Record<TitleStatus, string> = {
   ongoing: 'Ongoing',
@@ -22,7 +23,9 @@ export function TitleInfo({ title, onContinue, onChapters }: Props) {
   return (
     <section className={styles.info} aria-label="Selected title">
       <div className={styles.head}>
-        <h2 className={styles.name}>{title.title}</h2>
+        <h2 className={styles.name}>
+          <TitleName title={title} />
+        </h2>
         <p className={styles.meta}>
           <span className={`${styles.status} ${styles[title.status]}`}>
             <i aria-hidden="true" />

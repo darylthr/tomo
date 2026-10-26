@@ -18,6 +18,10 @@ export type Title = {
   categoryIds: number[];
   sourceName: string;
   initialized: boolean;
+  /** From the server's metadata job (Suwayomi manga meta `tomo.*`); null when not matched. */
+  logoUrl: string | null;
+  bannerUrl: string | null;
+  readingMode: ReaderMode | null;
 };
 
 export type Chapter = {

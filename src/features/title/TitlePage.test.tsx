@@ -28,6 +28,9 @@ const title: Title = {
   categoryIds: [],
   sourceName: 'MangaDex (EN)',
   initialized: true,
+  logoUrl: null,
+  bannerUrl: null,
+  readingMode: null,
 };
 
 const chapter = (id: number, order: number, patch: Partial<Chapter> = {}): Chapter => ({

@@ -1,0 +1,16 @@
+/* transparent artwork: no image outline; a soft shadow keeps light logos legible on any cover */
+.logo {
+  display: block;
+  max-width: min(100%, 320px);
+  object-fit: contain;
+  object-position: left center;
+  filter: drop-shadow(0 2px 10px oklch(0 0 0 / 0.55));
+}
+
+.md {
+  max-height: 64px;
+}
+
+.lg {
+  max-height: 96px;
+}

@@ -17,6 +17,7 @@ const TITLE_FIELDS = `
     source { displayName }
     chapters { totalCount }
     categories { nodes { id } }
+    meta { key value }
   }
 `;
 
