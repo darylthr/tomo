@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { FeedEntry } from '../../shared/model/types';
 import { useUi } from '../../shared/ui/uiStore';
 import { useLibrary } from '../library/libraryStore';
+import { collapseBatches, unreadCount } from './batches';
 import { getLastUpdateTime, getUpdates, isLibraryUpdateRunning, startLibraryUpdate } from '../server/api';
 
 /** How far back Updates looks. */
@@ -106,5 +107,5 @@ export const useUpdates = create<UpdatesState>()((set, get) => {
 
 useUpdates.subscribe((state, prev) => {
   if (state.entries !== prev.entries)
-    useUi.setState({ updatesBadge: state.entries.filter((e) => !e.chapter.read).length });
+    useUi.setState({ updatesBadge: unreadCount(collapseBatches(state.entries)) });
 });

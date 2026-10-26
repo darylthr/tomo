@@ -100,3 +100,15 @@ it('tells screen readers whether each chapter is unread, and when it came', () =
   expect(screen.getByRole('button', { name: 'Blue Hour, Ch. 12, unread, 2h' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Kintsugi, Ch. 11, read, 4d' })).toBeInTheDocument();
 });
+
+it('shows a back catalogue fetched in one go as one row that opens the title', async () => {
+  const at = new Date(2026, 9, 26, 9).getTime();
+  const catalogue = Array.from({ length: 142 }, (_, i) => ({ ...entry(1000 + 142 - i, 'Old Tome', new Date(at - i * 5)), title: { id: 77, title: 'Old Tome', coverUrl: null, inLibrary: true } }));
+  useUpdates.setState({ entries: [ENTRIES[0]!, ...catalogue] });
+  renderWithRouter(<UpdatesPage />, '/updates');
+  expect(screen.queryByRole('button', { name: /^Old Tome/ })).toBeNull();
+  const row = screen.getByRole('link', { name: 'Old Tome, 142 chapters added, 142 unread, 3h' });
+  expect(within(row).getByText('142 chapters added')).toBeInTheDocument();
+  await userEvent.click(row);
+  expect(screen.getByTestId('location')).toHaveTextContent('/title/77');
+});

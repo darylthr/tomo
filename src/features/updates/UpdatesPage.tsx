@@ -1,4 +1,4 @@
-import { useEffect, type MouseEvent } from 'react';
+import { useEffect, useMemo, type MouseEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { FeedEntry } from '../../shared/model/types';
 import { dayLabel, groupByDay, relativeTime } from '../../shared/time/days';
@@ -8,6 +8,7 @@ import list from '../../shared/ui/List.module.css';
 import { chapterLabel, rowThumb, Thumb } from '../../shared/ui/ListRow';
 import { Page } from '../../shared/ui/Page';
 import { openBook } from '../reader/opening';
+import { collapseBatches, type UpdateItem } from './batches';
 import styles from './UpdatesPage.module.css';
 import { useUpdates } from './updatesStore';
 
@@ -16,6 +17,7 @@ export function UpdatesPage() {
   const { status, entries, checking, load, check } = useUpdates();
   const navigate = useNavigate();
   const now = useNow();
+  const items = useMemo(() => collapseBatches(entries), [entries]);
 
   useEffect(() => {
     void useUpdates.getState().load();
@@ -61,13 +63,22 @@ export function UpdatesPage() {
         <div className={list.state}>No new chapters in the last 90 days.</div>
       ) : (
         <div className={list.enter}>
-          {groupByDay(entries, (e) => e.at, now).map((group) => (
+          {groupByDay(items, itemAt, now).map((group) => (
             <section key={group.label} aria-label={group.label}>
               <h2 className={list.groupLabel}>{group.label}</h2>
               <ul className={`${list.group} ${list.groupThumbs}`}>
-                {group.items.map((e) => (
-                  <UpdateRow key={e.chapter.id} entry={e} now={now} onOpen={(ev) => openBook(navigate, e.title, e.chapter.id, rowThumb(ev))} />
-                ))}
+                {group.items.map((item) =>
+                  item.kind === 'batch' ? (
+                    <BatchRow key={`batch-${item.title.id}-${item.at}`} batch={item} now={now} />
+                  ) : (
+                    <UpdateRow
+                      key={item.entry.chapter.id}
+                      entry={item.entry}
+                      now={now}
+                      onOpen={(ev) => openBook(navigate, item.entry.title, item.entry.chapter.id, rowThumb(ev))}
+                    />
+                  ),
+                )}
               </ul>
             </section>
           ))}
@@ -77,6 +88,8 @@ export function UpdatesPage() {
     </Page>
   );
 }
+
+const itemAt = (item: UpdateItem) => (item.kind === 'chapter' ? item.entry.at : item.at);
 
 function UpdateRow({ entry, now, onOpen }: { entry: FeedEntry; now: number; onOpen: (e: MouseEvent<HTMLButtonElement>) => void }) {
   const { chapter, title } = entry;
@@ -104,6 +117,36 @@ function UpdateRow({ entry, now, onOpen }: { entry: FeedEntry; now: number; onOp
             {!chapter.read && <span className={list.unreadDot} role="img" aria-label="Unread" />}
           </span>
         </button>
+      </div>
+    </li>
+  );
+}
+
+/** A title's back catalogue fetched in one go: one row that opens the title rather than 100 chapter rows. */
+function BatchRow({ batch, now }: { batch: Extract<UpdateItem, { kind: 'batch' }>; now: number }) {
+  const { title, entries, at } = batch;
+  const unread = entries.filter((e) => !e.chapter.read).length;
+  const label = `${entries.length} chapters added`;
+  const when = relativeTime(at, now);
+  const spoken = `${title.title}, ${label}, ${unread > 0 ? `${unread} unread` : 'read'}, ${when}`;
+  return (
+    <li>
+      <div className={`${list.feedRow} ${unread === 0 ? list.dim : ''}`}>
+        <Link to={`/title/${title.id}`} className={list.feedThumbLink} tabIndex={-1} aria-hidden="true">
+          <Thumb src={title.coverUrl} title={title.title} />
+        </Link>
+        <Link to={`/title/${title.id}`} className={list.feedMain} aria-label={spoken}>
+          <span className={list.rowText}>
+            <span className={list.rowTitle}>{title.title}</span>
+            <span className={`${list.rowSub} ${unread === 0 ? list.rowSubRead : ''}`}>{label}</span>
+          </span>
+          <span className={list.feedSide}>
+            <time dateTime={new Date(at).toISOString()} title={dayLabel(at, now)}>
+              {when}
+            </time>
+            {unread > 0 && <span className={list.unreadDot} role="img" aria-label="Unread" />}
+          </span>
+        </Link>
       </div>
     </li>
   );
