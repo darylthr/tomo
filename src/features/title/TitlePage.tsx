@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { Chapter, Title, TitleStatus } from '../../shared/model/types';
-import { getTitle, setInLibrary, setProgress } from '../server/api';
+import { fetchTitle, getTitle, setInLibrary, setProgress } from '../server/api';
 import { ServerError } from '../server/client';
 import { loadChapters, pickContinueChapter } from '../library/continueReading';
 import { useLibrary } from '../library/libraryStore';
@@ -29,7 +29,16 @@ export function TitlePage() {
   useEffect(() => {
     let cancelled = false;
     Promise.all([getTitle(id), loadChapters(id)])
-      .then(([title, chapters]) => !cancelled && setLoad({ state: 'ready', title, chapters }))
+      .then(([title, chapters]) => {
+        if (cancelled) return;
+        setLoad({ state: 'ready', title, chapters });
+        // Titles found while browsing have only a name and cover until Suwayomi asks the source.
+        if (!title.initialized) {
+          fetchTitle(id)
+            .then((full) => !cancelled && setLoad((s) => (s.state === 'ready' ? { ...s, title: { ...full, inLibrary: s.title.inLibrary } } : s)))
+            .catch(() => {});
+        }
+      })
       .catch((e) => !cancelled && setLoad({ state: 'error', message: e instanceof ServerError ? e.message : 'Something went wrong' }));
     return () => {
       cancelled = true;

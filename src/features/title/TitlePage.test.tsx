@@ -7,6 +7,7 @@ import { TitlePage } from './TitlePage';
 
 vi.mock('../server/api', () => ({
   getTitle: vi.fn(),
+  fetchTitle: vi.fn(),
   getChapters: vi.fn(),
   fetchChapters: vi.fn(),
   setProgress: vi.fn(async () => {}),
@@ -67,6 +68,7 @@ beforeEach(() => {
   vi.mocked(api.fetchChapters).mockResolvedValue(three);
   vi.mocked(api.setProgress).mockClear();
   vi.mocked(api.fetchChapters).mockClear();
+  vi.mocked(api.fetchTitle).mockReset();
 });
 
 it('shows the title and its chapters newest first', async () => {
@@ -104,4 +106,19 @@ it('continues at the oldest unread chapter', async () => {
   open();
   await userEvent.click(await screen.findByRole('button', { name: 'Continue · Ch. 2' }));
   expect(await screen.findByText('reader')).toBeInTheDocument();
+});
+
+it('loads details from the source for a title found while browsing', async () => {
+  vi.mocked(api.getTitle).mockResolvedValue({ ...title, initialized: false, description: '', author: '' });
+  vi.mocked(api.fetchTitle).mockResolvedValue({ ...title, description: 'Fetched from the source.' });
+  open();
+  expect(await screen.findByText('Fetched from the source.')).toBeInTheDocument();
+  expect(screen.getByText('Aoi Mizu')).toBeInTheDocument();
+  expect(api.fetchTitle).toHaveBeenCalledWith(1);
+});
+
+it('does not fetch details the server already has', async () => {
+  open();
+  await screen.findByText('Chapter 3');
+  expect(api.fetchTitle).not.toHaveBeenCalled();
 });
