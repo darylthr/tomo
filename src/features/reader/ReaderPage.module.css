@@ -44,7 +44,8 @@
 }
 
 .fit-width .page {
-  width: 100%;
+  /* capped on wide screens so a page stays readable instead of spanning a laptop display */
+  width: min(100%, 1000px);
   height: auto;
 }
 
@@ -137,7 +138,8 @@
 
 .top {
   top: 0;
-  display: flex;
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
   align-items: center;
   gap: 10px;
   padding: calc(8px + env(safe-area-inset-top)) 12px 28px;
@@ -146,8 +148,18 @@
 
 .titles {
   display: grid;
+  justify-items: center;
   min-width: 0;
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
+  text-align: center;
   line-height: 1.25;
+}
+
+.titles b,
+.titles span {
+  max-width: 100%;
 }
 
 .titles b {
@@ -167,23 +179,23 @@
 
 .bottom {
   bottom: 0;
-  display: grid;
-  gap: 10px;
   padding: 36px 14px calc(14px + env(safe-area-inset-bottom));
   background: linear-gradient(transparent, oklch(0 0 0 / 0.85) 40%);
 }
 
+/* one centred row, capped so controls stay within reach on wide screens */
 .scrubRow {
   display: grid;
   grid-template-columns: auto 1fr auto auto;
   align-items: center;
   gap: 10px;
+  max-width: 720px;
+  margin: 0 auto;
 }
 
 .scrubber {
   width: 100%;
-  accent-color: #f1f1f4;
-  height: 28px;
+  color: #f1f1f4;
 }
 
 .counter {
@@ -194,27 +206,76 @@
   font-variant-numeric: tabular-nums;
 }
 
-.modeRow {
-  display: flex;
-  justify-content: center;
+/* ---------- reading options ---------- */
+.optionsScrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
 }
 
-.sliders {
+.options {
+  position: absolute;
+  top: calc(64px + env(safe-area-inset-top));
+  right: 12px;
+  width: min(380px, calc(100% - 24px));
   display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: 14px;
+  padding: 16px;
+  border: 1px solid transparent;
+  border-radius: 22px;
+  background: oklch(0.14 0.008 280 / 0.94);
+  box-shadow:
+    0 0 0 1px oklch(1 0 0 / 0.1),
+    0 16px 40px oklch(0 0 0 / 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease-out;
 }
 
-.sliders label {
+.optionsOpen {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .options {
+    transform: translateY(-12px);
+    filter: blur(4px);
+    transition:
+      opacity 150ms ease-out,
+      transform 150ms ease-out,
+      filter 150ms ease-out;
+  }
+  .optionsOpen {
+    transform: none;
+    filter: none;
+    transition:
+      opacity 300ms ease-out,
+      transform 300ms ease-out,
+      filter 300ms ease-out;
+  }
+}
+
+.optionRow {
   display: grid;
-  gap: 2px;
-  font-size: 12px;
+  gap: 6px;
+}
+
+.optionLabel {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
   color: oklch(1 0 0 / 0.6);
 }
 
-.sliders input {
-  width: 100%;
-  accent-color: #f1f1f4;
+.optionLabel b {
+  font-weight: 600;
+  color: #f1f1f4;
+  font-variant-numeric: tabular-nums;
+}
+
+.options [role='slider'] {
+  color: #f1f1f4;
 }
 
 .round {
@@ -243,13 +304,18 @@
   scale: 0.96;
 }
 
+.round[data-active] {
+  background: #f1f1f4;
+  color: #0b0b0d;
+}
+
 .round:disabled {
   opacity: 0.35;
   cursor: default;
 }
 
 @media (hover: hover) {
-  .round:not(:disabled):hover {
+  .round:not(:disabled):not([data-active]):hover {
     background: oklch(1 0 0 / 0.16);
   }
 }

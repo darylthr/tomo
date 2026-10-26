@@ -1,6 +1,10 @@
+import { useEffect, useId, useState } from 'react';
 import type { ReaderMode } from '../../shared/model/types';
+import type { ReaderSettings } from '../../shared/settings/schema';
 import { useSettings } from '../../shared/settings/store';
+import { IconSettings } from '../../shared/ui/icons';
 import { Segmented } from '../../shared/ui/Segmented';
+import { TickSlider } from '../../shared/ui/TickSlider';
 import styles from './ReaderPage.module.css';
 import { useReader } from './readerStore';
 
@@ -20,12 +24,40 @@ const MODES: { value: ReaderMode; label: string }[] = [
   { value: 'vertical', label: 'Vertical' },
 ];
 
-/** Reader controls: back, chapter name, page scrubber, chapter buttons, mode, brightness and warmth. */
+const FITS: { value: ReaderSettings['fit']; label: string }[] = [
+  { value: 'screen', label: 'Screen' },
+  { value: 'width', label: 'Width' },
+  { value: 'height', label: 'Height' },
+];
+
+const percent = (v: number) => `${Math.round(v * 100)}%`;
+
+/**
+ * Reader controls: back, the centred title and chapter, and reading options on top;
+ * chapter buttons around a page slider (one line per page) at the bottom.
+ */
 export function ReaderChrome({ titleName, chapterName, onBack, onPrevChapter, onNextChapter, onModeChange }: Props) {
   const { index, pages, mode, chromeVisible, goTo } = useReader();
   const reader = useSettings((s) => s.settings.reader);
   const update = useSettings((s) => s.update);
+  const [optionsWanted, setOptions] = useState(false);
+  const optionsOpen = optionsWanted && chromeVisible;
+  const optionsId = useId();
   const rtl = mode === 'rtl';
+  const paged = mode !== 'webtoon';
+
+  // Escape closes the options first; the reader only leaves on the next Escape.
+  useEffect(() => {
+    if (!optionsOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.stopImmediatePropagation();
+      e.stopPropagation();
+      setOptions(false);
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [optionsOpen]);
 
   return (
     <div
@@ -45,7 +77,68 @@ export function ReaderChrome({ titleName, chapterName, onBack, onPrevChapter, on
           <b>{titleName}</b>
           <span>{chapterName}</span>
         </div>
+        <button
+          type="button"
+          className={styles.round}
+          aria-label="Reading options"
+          aria-expanded={optionsOpen}
+          aria-controls={optionsId}
+          data-active={optionsOpen || undefined}
+          onClick={() => setOptions((o) => !o)}
+        >
+          <IconSettings filled={optionsOpen} />
+        </button>
       </header>
+
+      {optionsOpen && <div className={styles.optionsScrim} aria-hidden="true" onClick={() => setOptions(false)} />}
+      <section
+        id={optionsId}
+        className={`${styles.options} ${optionsOpen ? styles.optionsOpen : ''}`}
+        aria-label="Reading options"
+        aria-hidden={!optionsOpen}
+        ref={(el) => {
+          if (el) el.inert = !optionsOpen;
+        }}
+      >
+        <div className={styles.optionRow}>
+          <span className={styles.optionLabel}>Mode</span>
+          <Segmented label="Reading mode" value={mode} onChange={onModeChange} options={MODES} />
+        </div>
+        {paged && (
+          <div className={styles.optionRow}>
+            <span className={styles.optionLabel}>Fit</span>
+            <Segmented label="Fit pages to" value={reader.fit} onChange={(fit) => update({ reader: { fit } })} options={FITS} />
+          </div>
+        )}
+        <div className={styles.optionRow}>
+          <span className={styles.optionLabel}>
+            Brightness <b>{percent(reader.brightness)}</b>
+          </span>
+          <TickSlider
+            label="Brightness"
+            min={0.2}
+            max={1}
+            step={0.05}
+            value={reader.brightness}
+            valueText={percent}
+            onChange={(brightness) => update({ reader: { brightness } })}
+          />
+        </div>
+        <div className={styles.optionRow}>
+          <span className={styles.optionLabel}>
+            Warmth <b>{percent(reader.warm)}</b>
+          </span>
+          <TickSlider
+            label="Warmth"
+            min={0}
+            max={1}
+            step={0.05}
+            value={reader.warm}
+            valueText={percent}
+            onChange={(warm) => update({ reader: { warm } })}
+          />
+        </div>
+      </section>
 
       <footer className={styles.bottom}>
         <div className={styles.scrubRow}>
@@ -60,16 +153,15 @@ export function ReaderChrome({ titleName, chapterName, onBack, onPrevChapter, on
               <path d="M18 6 11 12l7 6M7 6v12" />
             </svg>
           </button>
-          <input
+          <TickSlider
             className={styles.scrubber}
-            type="range"
+            label="Page"
             min={1}
             max={Math.max(1, pages.length)}
             value={index + 1}
             dir={rtl ? 'rtl' : 'ltr'}
-            aria-label="Page"
-            aria-valuetext={`Page ${index + 1} of ${pages.length}`}
-            onChange={(e) => goTo(Number(e.target.value) - 1)}
+            valueText={(v) => `Page ${v} of ${pages.length}`}
+            onChange={(v) => goTo(v - 1)}
           />
           <span className={styles.counter}>
             {index + 1} / {pages.length}
@@ -85,33 +177,6 @@ export function ReaderChrome({ titleName, chapterName, onBack, onPrevChapter, on
               <path d="m6 6 7 6-7 6M17 6v12" />
             </svg>
           </button>
-        </div>
-        <div className={styles.modeRow}>
-          <Segmented label="Reading mode" value={mode} onChange={onModeChange} options={MODES} />
-        </div>
-        <div className={styles.sliders}>
-          <label>
-            <span>Brightness</span>
-            <input
-              type="range"
-              min={0.2}
-              max={1}
-              step={0.05}
-              value={reader.brightness}
-              onChange={(e) => update({ reader: { brightness: Number(e.target.value) } })}
-            />
-          </label>
-          <label>
-            <span>Warmth</span>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.05}
-              value={reader.warm}
-              onChange={(e) => update({ reader: { warm: Number(e.target.value) } })}
-            />
-          </label>
         </div>
       </footer>
     </div>

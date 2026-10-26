@@ -8,6 +8,7 @@ import { useLibrary } from '../library/libraryStore';
 import { getChapter, getPages, getTitle, setProgress } from '../server/api';
 import { ServerError } from '../server/client';
 import { playOpening } from './opening';
+import { preferredMode } from './mode';
 import { PagedView } from './PagedView';
 import { createProgressSync, startPage } from './progress';
 import { ReaderChrome } from './ReaderChrome';
@@ -50,7 +51,7 @@ export function ReaderPage() {
       const [title, chapters, pages] = await Promise.all([getTitle(chapter.titleId), loadChapters(chapter.titleId), getPages(chapterId)]);
       if (cancelled) return;
       const settings = useSettings.getState().settings.reader;
-      const chosen = settings.modes[String(title.id)] ?? settings.defaultMode;
+      const chosen = settings.modes[String(title.id)] ?? preferredMode(title) ?? settings.defaultMode;
       const start = startPage(chapter, pages.length);
       useReader.getState().open(chapter, pages, start, chosen);
       const sync = createProgressSync(

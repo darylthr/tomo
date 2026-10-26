@@ -1,0 +1,41 @@
+.slider {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 36px;
+  min-width: 0;
+  padding: 0 1px;
+  border-radius: 8px;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.slider:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.tick {
+  flex: none;
+  width: 2px;
+  height: 12px;
+  border-radius: 1px;
+  background: currentColor;
+  opacity: 0.28;
+  pointer-events: none;
+  transition: opacity 100ms ease-out;
+}
+
+.tick[data-done] {
+  opacity: 0.72;
+}
+
+/* the current line stands out by size and full ink, not by motion */
+.tick[data-current] {
+  width: 3px;
+  height: 26px;
+  border-radius: 1.5px;
+  opacity: 1;
+}
