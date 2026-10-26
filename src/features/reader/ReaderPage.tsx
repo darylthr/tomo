@@ -10,7 +10,8 @@ import { ServerError } from '../server/client';
 import { playOpening } from './opening';
 import { preferredMode } from './mode';
 import { PagedView } from './PagedView';
-import { createProgressSync, startPage } from './progress';
+import { useUpdates } from '../updates/updatesStore';
+import { createProgressSync, savesSettled, startPage } from './progress';
 import { ReaderChrome } from './ReaderChrome';
 import styles from './ReaderPage.module.css';
 import { useReader } from './readerStore';
@@ -41,6 +42,12 @@ export function ReaderPage() {
 
   useEffect(() => {
     useUi.setState({ openingFrom: null });
+    // Leaving the reader: once the last save lands, finished chapters drop off the Updates badge.
+    return () => {
+      void savesSettled().then(() => {
+        if (useUpdates.getState().status !== 'idle') void useUpdates.getState().load();
+      });
+    };
   }, []);
 
   useEffect(() => {

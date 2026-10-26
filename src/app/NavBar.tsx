@@ -46,7 +46,7 @@ export function NavBar() {
             >
               <span className={styles.ic}>
                 <Icon filled={selected} />
-                {to === '/updates' && badge > 0 && <span className={styles.badge}>{badge}</span>}
+                {to === '/updates' && badge > 0 && <span className={styles.badge}>{badge > 99 ? '99+' : badge}</span>}
               </span>
               <span className={styles.label}>{label}</span>
             </NavLink>

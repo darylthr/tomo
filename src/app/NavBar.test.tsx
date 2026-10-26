@@ -23,6 +23,12 @@ it('selects the tab for the current route', () => {
   );
 });
 
+it('caps the Updates badge at 99+', () => {
+  useUi.setState({ updatesBadge: 140 });
+  renderWithRouter(<NavBar />);
+  expect(within(screen.getByRole('tab', { name: 'Updates' })).getByText('99+')).toBeInTheDocument();
+});
+
 it('navigates when a tab is tapped', async () => {
   renderWithRouter(<NavBar />);
   await userEvent.click(screen.getByRole('tab', { name: 'Updates' }));
