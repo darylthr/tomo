@@ -28,8 +28,11 @@ export async function resumeChapterId(entry: FeedEntry): Promise<number> {
   return next?.id ?? chapter.id;
 }
 
-/** "Ch. 12 · Page 4 of 24 · 14:05": the page part drops "of N" when the count is unknown. */
-export function historyLine(entry: FeedEntry, now: number): string {
+/**
+ * ["Ch. 12 · Page 4 of 24", "14:05"]: where the reader stopped, and when. The page part drops
+ * "of N" when the count is unknown. Split so narrow rows can cut the first part but keep the time.
+ */
+export function historyLine(entry: FeedEntry, now: number): [string, string] {
   const { chapter, at } = entry;
   const progress = chapter.read
     ? 'Read'
@@ -41,5 +44,5 @@ export function historyLine(entry: FeedEntry, now: number): string {
     label === 'Today' || label === 'Yesterday'
       ? clockTime(at)
       : new Date(at).toLocaleDateString('en-US', { weekday: 'short' });
-  return `${chapterLabel(chapter)} · ${progress} · ${when}`;
+  return [`${chapterLabel(chapter)} · ${progress}`, when];
 }

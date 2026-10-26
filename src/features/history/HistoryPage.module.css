@@ -18,3 +18,19 @@
     background: oklch(0.62 0.19 25 / 0.38);
   }
 }
+
+/* Narrow rows cut the chapter and page, never the time. */
+.line {
+  display: flex;
+  min-width: 0;
+}
+
+.where {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.when {
+  flex: none;
+}

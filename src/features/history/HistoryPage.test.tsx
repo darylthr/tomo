@@ -48,8 +48,8 @@ it('shows one row per title, grouped by day, with chapter and page', async () =>
   expect(screen.getByText('Yesterday')).toBeInTheDocument();
   expect(screen.getByText('Wednesday, Oct 21')).toBeInTheDocument();
   expect(screen.getAllByRole('button', { name: /^Resume / })).toHaveLength(3);
-  expect(within(row('Blue Hour')).getByText(/^Ch\. 12 · Page 4 of 24 · /)).toBeInTheDocument();
-  expect(within(row('Kintsugi')).getByText(/^Ch\. 21 · Read · /)).toBeInTheDocument();
+  expect(row('Blue Hour')).toHaveTextContent(/Ch\. 12 · Page 4 of 24 · \S/);
+  expect(row('Kintsugi')).toHaveTextContent(/Ch\. 21 · Read · \S/);
   expect(api.getHistory).toHaveBeenCalledWith(NOW - HISTORY_STEP_MS);
 });
 
@@ -57,7 +57,7 @@ it('leaves out the page count when it is unknown, and shows a letter without a c
   renderWithRouter(<HistoryPage />, '/history');
   await screen.findByText('Today');
   const paper = row('Paper Moon');
-  expect(within(paper).getByText('Ch. 5 · Page 3 · Wed')).toBeInTheDocument();
+  expect(paper).toHaveTextContent('Ch. 5 · Page 3 · Wed');
   expect(within(paper).getByText('P')).toBeInTheDocument();
 });
 

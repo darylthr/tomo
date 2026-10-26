@@ -109,7 +109,7 @@ export function HistoryPage() {
                       >
                         <span className={list.rowText}>
                           <span className={list.rowTitle}>{e.title.title}</span>
-                          <span className={list.rowSub}>{historyLine(e, now)}</span>
+                          <HistoryLine entry={e} now={now} />
                         </span>
                       </button>
                       <span className={list.feedActions}>
@@ -146,6 +146,16 @@ export function HistoryPage() {
         </div>
       )}
     </Page>
+  );
+}
+
+function HistoryLine({ entry, now }: { entry: FeedEntry; now: number }) {
+  const [where, when] = historyLine(entry, now);
+  return (
+    <span className={`${list.rowSub} ${styles.line}`}>
+      <span className={styles.where}>{where}</span>
+      <span className={styles.when}>&nbsp;· {when}</span>
+    </span>
   );
 }
 
