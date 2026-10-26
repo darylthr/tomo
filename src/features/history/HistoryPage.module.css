@@ -1,0 +1,20 @@
+.skeleton {
+  height: 84px;
+}
+
+.more {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.danger {
+  background: oklch(0.62 0.19 25 / 0.28);
+  color: #ffd0d0;
+}
+
+@media (hover: hover) {
+  .danger:hover {
+    background: oklch(0.62 0.19 25 / 0.38);
+  }
+}
