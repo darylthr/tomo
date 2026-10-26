@@ -1,0 +1,19 @@
+{
+  "data": {
+    "chapters": {
+      "nodes": [
+        { "id": 11, "name": "Chapter 2: Platform", "mangaId": 1, "chapterNumber": 2, "sourceOrder": 2, "isRead": true, "isBookmarked": false, "lastPageRead": 23, "pageCount": 24, "uploadDate": "1792700000000", "scanlator": null, "fetchedAt": "1792700000", "lastReadAt": "1792990000",
+          "manga": { "id": 1, "title": "Blue Hour", "thumbnailUrl": "/api/v1/manga/1/thumbnail", "inLibrary": true, "inLibraryAt": "1790000000", "meta": [] } },
+        { "id": 12, "name": "Chapter 3: Last Stop", "mangaId": 1, "chapterNumber": 3, "sourceOrder": 3, "isRead": false, "isBookmarked": false, "lastPageRead": 3, "pageCount": 24, "uploadDate": "1792800000000", "scanlator": null, "fetchedAt": "1792800000", "lastReadAt": "1793008800",
+          "manga": { "id": 1, "title": "Blue Hour", "thumbnailUrl": "/api/v1/manga/1/thumbnail", "inLibrary": true, "inLibraryAt": "1790000000", "meta": [] } },
+        { "id": 21, "name": "Chapter 12", "mangaId": 2, "chapterNumber": 12, "sourceOrder": 12, "isRead": true, "isBookmarked": false, "lastPageRead": 19, "pageCount": 20, "uploadDate": "1792950000000", "scanlator": null, "fetchedAt": "1792962000", "lastReadAt": "1792962000",
+          "manga": { "id": 2, "title": "Kintsugi", "thumbnailUrl": "/api/v1/manga/2/thumbnail", "inLibrary": true, "inLibraryAt": "1790000000",
+            "meta": [{ "key": "tomo.cover", "value": "/tomo-meta/2/cover.jpg" }, { "key": "tomo.title", "value": "Kintsugi: Golden Seams" }] } },
+        { "id": 41, "name": "Chapter 4", "mangaId": 4, "chapterNumber": 4, "sourceOrder": 4, "isRead": true, "isBookmarked": false, "lastPageRead": 30, "pageCount": 31, "uploadDate": "1792000000000", "scanlator": null, "fetchedAt": "1792000000", "lastReadAt": "1792590000",
+          "manga": { "id": 4, "title": "Paper Moon", "thumbnailUrl": null, "inLibrary": false, "inLibraryAt": "0", "meta": [] } },
+        { "id": 40, "name": "Chapter 5", "mangaId": 4, "chapterNumber": 5, "sourceOrder": 5, "isRead": false, "isBookmarked": false, "lastPageRead": 2, "pageCount": 0, "uploadDate": "1792100000000", "scanlator": null, "fetchedAt": "1792100000", "lastReadAt": "1792594800",
+          "manga": { "id": 4, "title": "Paper Moon", "thumbnailUrl": null, "inLibrary": false, "inLibraryAt": "0", "meta": [] } }
+      ]
+    }
+  }
+}

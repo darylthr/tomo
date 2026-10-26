@@ -1,16 +1,19 @@
-import type { BrowseMode, BrowsePage, Category, Chapter, Source, SourceFilter, Title } from '../../shared/model/types';
+import type { BrowseMode, BrowsePage, Category, Chapter, FeedEntry, Source, SourceFilter, Title } from '../../shared/model/types';
 import { gql } from './client';
 import { resolveUrl } from './config';
 import {
+  epochMs,
   toBrowseItem,
   toCategory,
   toChapter,
+  toFeedEntry,
   toFilter,
   toSource,
   toTitle,
   type RawBrowseItem,
   type RawCategory,
   type RawChapter,
+  type RawFeedChapter,
   type RawFilter,
   type RawSource,
   type RawTitle,
@@ -135,4 +138,47 @@ export async function getMaxSourcesInParallel(): Promise<number> {
   } catch {
     return DEFAULT_PARALLEL_SOURCES;
   }
+}
+
+const newestAtFirst = (a: FeedEntry, b: FeedEntry) => b.at - a.at || b.chapter.order - a.chapter.order;
+const asSeconds = (ms: number) => String(Math.floor(ms / 1000));
+
+/** New chapters for library titles found since `sinceMs`, newest first. */
+export async function getUpdates(sinceMs: number, signal?: AbortSignal): Promise<FeedEntry[]> {
+  const data = await gql<{ chapters: { nodes: RawFeedChapter[] } }>(op.UPDATES, { since: asSeconds(sinceMs) }, { signal });
+  return (
+    data.chapters.nodes
+      // Chapters fetched when a title joined the library are its back catalogue, not news.
+      .filter((raw) => epochMs(raw.fetchedAt) > epochMs(raw.manga.inLibraryAt))
+      .map((raw) => toFeedEntry(raw, 'updates'))
+      // The server's time unit isn't guaranteed, so the window is applied here too.
+      .filter((e) => e.at > sinceMs)
+      .sort(newestAtFirst)
+  );
+}
+
+/** Every chapter read since `sinceMs`, most recently read first. */
+export async function getHistory(sinceMs: number, signal?: AbortSignal): Promise<FeedEntry[]> {
+  const data = await gql<{ chapters: { nodes: RawFeedChapter[] } }>(op.HISTORY, { since: asSeconds(sinceMs) }, { signal });
+  return data.chapters.nodes
+    .map((raw) => toFeedEntry(raw, 'history'))
+    .filter((e) => e.at > sinceMs)
+    .sort(newestAtFirst);
+}
+
+/** When Suwayomi last checked its library's sources for new chapters (ms; 0 if never). */
+export async function getLastUpdateTime(): Promise<number> {
+  const data = await gql<{ lastUpdateTimestamp: { timestamp: string } }>(op.LAST_UPDATE);
+  return epochMs(data.lastUpdateTimestamp.timestamp);
+}
+
+/** Asks Suwayomi to check every library title's source for new chapters. */
+export async function startLibraryUpdate(): Promise<{ running: boolean }> {
+  const data = await gql<{ updateLibraryManga: { updateStatus: { isRunning: boolean } } }>(op.UPDATE_LIBRARY);
+  return { running: data.updateLibraryManga.updateStatus.isRunning };
+}
+
+export async function isLibraryUpdateRunning(): Promise<boolean> {
+  const data = await gql<{ updateStatus: { isRunning: boolean } }>(op.UPDATE_STATUS);
+  return data.updateStatus.isRunning;
 }

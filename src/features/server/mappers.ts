@@ -2,6 +2,7 @@ import type {
   BrowseItem,
   Category,
   Chapter,
+  FeedEntry,
   ReaderMode,
   Source,
   SourceFilter,
@@ -113,6 +114,33 @@ export function toChapter(raw: RawChapter): Chapter {
     pageCount: raw.pageCount,
     uploadedAt: Number(raw.uploadDate) || 0,
     scanlator: raw.scanlator,
+  };
+}
+
+/** Suwayomi timestamps are LongStrings, mostly epoch seconds; values already in ms pass through. */
+export function epochMs(v: string | number | null | undefined): number {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return n < 1e12 ? n * 1000 : n;
+}
+
+export type RawFeedChapter = RawChapter & {
+  fetchedAt: string | null;
+  lastReadAt: string | null;
+  manga: Pick<RawTitle, 'id' | 'title' | 'thumbnailUrl' | 'inLibrary' | 'meta'> & { inLibraryAt: string | null };
+};
+
+export function toFeedEntry(raw: RawFeedChapter, kind: 'updates' | 'history'): FeedEntry {
+  const meta = tomoMeta(raw.manga);
+  return {
+    chapter: toChapter(raw),
+    title: {
+      id: raw.manga.id,
+      title: meta.title ?? raw.manga.title,
+      coverUrl: meta.cover ?? (raw.manga.thumbnailUrl ? resolveUrl(raw.manga.thumbnailUrl) : null),
+      inLibrary: raw.manga.inLibrary,
+    },
+    at: epochMs(kind === 'updates' ? raw.fetchedAt : raw.lastReadAt),
   };
 }
 

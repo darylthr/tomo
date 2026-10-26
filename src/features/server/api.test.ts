@@ -6,11 +6,20 @@ import pagesFixture from './__fixtures__/pages.json';
 import sourceFiltersFixture from './__fixtures__/source-filters.json';
 import sourceMangaFixture from './__fixtures__/source-manga.json';
 import sourcesFixture from './__fixtures__/sources.json';
+import updatesFixture from './__fixtures__/updates.json';
+import historyFixture from './__fixtures__/history.json';
+import * as operations from './operations';
+import { epochMs } from './mappers';
 import {
   browseSource,
   fetchTitle,
   getAbout,
   getChapters,
+  getHistory,
+  getLastUpdateTime,
+  getUpdates,
+  isLibraryUpdateRunning,
+  startLibraryUpdate,
   getLibrary,
   getMaxSourcesInParallel,
   getPages,
@@ -206,5 +215,70 @@ describe('sources and browsing', () => {
     const title = await fetchTitle(3);
     expect(calls[0]!.variables).toEqual({ id: 3 });
     expect(title).toMatchObject({ id: 3, description: 'Fetched', initialized: true });
+  });
+});
+
+describe('updates, history and library update checks', () => {
+  const OCT_1 = Date.UTC(2026, 9, 1);
+
+  it('reads Suwayomi timestamps as milliseconds whether they come in seconds or not', () => {
+    expect(epochMs('1761472800')).toBe(1761472800000);
+    expect(epochMs(1761472800000)).toBe(1761472800000);
+    expect(epochMs(null)).toBe(0);
+    expect(epochMs(undefined)).toBe(0);
+  });
+
+  it('lists new library chapters newest first, with Tomo metadata on the titles', async () => {
+    serve({ UPDATES: updatesFixture });
+    const entries = await getUpdates(OCT_1);
+    expect(entries.map((e) => e.chapter.id)).toEqual([12, 11, 32, 21, 20]);
+    expect(entries[0]).toMatchObject({
+      at: 1793008800000,
+      title: { id: 1, title: 'Blue Hour', coverUrl: 'https://tomo.home/api/v1/manga/1/thumbnail', inLibrary: true },
+    });
+    expect(entries[3]!.title).toMatchObject({ title: 'Kintsugi: Golden Seams', coverUrl: 'https://tomo.home/tomo-meta/2/cover.jpg' });
+    expect(entries[4]!.chapter).toMatchObject({ number: 11, read: true });
+  });
+
+  it('leaves out chapters found when a title was added to the library', async () => {
+    serve({ UPDATES: updatesFixture });
+    const entries = await getUpdates(OCT_1);
+    expect(entries.some((e) => e.chapter.id === 31)).toBe(false);
+  });
+
+  it('asks for chapters found since a time in seconds, and drops older ones the server returns anyway', async () => {
+    serve({ UPDATES: updatesFixture });
+    const since = Date.UTC(2026, 9, 22);
+    const entries = await getUpdates(since);
+    expect(calls[0]!.variables).toEqual({ since: String(Math.floor(since / 1000)) });
+    expect(entries.map((e) => e.chapter.id)).toEqual([12, 11, 32, 21]);
+  });
+
+  it('lists read chapters by when they were last read, including titles outside the library', async () => {
+    serve({ HISTORY: historyFixture });
+    const entries = await getHistory(OCT_1);
+    expect(entries.map((e) => e.chapter.id)).toEqual([12, 11, 21, 40, 41]);
+    expect(entries[0]).toMatchObject({ at: 1793008800000, chapter: { lastPage: 3, pageCount: 24 } });
+    expect(entries[3]!.title).toEqual({ id: 4, title: 'Paper Moon', coverUrl: null, inLibrary: false });
+  });
+
+  it('reads when Suwayomi last checked for new chapters', async () => {
+    serve({ LAST_UPDATE: { data: { lastUpdateTimestamp: { timestamp: '1793001600000' } } } });
+    await expect(getLastUpdateTime()).resolves.toBe(1793001600000);
+  });
+
+  it('starts a library update and reports whether one is running', async () => {
+    serve({
+      UPDATE_LIBRARY: { data: { updateLibraryManga: { updateStatus: { isRunning: true } } } },
+      UPDATE_STATUS: { data: { updateStatus: { isRunning: false } } },
+    });
+    await expect(startLibraryUpdate()).resolves.toEqual({ running: true });
+    await expect(isLibraryUpdateRunning()).resolves.toBe(false);
+  });
+
+  it('never sends order arguments, which older servers reject', () => {
+    for (const [name, doc] of Object.entries(operations)) {
+      expect(doc, name).not.toMatch(/\border\s*:/);
+    }
   });
 });

@@ -145,3 +145,38 @@ export const FETCH_MANGA = `
   ${TITLE_FIELDS}
   mutation FETCH_MANGA($id: Int!) { fetchManga(input: { id: $id }) { manga { ...TITLE_FIELDS } } }
 `;
+
+const FEED_FIELDS = `
+  fragment FEED_FIELDS on ChapterType {
+    ...CHAPTER_FIELDS
+    fetchedAt
+    lastReadAt
+    manga { id title thumbnailUrl inLibrary inLibraryAt meta { key value } }
+  }
+`;
+
+// Filters, not `order:`: older servers don't take the list form of `order`. Sorted on the client.
+export const UPDATES = `
+  ${CHAPTER_FIELDS}
+  ${FEED_FIELDS}
+  query UPDATES($since: LongString!) {
+    chapters(filter: { inLibrary: { equalTo: true }, fetchedAt: { greaterThan: $since } }) {
+      nodes { ...FEED_FIELDS }
+    }
+  }
+`;
+
+export const HISTORY = `
+  ${CHAPTER_FIELDS}
+  ${FEED_FIELDS}
+  query HISTORY($since: LongString!) {
+    chapters(filter: { lastReadAt: { greaterThan: $since } }) { nodes { ...FEED_FIELDS } }
+  }
+`;
+
+export const LAST_UPDATE = `query LAST_UPDATE { lastUpdateTimestamp { timestamp } }`;
+
+// updateLibraryManga and updateStatus exist in old and new servers (newer ones deprecate them).
+export const UPDATE_LIBRARY = `mutation UPDATE_LIBRARY { updateLibraryManga(input: {}) { updateStatus { isRunning } } }`;
+
+export const UPDATE_STATUS = `query UPDATE_STATUS { updateStatus { isRunning } }`;

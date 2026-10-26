@@ -40,6 +40,14 @@ export type Chapter = {
   scanlator: string | null;
 };
 
+/** A chapter in the Updates or History list, with the title it belongs to. */
+export type FeedEntry = {
+  chapter: Chapter;
+  title: Pick<Title, 'id' | 'title' | 'coverUrl' | 'inLibrary'>;
+  /** ms. Updates: when Suwayomi found the chapter. History: when it was last read. */
+  at: number;
+};
+
 export type Category = { id: number; name: string; order: number };
 
 /** A Suwayomi source: an installed extension's source, or the Local source ("Home server"). */

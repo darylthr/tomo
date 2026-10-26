@@ -1,0 +1,22 @@
+{
+  "data": {
+    "chapters": {
+      "nodes": [
+        { "id": 20, "name": "Chapter 11", "mangaId": 2, "chapterNumber": 11, "sourceOrder": 11, "isRead": true, "isBookmarked": false, "lastPageRead": 19, "pageCount": 20, "uploadDate": "1792590000000", "scanlator": null, "fetchedAt": "1792594800", "lastReadAt": "1792600000",
+          "manga": { "id": 2, "title": "Kintsugi", "thumbnailUrl": "/api/v1/manga/2/thumbnail", "inLibrary": true, "inLibraryAt": "1790000000",
+            "meta": [{ "key": "tomo.cover", "value": "/tomo-meta/2/cover.jpg" }, { "key": "tomo.title", "value": "Kintsugi: Golden Seams" }] } },
+        { "id": 11, "name": "Chapter 2: Platform", "mangaId": 1, "chapterNumber": 2, "sourceOrder": 2, "isRead": false, "isBookmarked": false, "lastPageRead": 0, "pageCount": 0, "uploadDate": "1793000000000", "scanlator": null, "fetchedAt": "1793008800", "lastReadAt": "0",
+          "manga": { "id": 1, "title": "Blue Hour", "thumbnailUrl": "/api/v1/manga/1/thumbnail", "inLibrary": true, "inLibraryAt": "1790000000", "meta": [] } },
+        { "id": 12, "name": "Chapter 3: Last Stop", "mangaId": 1, "chapterNumber": 3, "sourceOrder": 3, "isRead": false, "isBookmarked": false, "lastPageRead": 0, "pageCount": 0, "uploadDate": "1793000000000", "scanlator": null, "fetchedAt": "1793008800", "lastReadAt": "0",
+          "manga": { "id": 1, "title": "Blue Hour", "thumbnailUrl": "/api/v1/manga/1/thumbnail", "inLibrary": true, "inLibraryAt": "1790000000", "meta": [] } },
+        { "id": 21, "name": "Chapter 12", "mangaId": 2, "chapterNumber": 12, "sourceOrder": 12, "isRead": false, "isBookmarked": false, "lastPageRead": 0, "pageCount": 0, "uploadDate": "1792950000000", "scanlator": null, "fetchedAt": "1792962000", "lastReadAt": "0",
+          "manga": { "id": 2, "title": "Kintsugi", "thumbnailUrl": "/api/v1/manga/2/thumbnail", "inLibrary": true, "inLibraryAt": "1790000000",
+            "meta": [{ "key": "tomo.cover", "value": "/tomo-meta/2/cover.jpg" }, { "key": "tomo.title", "value": "Kintsugi: Golden Seams" }] } },
+        { "id": 31, "name": "Chapter 1", "mangaId": 3, "chapterNumber": 1, "sourceOrder": 1, "isRead": false, "isBookmarked": false, "lastPageRead": 0, "pageCount": 0, "uploadDate": "1780000000000", "scanlator": null, "fetchedAt": "1793001600", "lastReadAt": "0",
+          "manga": { "id": 3, "title": "Night Tram", "thumbnailUrl": null, "inLibrary": true, "inLibraryAt": "1793001600", "meta": [] } },
+        { "id": 32, "name": "Chapter 2", "mangaId": 3, "chapterNumber": 2, "sourceOrder": 2, "isRead": false, "isBookmarked": false, "lastPageRead": 0, "pageCount": 0, "uploadDate": "1793004000000", "scanlator": null, "fetchedAt": "1793005200", "lastReadAt": "0",
+          "manga": { "id": 3, "title": "Night Tram", "thumbnailUrl": null, "inLibrary": true, "inLibraryAt": "1793001600", "meta": [] } }
+      ]
+    }
+  }
+}
