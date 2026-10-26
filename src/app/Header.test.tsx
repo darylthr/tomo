@@ -1,6 +1,5 @@
 import { act, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useUi } from '../shared/ui/uiStore';
 import { Header } from './Header';
 import { renderWithRouter } from './testRouter';
 
@@ -9,10 +8,9 @@ afterEach(() => vi.useRealTimers());
 
 const user = () => userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
-it('shows the brand between the settings and search buttons', () => {
+it('shows the brand and the search button', () => {
   renderWithRouter(<Header />);
   expect(screen.getByText('Tomo')).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Search all sources' })).toBeInTheDocument();
 });
 
@@ -69,9 +67,7 @@ it('uses a 16px input so iOS does not zoom', () => {
   expect(screen.getByRole('searchbox', { hidden: true })).toHaveClass('input');
 });
 
-it('opens the settings sheet from the settings button', async () => {
-  useUi.setState({ settingsOpen: false });
+it('leaves settings to the navbar', () => {
   renderWithRouter(<Header />);
-  await user().click(screen.getByRole('button', { name: 'Settings' }));
-  expect(useUi.getState().settingsOpen).toBe(true);
+  expect(screen.queryByRole('button', { name: 'Settings' })).not.toBeInTheDocument();
 });

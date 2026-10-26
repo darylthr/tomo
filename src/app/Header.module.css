@@ -11,15 +11,13 @@
   z-index: 10;
 }
 
-.settings {
-  justify-self: start;
-}
-
 .searchBtn {
+  grid-column: 3;
   justify-self: end;
 }
 
 .brand {
+  grid-column: 2;
   justify-self: center;
   display: flex;
   align-items: center;

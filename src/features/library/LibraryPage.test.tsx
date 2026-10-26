@@ -1,9 +1,8 @@
 import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import type { Title } from '../../shared/model/types';
 import { useSettings } from '../../shared/settings/store';
-import { useUi } from '../../shared/ui/uiStore';
 import { ServerError } from '../server/client';
 import { pickContinueChapter } from './continueReading';
 import { LibraryPage } from './LibraryPage';
@@ -32,14 +31,16 @@ function showLibrary(state: Partial<ReturnType<typeof useLibrary.getState>>) {
   useLibrary.setState({ status: 'ready', titles: [], categories: [], error: null, load: async () => {}, ...state });
   return render(
     <MemoryRouter>
-      <LibraryPage />
+      <Routes>
+        <Route path="/" element={<LibraryPage />} />
+        <Route path="/settings" element={<p>Settings page</p>} />
+      </Routes>
     </MemoryRouter>,
   );
 }
 
 beforeEach(() => {
   useSettings.getState().reset();
-  useUi.setState({ settingsOpen: false });
 });
 
 it('explains an unreachable server and offers a retry', async () => {
@@ -50,7 +51,7 @@ it('explains an unreachable server and offers a retry', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'Retry' }));
   expect(refresh).toHaveBeenCalled();
   await userEvent.click(screen.getByRole('button', { name: 'Server settings' }));
-  expect(useUi.getState().settingsOpen).toBe(true);
+  expect(screen.getByText('Settings page')).toBeInTheDocument();
 });
 
 it('asks to connect a server when none is set up and the same address has no Suwayomi', () => {

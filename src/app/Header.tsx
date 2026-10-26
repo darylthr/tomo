@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { IconBook, IconClose, IconSearch, IconSettings } from '../shared/ui/icons';
-import { useUi } from '../shared/ui/uiStore';
+import { IconBook, IconClose, IconSearch } from '../shared/ui/icons';
 import styles from './Header.module.css';
 
 const SEARCH_DEBOUNCE_MS = 280;
@@ -11,11 +10,10 @@ function isTyping(target: EventTarget | null): boolean {
   return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
 }
 
-/** Floating header: settings on the left, brand centered, search icon that expands into a field. */
+/** Floating header: brand centered, search icon that expands into a field. Settings live in the navbar. */
 export function Header() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const openSettings = useUi((s) => s.openSettings);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -61,9 +59,6 @@ export function Header() {
 
   return (
     <header className={`${styles.header} ${open ? styles.open : ''}`} data-search-open={open}>
-      <button type="button" className={`${styles.iconBtn} ${styles.settings}`} aria-label="Settings" onClick={openSettings}>
-        <IconSettings />
-      </button>
       <div className={styles.brand}>
         <IconBook />
         <span>Tomo</span>

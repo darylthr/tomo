@@ -2,8 +2,7 @@ import 'fake-indexeddb/auto';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useSettings } from '../../shared/settings/store';
-import { useUi } from '../../shared/ui/uiStore';
-import { SettingsSheet } from './SettingsSheet';
+import { SettingsPage } from './SettingsPage';
 
 vi.mock('../background/backgroundImage', () => ({
   saveBackgroundImage: vi.fn(async () => {
@@ -15,64 +14,51 @@ vi.mock('../background/backgroundImage', () => ({
   clearBackgroundImage: vi.fn(async () => {}),
 }));
 
-beforeEach(() => {
-  useSettings.getState().reset();
-  useUi.setState({ settingsOpen: false });
-});
+beforeEach(() => useSettings.getState().reset());
 
-function openSheet() {
-  render(
-    <>
-      <button onClick={() => useUi.getState().openSettings()}>Settings</button>
-      <SettingsSheet />
-    </>,
-  );
-  return screen.getByRole('button', { name: 'Settings' });
-}
+const show = () => render(<SettingsPage />);
 
-it('opens as a dialog named Settings', async () => {
-  const trigger = openSheet();
-  await userEvent.click(trigger);
-  expect(screen.getByRole('dialog', { name: 'Settings' })).toBeVisible();
+it('is a page named Settings with every group', () => {
+  show();
+  expect(screen.getByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument();
+  for (const name of ['Server', 'Library', 'Reading', 'Background', 'Appearance'])
+    expect(screen.getByRole('region', { name })).toBeInTheDocument();
 });
 
 it('changes how titles are shown', async () => {
-  await userEvent.click(openSheet());
-  const group = screen.getByRole('radiogroup', { name: 'Show titles as' });
+  show();
   await userEvent.click(screen.getByRole('radio', { name: 'Covers' }));
-  expect(group).toBeInTheDocument();
   expect(useSettings.getState().settings.library.display).toBe('covers');
 });
 
-it('keeps the dithered background switch off until an image is chosen', async () => {
-  await userEvent.click(openSheet());
+it('picks the default reading mode and page fit', async () => {
+  show();
+  await userEvent.click(screen.getByRole('radio', { name: 'Webtoon' }));
+  await userEvent.click(screen.getByRole('radio', { name: 'Width' }));
+  expect(useSettings.getState().settings.reader).toMatchObject({ defaultMode: 'webtoon', fit: 'width' });
+});
+
+it('keeps the dithered background switch off until an image is chosen', () => {
+  show();
   expect(screen.getByRole('switch', { name: 'Dithered background' })).toBeDisabled();
 });
 
 it('shows a readable error when the image cannot be used', async () => {
-  await userEvent.click(openSheet());
+  show();
   const input = screen.getByLabelText('Choose image');
   await userEvent.upload(input, new File(['x'], 'photo.heic', { type: 'image/heic' }));
   expect(await screen.findByText("Couldn't read that image")).toBeInTheDocument();
   expect(screen.getByRole('switch', { name: 'Dithered background' })).toBeDisabled();
 });
 
-it('warns when custom theme text would be hard to read', async () => {
-  await userEvent.click(openSheet());
+it('warns when custom theme text would be hard to read', () => {
+  show();
   act(() => useSettings.getState().update({ theme: { mode: 'custom', bg: '#777777', ink: '#ffffff' } }));
   expect(screen.getByText('Text may be hard to read on this background')).toBeInTheDocument();
 });
 
-it('closes on Escape and returns focus to the button that opened it', async () => {
-  const trigger = openSheet();
-  await userEvent.click(trigger);
-  await userEvent.keyboard('{Escape}');
-  expect(useUi.getState().settingsOpen).toBe(false);
-  expect(trigger).toHaveFocus();
-});
-
 it('moves through a segmented control with the arrow keys', async () => {
-  await userEvent.click(openSheet());
+  show();
   const books = screen.getByRole('radio', { name: 'Books' });
   books.focus();
   await userEvent.keyboard('{ArrowRight}');

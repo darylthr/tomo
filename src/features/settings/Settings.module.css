@@ -1,0 +1,156 @@
+/* Settings live on their own page; each group is a glass card over the background. */
+.sections {
+  display: grid;
+  gap: 14px;
+}
+
+.section {
+  padding: 4px 16px 8px;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  /* opaque enough to read over any background image, without blurring it */
+  background: oklch(0.13 0.008 280 / 0.84);
+  box-shadow: var(--glass-ring);
+}
+
+.heading {
+  margin: 10px 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+}
+
+.label {
+  font-size: 15px;
+}
+
+/* label above a wide control (four-option groups don't fit beside a label on phones) */
+.stack {
+  display: grid;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.imageActions {
+  display: flex;
+  gap: 6px;
+}
+
+.ghost {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: oklch(1 0 0 / 0.1);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    scale 150ms ease-out,
+    background-color 150ms ease-out;
+}
+
+.ghost:not(:disabled):active {
+  scale: 0.96;
+}
+
+@media (hover: hover) {
+  .ghost:hover {
+    background: oklch(1 0 0 / 0.16);
+  }
+}
+
+.file {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.ghost:has(.file:focus-visible) {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.error,
+.warning {
+  margin: 0 0 8px;
+  font-size: 13px;
+  text-wrap: pretty;
+}
+
+.error {
+  color: #ffb4b4;
+}
+
+.warning {
+  color: #ffc879;
+}
+
+.color {
+  width: 44px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid oklch(1 0 0 / 0.2);
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.success {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: #8fe3a5;
+}
+
+.field {
+  flex: 1;
+  min-width: 0;
+  max-width: 220px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid oklch(1 0 0 / 0.16);
+  border-radius: 10px;
+  background: oklch(1 0 0 / 0.06);
+  font-size: 16px;
+  transition: border-color 150ms ease-out;
+}
+
+.field::placeholder {
+  color: var(--faint);
+}
+
+.field:focus-visible {
+  outline: none;
+  border-color: oklch(1 0 0 / 0.4);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 0 10px;
+}
+
+.details {
+  color: var(--faint);
+  word-break: break-word;
+}
+
+a.ghost {
+  color: inherit;
+  text-decoration: none;
+}

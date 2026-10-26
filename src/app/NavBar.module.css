@@ -13,7 +13,7 @@
 .tabs {
   position: relative;
   display: flex;
-  width: min(480px, 100%);
+  width: min(560px, 100%);
   height: var(--nav-h);
 }
 

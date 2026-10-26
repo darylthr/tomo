@@ -4,11 +4,11 @@ import { useUi } from '../shared/ui/uiStore';
 import { NavBar } from './NavBar';
 import { renderWithRouter } from './testRouter';
 
-const TABS = ['Library', 'Updates', 'History', 'Search'];
+const TABS = ['Library', 'Updates', 'History', 'Search', 'Settings'];
 
 beforeEach(() => useUi.setState({ updatesBadge: 0 }));
 
-it('shows the four sections, each with a visible label', () => {
+it('shows the five sections, each with a visible label', () => {
   renderWithRouter(<NavBar />);
   const tabs = screen.getAllByRole('tab');
   expect(tabs.map((t) => t.textContent?.replace(/\d+/g, '').trim())).toEqual(TABS);

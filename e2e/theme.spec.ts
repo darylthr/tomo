@@ -19,7 +19,7 @@ async function contrastOf(page: Page, selector: string, backgroundSelector: stri
 }
 
 async function chooseTheme(page: Page, mode: 'Light' | 'Custom') {
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('tab', { name: 'Settings' }).click();
   await page.getByRole('radio', { name: mode }).click();
 }
 
@@ -32,8 +32,9 @@ for (const mode of ['Light', 'Custom'] as const) {
       await page.getByLabel('Background color').fill('#ffffff');
       await page.getByLabel('Text color').fill('#000000');
     }
-    expect(await contrastOf(page, 'dialog h2', 'dialog')).toBeGreaterThanOrEqual(4.5);
-    await page.getByRole('button', { name: 'Close settings' }).click();
+    expect(await contrastOf(page, 'section[aria-label="Appearance"] span', 'section[aria-label="Appearance"]')).toBeGreaterThanOrEqual(4.5);
+    expect(await contrastOf(page, 'main h1', 'main')).toBeGreaterThanOrEqual(4.5);
+    await page.getByRole('tab', { name: 'Updates' }).click();
     expect(await contrastOf(page, 'main h1', 'main')).toBeGreaterThanOrEqual(4.5);
     expect(await contrastOf(page, 'nav [aria-selected="false"]', 'body')).toBeGreaterThanOrEqual(3);
   });

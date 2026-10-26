@@ -1,18 +1,18 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
-import type { BackgroundSettings, LibrarySettings, ThemeMode } from '../../shared/settings/schema';
+import { useState, type ReactNode } from 'react';
+import type { ReaderMode } from '../../shared/model/types';
+import type { BackgroundSettings, LibrarySettings, ReaderSettings, ThemeMode } from '../../shared/settings/schema';
 import { useSettings } from '../../shared/settings/store';
 import { meetsAA } from '../../shared/theme/contrast';
-import { IconClose } from '../../shared/ui/icons';
+import { Page } from '../../shared/ui/Page';
 import { Segmented } from '../../shared/ui/Segmented';
 import { Switch } from '../../shared/ui/Switch';
-import { useUi } from '../../shared/ui/uiStore';
 import { clearBackgroundImage, saveBackgroundImage } from '../background/backgroundImage';
 import { ServerSection } from '../server/ServerSection';
-import styles from './SettingsSheet.module.css';
+import styles from './Settings.module.css';
 
-function Row({ label, children }: { label: string; children: ReactNode }) {
+function Row({ label, stack, children }: { label: string; stack?: boolean; children: ReactNode }) {
   return (
-    <div className={styles.row}>
+    <div className={stack ? styles.stack : styles.row}>
       <span className={styles.label}>{label}</span>
       {children}
     </div>
@@ -24,39 +24,33 @@ const LEVELS = [
   { value: '6', label: 'Mid' },
   { value: '9', label: 'High' },
 ];
+const MODES: { value: ReaderMode; label: string }[] = [
+  { value: 'rtl', label: 'Manga' },
+  { value: 'ltr', label: 'Comic' },
+  { value: 'webtoon', label: 'Webtoon' },
+  { value: 'vertical', label: 'Vertical' },
+];
+const FITS: { value: ReaderSettings['fit']; label: string }[] = [
+  { value: 'screen', label: 'Screen' },
+  { value: 'width', label: 'Width' },
+  { value: 'height', label: 'Height' },
+];
 const GRAIN = [
   { value: '2', label: 'Fine' },
   { value: '3', label: 'Mid' },
   { value: '4', label: 'Coarse' },
 ];
 
-export function SettingsSheet() {
-  const open = useUi((s) => s.settingsOpen);
-  const close = useUi((s) => s.closeSettings);
+/** The Settings tab: server, library, reading, background and appearance. */
+export function SettingsPage() {
   const settings = useSettings((s) => s.settings);
   const update = useSettings((s) => s.update);
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const returnFocus = useRef<HTMLElement | null>(null);
-  const titleId = useId();
   const [imageError, setImageError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (open && !dialog.open) {
-      returnFocus.current = document.activeElement as HTMLElement | null;
-      dialog.showModal();
-      dialog.querySelector<HTMLButtonElement>(`.${styles.close}`)?.focus({ preventScroll: true });
-    } else if (!open && dialog.open) {
-      dialog.close();
-      returnFocus.current?.focus({ preventScroll: true });
-    }
-  }, [open]);
-
   const lib = (patch: Partial<LibrarySettings>) => update({ library: patch });
   const bg = (patch: Partial<BackgroundSettings>) => update({ background: patch });
-  const { library, background, theme } = settings;
+  const { library, background, theme, reader } = settings;
   const lowContrast = theme.mode === 'custom' && !meetsAA(theme.ink, theme.bg);
 
   const onImage = async (file: File | undefined) => {
@@ -73,31 +67,8 @@ export function SettingsSheet() {
   };
 
   return (
-    <dialog
-      ref={dialogRef}
-      className={styles.sheet}
-      aria-labelledby={titleId}
-      onClose={close}
-      onKeyDown={(e) => {
-        if (e.key === 'Escape') {
-          e.preventDefault();
-          close();
-        }
-      }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) close();
-      }}
-    >
-      <div className={styles.body}>
-        <header className={styles.head}>
-          <h2 id={titleId} className={styles.title}>
-            Settings
-          </h2>
-          <button type="button" className={styles.close} aria-label="Close settings" onClick={close}>
-            <IconClose />
-          </button>
-        </header>
-
+    <Page title="Settings">
+      <div className={styles.sections}>
         <ServerSection />
 
         <section className={styles.section} aria-label="Library">
@@ -143,6 +114,21 @@ export function SettingsSheet() {
           </Row>
           <Row label="Mirror right-to-left manga">
             <Switch label="Mirror right-to-left manga" checked={library.mirrorRtl} onChange={(mirrorRtl) => lib({ mirrorRtl })} />
+          </Row>
+        </section>
+
+        <section className={styles.section} aria-label="Reading">
+          <h3 className={styles.heading}>Reading</h3>
+          <Row label="Default reading mode" stack>
+            <Segmented
+              label="Default reading mode"
+              value={reader.defaultMode}
+              onChange={(defaultMode) => update({ reader: { defaultMode } })}
+              options={MODES}
+            />
+          </Row>
+          <Row label="Fit pages to">
+            <Segmented label="Fit pages to" value={reader.fit} onChange={(fit) => update({ reader: { fit } })} options={FITS} />
           </Row>
         </section>
 
@@ -236,6 +222,6 @@ export function SettingsSheet() {
           )}
         </section>
       </div>
-    </dialog>
+    </Page>
   );
 }

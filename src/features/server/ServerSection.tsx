@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSettings } from '../../shared/settings/store';
 import { Segmented } from '../../shared/ui/Segmented';
-import styles from '../settings/SettingsSheet.module.css';
+import styles from '../settings/Settings.module.css';
 import { getAbout } from './api';
 import { ServerError } from './client';
 import { normalizeServerUrl, resolveUrl } from './config';

@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Title } from '../../shared/model/types';
 import { useSettings } from '../../shared/settings/store';
-import { useUi } from '../../shared/ui/uiStore';
 import { openBook } from '../reader/opening';
 import { CategoryBar, type CategoryFilter } from './CategoryBar';
 import { loadChapters, pickContinueChapter } from './continueReading';
@@ -25,8 +24,8 @@ export function LibraryPage() {
   const { status, titles, categories, error, load, refresh } = useLibrary();
   const library = useSettings((s) => s.settings.library);
   const serverUrl = useSettings((s) => s.settings.server.url);
-  const openSettings = useUi((s) => s.openSettings);
   const navigate = useNavigate();
+  const openSettings = () => navigate('/settings');
   const [filter, setFilter] = useState<CategoryFilter>('all');
   const [center, setCenter] = useState(0);
 

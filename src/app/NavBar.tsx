@@ -1,6 +1,6 @@
 import { useRef, type ComponentType } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { IconHistory, IconLibrary, IconSearch, IconUpdates } from '../shared/ui/icons';
+import { IconHistory, IconLibrary, IconSearch, IconSettings, IconUpdates } from '../shared/ui/icons';
 import { useSlidingPill } from '../shared/ui/useSlidingPill';
 import { useUi } from '../shared/ui/uiStore';
 import styles from './NavBar.module.css';
@@ -12,6 +12,7 @@ const TABS: Tab[] = [
   { to: '/updates', label: 'Updates', Icon: IconUpdates },
   { to: '/history', label: 'History', Icon: IconHistory },
   { to: '/search', label: 'Search', Icon: IconSearch },
+  { to: '/settings', label: 'Settings', Icon: IconSettings },
 ];
 
 function activeTab(pathname: string): string {
