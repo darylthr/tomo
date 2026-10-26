@@ -1,3 +1,4 @@
+import type { MouseEvent } from 'react';
 import type { Chapter } from '../model/types';
 import list from './List.module.css';
 
@@ -13,4 +14,9 @@ export function Thumb({ src, title }: { src: string | null; title: string }) {
       {src ? <img src={src} alt="" loading="lazy" decoding="async" /> : <span className={list.thumbLetter}>{title.trim().charAt(0).toUpperCase()}</span>}
     </span>
   );
+}
+
+/** The thumbnail in the clicked row, where the book-opening transition starts. */
+export function rowThumb(e: MouseEvent<HTMLElement>): HTMLElement | null {
+  return e.currentTarget.closest('li')?.querySelector<HTMLElement>(`.${list.thumb}`) ?? null;
 }

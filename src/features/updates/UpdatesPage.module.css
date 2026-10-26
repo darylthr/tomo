@@ -1,0 +1,54 @@
+.refresh {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: oklch(1 0 0 / 0.1);
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    scale 150ms ease-out,
+    background-color 150ms ease-out;
+}
+
+.refresh svg {
+  width: 18px;
+  height: 18px;
+}
+
+.refresh:not(:disabled):active {
+  scale: 0.96;
+}
+
+@media (hover: hover) {
+  .refresh:hover {
+    background: oklch(1 0 0 / 0.16);
+  }
+}
+
+.spinning svg {
+  animation: spin 1000ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinning svg {
+    animation-duration: 3000ms;
+  }
+}
+
+.checking {
+  margin-bottom: 4px;
+}
+
+.skeleton {
+  height: 84px;
+}

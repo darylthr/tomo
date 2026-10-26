@@ -21,6 +21,7 @@ export function renderWithRouter(ui: ReactNode, path = '/') {
       { path: '/updates', element },
       { path: '/history', element },
       { path: '/search', element },
+      { path: '*', element },
     ],
     { initialEntries: [path] },
   );

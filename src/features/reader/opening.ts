@@ -6,7 +6,7 @@ import { useUi } from '../../shared/ui/uiStore';
 const EASE = 'cubic-bezier(0.2, 0, 0, 1)';
 
 /** Navigates to the reader, remembering where the cover was so the reader can open it like a book. */
-export function openBook(navigate: NavigateFunction, title: Title, chapterId: number, coverEl: HTMLElement | null) {
+export function openBook(navigate: NavigateFunction, title: Pick<Title, 'coverUrl'>, chapterId: number, coverEl: HTMLElement | null) {
   const r = coverEl?.getBoundingClientRect();
   useUi.setState({
     openingFrom:
