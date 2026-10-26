@@ -71,3 +71,9 @@ it('leaves settings to the navbar', () => {
   renderWithRouter(<Header />);
   expect(screen.queryByRole('button', { name: 'Settings' })).not.toBeInTheDocument();
 });
+
+it('reopens with the query of the results on screen', async () => {
+  renderWithRouter(<Header />, '/search?q=ferry');
+  await user().click(screen.getByRole('button', { name: 'Search all sources' }));
+  expect(screen.getByRole('searchbox')).toHaveValue('ferry');
+});

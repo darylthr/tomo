@@ -40,7 +40,7 @@ test('the search icon opens a field that searches all sources', async ({ page })
   await expect(field).toBeFocused();
   await field.fill('moon');
   await expect(page).toHaveURL(/\/search\?q=moon$/);
-  await expect(page.getByRole('heading', { name: 'Results for "moon"' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '“moon”' })).toBeVisible();
 });
 
 test('a background image is dithered, fades to black and survives a reload', async ({ page, browserName }) => {

@@ -1,0 +1,359 @@
+/* Search tab: sources list, global results and the cover tiles they share (spec §7.5). */
+
+.groupLabel {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 18px 6px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.groupLabel:first-of-type {
+  margin-top: 4px;
+}
+
+.groupHint {
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--faint);
+}
+
+/* A glass card of rows. Rows are inset 6px, so their radius is 20 - 6 = 14px. */
+.group {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  background: oklch(0.13 0.008 280 / 0.84);
+  box-shadow: var(--glass-ring);
+}
+
+.group > li + li {
+  border-top: 1px solid oklch(1 0 0 / 0.06);
+  margin-left: 58px;
+}
+
+.group > li + li > .row {
+  margin-left: -58px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 10px;
+  border-radius: 14px;
+  color: inherit;
+  text-decoration: none;
+  transition: background-color 150ms ease-out;
+}
+
+.row:active {
+  background: oklch(1 0 0 / 0.08);
+}
+
+@media (hover: hover) {
+  .row:hover {
+    background: oklch(1 0 0 / 0.06);
+  }
+}
+
+.rowText {
+  display: grid;
+  min-width: 0;
+}
+
+.rowTitle {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowSub {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+.rowSide {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chevron {
+  width: 18px;
+  height: 18px;
+  color: var(--faint);
+}
+
+/* Extension icons are app-icon artwork: no image outline. */
+.icon {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.iconSm {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+
+.letter {
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 16px;
+  color: #fff;
+}
+
+.iconSm.letter {
+  font-size: 12px;
+}
+
+.neutral {
+  background: oklch(1 0 0 / 0.12);
+  color: var(--ink);
+}
+
+.neutral svg {
+  width: 20px;
+  height: 20px;
+}
+
+.lang {
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: oklch(1 0 0 / 0.1);
+  color: var(--muted);
+}
+
+.note {
+  margin: 18px 8px 0;
+  font-size: 12.5px;
+  text-align: center;
+  color: var(--faint);
+  text-wrap: pretty;
+}
+
+.note + .note {
+  margin-top: 6px;
+}
+
+.skeletonRow {
+  height: 60px;
+  border-radius: 14px;
+  background: oklch(1 0 0 / 0.04);
+}
+
+.skeletonRow + .skeletonRow {
+  margin-top: 1px;
+}
+
+/* Loading, empty and error lines. */
+.state {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  border-radius: 18px;
+  background: oklch(0.13 0.008 280 / 0.84);
+  box-shadow: var(--glass-ring);
+  font-size: 13.5px;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.stateError {
+  justify-content: space-between;
+  color: #ffb4b4;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border-radius: 999px;
+  border: 2px solid oklch(1 0 0 / 0.2);
+  border-top-color: var(--ink);
+  animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2400ms;
+  }
+}
+
+.ghost {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: oklch(1 0 0 / 0.1);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    scale 150ms ease-out,
+    background-color 150ms ease-out;
+}
+
+.ghost:not(:disabled):active {
+  scale: 0.96;
+}
+
+@media (hover: hover) {
+  .ghost:hover {
+    background: oklch(1 0 0 / 0.16);
+  }
+}
+
+/* Global search: one block per source. */
+.sourceResults + .sourceResults {
+  margin-top: 18px;
+}
+
+.resultsHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 32px;
+  margin: 0 4px 8px;
+}
+
+.resultsName {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.hscroll {
+  list-style: none;
+  display: flex;
+  gap: 12px;
+  margin: 0 -14px;
+  padding: 2px 14px 6px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 14px;
+  scrollbar-width: none;
+}
+
+.hscroll::-webkit-scrollbar {
+  display: none;
+}
+
+.hscroll > li {
+  flex: none;
+  width: 104px;
+  scroll-snap-align: start;
+}
+
+/* Cover tiles (global rows and the source grid). */
+.tile {
+  display: grid;
+  gap: 6px;
+  color: inherit;
+  text-decoration: none;
+  transition: scale 150ms ease-out;
+}
+
+.tile:active {
+  scale: 0.96;
+}
+
+.cover {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 0.68;
+  overflow: hidden;
+  border-radius: 4px;
+  background: oklch(1 0 0 / 0.08);
+  box-shadow: 0 6px 16px oklch(0 0 0 / 0.45);
+}
+
+.cover img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* The image outline sits above the picture, inset by 1px. */
+.cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  outline: 1px solid oklch(1 0 0 / 0.1);
+  outline-offset: -1px;
+  pointer-events: none;
+}
+
+.coverText {
+  padding: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--muted);
+  text-wrap: balance;
+}
+
+.inLibrary {
+  position: absolute;
+  left: 5px;
+  top: 5px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.tileName {
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

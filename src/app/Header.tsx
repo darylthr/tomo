@@ -13,7 +13,7 @@ function isTyping(target: EventTarget | null): boolean {
 /** Floating header: brand centered, search icon that expands into a field. Settings live in the navbar. */
 export function Header() {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -21,6 +21,8 @@ export function Header() {
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const openSearch = () => {
+    // On a results page, reopen with that query so it can be refined.
+    if (pathname === '/search') setQuery(new URLSearchParams(search).get('q') ?? '');
     setOpen(true);
     inputRef.current?.focus({ preventScroll: true });
   };

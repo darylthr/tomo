@@ -29,6 +29,14 @@ function defaults(): Record<string, Handler> {
     FETCH_PAGES: read('pages.json'),
     UPDATE_CHAPTER: (v: Record<string, unknown>) => ({ data: { updateChapter: { chapter: { id: v.id, isRead: false, lastPageRead: 0 } } } }),
     UPDATE_MANGA: (v: Record<string, unknown>) => ({ data: { updateManga: { manga: { id: v.id, inLibrary: v.inLibrary } } } }),
+    SOURCES: read('sources.json'),
+    SOURCE: read('source-filters.json'),
+    SERVER_SETTINGS: { data: { settings: { maxSourcesInParallel: 2 } } },
+    FETCH_SOURCE_MANGA: read('source-manga.json'),
+    FETCH_MANGA: (v: Record<string, unknown>) => {
+      const nodes = read('library.json').data.mangas.nodes as { id: number }[];
+      return { data: { fetchManga: { manga: nodes.find((n) => n.id === v.id) ?? nodes[0] } } };
+    },
   };
 }
 

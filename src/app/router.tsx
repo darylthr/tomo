@@ -3,6 +3,7 @@ import { HistoryPage } from '../features/history/HistoryPage';
 import { LibraryPage } from '../features/library/LibraryPage';
 import { ReaderPage } from '../features/reader/ReaderPage';
 import { SearchPage } from '../features/search/SearchPage';
+import { SourcePage } from '../features/search/SourcePage';
 import { SettingsPage } from '../features/settings/SettingsPage';
 import { TitlePage } from '../features/title/TitlePage';
 import { UpdatesPage } from '../features/updates/UpdatesPage';
@@ -16,6 +17,7 @@ export const routes: RouteObject[] = [
       { path: 'updates', element: <UpdatesPage /> },
       { path: 'history', element: <HistoryPage /> },
       { path: 'search', element: <SearchPage /> },
+      { path: 'search/source/:sourceId', element: <SourcePage /> },
       { path: 'settings', element: <SettingsPage /> },
       { path: 'title/:id', element: <TitlePage /> },
       { path: '*', element: <LibraryPage /> },

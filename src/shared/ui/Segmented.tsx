@@ -7,7 +7,8 @@ type Option<T extends string> = { value: T; label: string };
 type Props<T extends string> = {
   label: string;
   options: Option<T>[];
-  value: T;
+  /** null: nothing chosen (the pill hides), as when a search replaces the listing. */
+  value: T | null;
   onChange: (value: T) => void;
 };
 
@@ -15,14 +16,14 @@ type Props<T extends string> = {
 export function Segmented<T extends string>({ label, options, value, onChange }: Props<T>) {
   const groupRef = useRef<HTMLDivElement>(null);
   const pillRef = useRef<HTMLSpanElement>(null);
-  useSlidingPill(groupRef, pillRef, value);
+  useSlidingPill(groupRef, pillRef, value ?? '');
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     const step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
     if (!step) return;
     e.preventDefault();
     const index = options.findIndex((o) => o.value === value);
-    const next = options[(index + step + options.length) % options.length]!;
+    const next = options[index < 0 ? (step > 0 ? 0 : options.length - 1) : (index + step + options.length) % options.length]!;
     onChange(next.value);
     groupRef.current?.querySelector<HTMLButtonElement>(`[data-pill-key="${next.value}"]`)?.focus();
   };
@@ -30,7 +31,7 @@ export function Segmented<T extends string>({ label, options, value, onChange }:
   return (
     <div ref={groupRef} className={styles.group} role="radiogroup" aria-label={label} onKeyDown={onKeyDown}>
       <span ref={pillRef} className={styles.pill} aria-hidden="true" />
-      {options.map((o) => {
+      {options.map((o, i) => {
         const checked = o.value === value;
         return (
           <button
@@ -38,7 +39,7 @@ export function Segmented<T extends string>({ label, options, value, onChange }:
             type="button"
             role="radio"
             aria-checked={checked}
-            tabIndex={checked ? 0 : -1}
+            tabIndex={checked || (value === null && i === 0) ? 0 : -1}
             data-pill-key={o.value}
             className={styles.option}
             onClick={() => onChange(o.value)}

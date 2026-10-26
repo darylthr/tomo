@@ -89,3 +89,45 @@ export function IconBook(p: Omit<IconProps, "filled">) {
     </Svg>
   );
 }
+
+export function IconBack(p: Omit<IconProps, "filled">) {
+  return (
+    <Svg strokeWidth={2} {...p}>
+      <path d="m15 6-6 6 6 6" />
+    </Svg>
+  );
+}
+
+export function IconChevron(p: Omit<IconProps, "filled">) {
+  return (
+    <Svg strokeWidth={2} {...p}>
+      <path d="m9 6 6 6-6 6" />
+    </Svg>
+  );
+}
+
+export function IconExternal(p: Omit<IconProps, "filled">) {
+  return (
+    <Svg strokeWidth={1.9} {...p}>
+      <path d="M14 4h6v6M20 4l-9 9" />
+      <path d="M19 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4" />
+    </Svg>
+  );
+}
+
+export function IconExtensions(p: Omit<IconProps, "filled">) {
+  return (
+    <Svg {...p}>
+      <path d="M12 3v12M7 10l5 5 5-5" />
+      <path d="M5 19h14" />
+    </Svg>
+  );
+}
+
+export function IconFilter(p: Omit<IconProps, "filled">) {
+  return (
+    <Svg {...p}>
+      <path d="M4 6h16M7 12h10M10 18h4" />
+    </Svg>
+  );
+}
