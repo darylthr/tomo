@@ -91,6 +91,34 @@ export const UPDATE_MANGA = `
   }
 `;
 
+// Category ids above 0 are the owner's; 0 is Suwayomi's built-in default.
+export const CREATE_CATEGORY = `
+  mutation CREATE_CATEGORY($name: String!) { createCategory(input: { name: $name }) { category { id name order } } }
+`;
+
+export const RENAME_CATEGORY = `
+  mutation RENAME_CATEGORY($id: Int!, $name: String!) {
+    updateCategory(input: { id: $id, patch: { name: $name } }) { category { id name } }
+  }
+`;
+
+/** `position` counts from 1 among the owner's categories. */
+export const MOVE_CATEGORY = `
+  mutation MOVE_CATEGORY($id: Int!, $position: Int!) {
+    updateCategoryOrder(input: { id: $id, position: $position }) { categories { id order } }
+  }
+`;
+
+export const DELETE_CATEGORY = `
+  mutation DELETE_CATEGORY($id: Int!) { deleteCategory(input: { categoryId: $id }) { category { id } } }
+`;
+
+export const UPDATE_MANGA_CATEGORIES = `
+  mutation UPDATE_MANGA_CATEGORIES($id: Int!, $patch: UpdateMangaCategoriesPatchInput!) {
+    updateMangaCategories(input: { id: $id, patch: $patch }) { manga { id categories { nodes { id } } } }
+  }
+`;
+
 const BROWSE_FIELDS = `
   fragment BROWSE_FIELDS on MangaType {
     id

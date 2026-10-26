@@ -74,6 +74,31 @@ export async function setInLibrary(titleId: number, inLibrary: boolean): Promise
   await gql(op.UPDATE_MANGA, { id: titleId, inLibrary });
 }
 
+export async function createCategory(name: string): Promise<Category> {
+  const data = await gql<{ createCategory: { category: RawCategory } }>(op.CREATE_CATEGORY, { name });
+  return toCategory(data.createCategory.category);
+}
+
+export async function renameCategory(id: number, name: string): Promise<void> {
+  await gql(op.RENAME_CATEGORY, { id, name });
+}
+
+/** Moves a category to `position` (from 1) in the owner's list, which is the shelf's tab order. */
+export async function moveCategory(id: number, position: number): Promise<void> {
+  await gql(op.MOVE_CATEGORY, { id, position });
+}
+
+/** Deletes a category; its titles stay in the library. */
+export async function deleteCategory(id: number): Promise<void> {
+  await gql(op.DELETE_CATEGORY, { id });
+}
+
+/** Puts a title in exactly these categories. */
+export async function setTitleCategories(titleId: number, categoryIds: number[]): Promise<void> {
+  const addToCategories = categoryIds.filter((id) => id > 0);
+  await gql(op.UPDATE_MANGA_CATEGORIES, { id: titleId, patch: { clearCategories: true, addToCategories } });
+}
+
 /** Asks Suwayomi to load a title's details from its source (titles found while browsing). */
 export async function fetchTitle(id: number): Promise<Title> {
   const data = await gql<{ fetchManga: { manga: RawTitle } }>(op.FETCH_MANGA, { id });

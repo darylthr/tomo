@@ -25,7 +25,12 @@ import {
   getPages,
   getSourceFilters,
   getSources,
+  createCategory,
+  deleteCategory,
+  moveCategory,
+  renameCategory,
   setInLibrary,
+  setTitleCategories,
   setProgress,
 } from './api';
 
@@ -280,5 +285,28 @@ describe('updates, history and library update checks', () => {
     for (const [name, doc] of Object.entries(operations)) {
       expect(doc, name).not.toMatch(/\border\s*:/);
     }
+  });
+});
+
+describe('categories', () => {
+  it('creates a category without choosing its order', async () => {
+    serve({ CREATE_CATEGORY: { data: { createCategory: { category: { id: 7, name: 'To Read', order: 4 } } } } });
+    await expect(createCategory('To Read')).resolves.toEqual({ id: 7, name: 'To Read', order: 4 });
+    expect(calls[0]!.variables).toEqual({ name: 'To Read' });
+  });
+
+  it('renames, moves and deletes a category', async () => {
+    serve({});
+    await renameCategory(7, 'Reading');
+    await moveCategory(7, 2);
+    await deleteCategory(7);
+    expect(calls.map((c) => c.variables)).toEqual([{ id: 7, name: 'Reading' }, { id: 7, position: 2 }, { id: 7 }]);
+    expect(calls.map((c) => /mutation\s+(\w+)/.exec(c.query)?.[1])).toEqual(['RENAME_CATEGORY', 'MOVE_CATEGORY', 'DELETE_CATEGORY']);
+  });
+
+  it("replaces a title's categories, leaving out the built-in default", async () => {
+    serve({});
+    await setTitleCategories(3, [0, 5, 7]);
+    expect(calls[0]!.variables).toEqual({ id: 3, patch: { clearCategories: true, addToCategories: [5, 7] } });
   });
 });

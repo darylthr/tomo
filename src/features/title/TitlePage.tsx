@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { Chapter, Title, TitleStatus } from '../../shared/model/types';
-import { fetchTitle, getTitle, setInLibrary, setProgress } from '../server/api';
+import { createCategory, fetchTitle, getTitle, setInLibrary, setProgress, setTitleCategories } from '../server/api';
 import { ServerError } from '../server/client';
 import { loadChapters, pickContinueChapter } from '../library/continueReading';
 import { useLibrary } from '../library/libraryStore';
@@ -10,6 +10,7 @@ import { IconFilter } from '../../shared/ui/icons';
 import { TitleName } from '../../shared/ui/TitleName';
 import { prefersReducedMotion } from '../../shared/ui/useReducedMotion';
 import { arrangeChapters, isDefaultView } from './chapterList';
+import { CategorySheet } from './CategorySheet';
 import { ChapterViewPanel } from './ChapterViewPanel';
 import { useChapterView, useChapterViews } from './chapterViewStore';
 
@@ -32,6 +33,12 @@ export function TitlePage() {
   const [expanded, setExpanded] = useState(false);
   const view = useChapterView(id);
   const setView = useChapterViews((s) => s.setView);
+  const [picking, setPicking] = useState(false);
+  const allCategories = useLibrary((s) => s.categories);
+  const libraryTitles = useLibrary((s) => s.titles);
+  useEffect(() => {
+    void useLibrary.getState().load();
+  }, []);
   const [panel, setPanel] = useState<'closed' | 'open' | 'closing'>('closed');
   const closeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(closeTimer.current), []);
@@ -100,10 +107,38 @@ export function TitlePage() {
     useLibrary.getState().patchTitle(title.id, { unread });
   };
 
+  const categories = allCategories.filter((c) => c.id > 0);
+  const counts = new Map<number, number>();
+  for (const t of libraryTitles) for (const c of t.categoryIds) counts.set(c, (counts.get(c) ?? 0) + 1);
+  const ownCategories = categories.filter((c) => title.categoryIds.includes(c.id));
+
+  const setLibrary = (inLibrary: boolean, categoryIds = title.categoryIds) => {
+    void (async () => {
+      if (inLibrary !== title.inLibrary) await setInLibrary(title.id, inLibrary);
+      if (inLibrary && categories.length > 0) await setTitleCategories(title.id, categoryIds);
+    })()
+      .catch(() => {})
+      .finally(() => useLibrary.getState().refresh());
+    update((s) => ({ title: { ...s.title, inLibrary, categoryIds: inLibrary ? categoryIds : [] }, chapters: s.chapters }));
+  };
+
+  // With categories set up, adding asks where the title goes (as in Mihon); without, it just adds.
   const toggleLibrary = () => {
-    const inLibrary = !title.inLibrary;
-    void setInLibrary(title.id, inLibrary).then(() => useLibrary.getState().refresh());
-    update((s) => ({ title: { ...s.title, inLibrary }, chapters: s.chapters }));
+    if (title.inLibrary) setLibrary(false);
+    else if (categories.length > 0) setPicking(true);
+    else setLibrary(true);
+  };
+
+  const saveCategories = (ids: number[]) => {
+    setPicking(false);
+    if (title.inLibrary && ids.length === 0) setLibrary(false);
+    else setLibrary(true, ids);
+  };
+
+  const newCategory = async (name: string) => {
+    const category = await createCategory(name);
+    useLibrary.setState((s) => ({ categories: [...s.categories, category] }));
+    return category;
   };
 
   return (
@@ -144,6 +179,31 @@ export function TitlePage() {
             {title.inLibrary ? 'In library' : 'Add to library'}
           </button>
         </div>
+        {title.inLibrary && (
+          <div className={styles.categories}>
+            {ownCategories.length > 0 && (
+              <ul className={styles.categoryChips} aria-label="Categories">
+                {ownCategories.map((c) => (
+                  <li key={c.id}>{c.name}</li>
+                ))}
+              </ul>
+            )}
+            <button type="button" className={styles.categoryEdit} aria-label="Edit categories" onClick={() => setPicking(true)}>
+              {ownCategories.length > 0 ? 'Edit' : 'Add to a category'}
+            </button>
+          </div>
+        )}
+        <CategorySheet
+          open={picking}
+          mode={title.inLibrary ? 'edit' : 'add'}
+          titleName={title.title}
+          categories={categories}
+          counts={counts}
+          selected={title.categoryIds.filter((id) => id > 0)}
+          onCreate={newCategory}
+          onSave={saveCategories}
+          onClose={() => setPicking(false)}
+        />
 
         {title.description && (
           <div className={styles.description}>
