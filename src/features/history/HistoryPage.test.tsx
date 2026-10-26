@@ -64,7 +64,8 @@ it('leaves out the page count when it is unknown, and shows a letter without a c
 it('resumes an unfinished chapter where it was left', async () => {
   renderWithRouter(<HistoryPage />, '/history');
   await userEvent.click(await screen.findByRole('button', { name: 'Resume Blue Hour' }));
-  expect(screen.getByTestId('location')).toHaveTextContent('/read/12');
+  // Resume is async (it may load the chapter list), so wait for the navigation.
+  await vi.waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('/read/12'));
 });
 
 it('resumes at the next chapter after a finished one', async () => {
@@ -74,7 +75,8 @@ it('resumes at the next chapter after a finished one', async () => {
   ]);
   renderWithRouter(<HistoryPage />, '/history');
   await userEvent.click(await screen.findByRole('button', { name: 'Resume Kintsugi' }));
-  expect(screen.getByTestId('location')).toHaveTextContent('/read/22');
+  // Resume is async (it may load the chapter list), so wait for the navigation.
+  await vi.waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('/read/22'));
 });
 
 it('opens the title from its thumbnail', async () => {
