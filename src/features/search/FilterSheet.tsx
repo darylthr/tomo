@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import type { SortValue, SourceFilter, TriState } from '../../shared/model/types';
-import { IconClose } from '../../shared/ui/icons';
 import { Switch } from '../../shared/ui/Switch';
-import { prefersReducedMotion } from '../../shared/ui/useReducedMotion';
+import { Sheet } from '../../shared/ui/Sheet';
+import sheet from '../../shared/ui/Sheet.module.css';
 import { defaultFilterState, filterChanges, setFilterValue, type FilterState, type FilterValue } from './filters';
 import styles from './FilterSheet.module.css';
 
@@ -18,14 +18,8 @@ type Props = {
   onClose: () => void;
 };
 
-const EXIT_MS = 150;
-
 /** A source's filter list: a bottom sheet on phones, a side panel on wide screens. */
 export function FilterSheet({ open, sourceName, filters, error, applied, onApply, onRetry, onClose }: Props) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  // `entered` flips a frame after opening so the sheet transitions in; closing hides it at once.
-  const [entered, setEntered] = useState(false);
-  const shown = open && entered;
   // Edits since opening; null shows what's applied.
   const [edits, setEdits] = useState<FilterState | null>(null);
   const [wasOpen, setWasOpen] = useState(open);
@@ -35,86 +29,49 @@ export function FilterSheet({ open, sourceName, filters, error, applied, onApply
   }
   const draft = edits ?? applied ?? (filters ? defaultFilterState(filters) : []);
 
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (open) {
-      if (!dialog.open) {
-        if (dialog.showModal) dialog.showModal();
-        else dialog.setAttribute('open', '');
-      }
-      const frame = requestAnimationFrame(() => setEntered(true));
-      return () => cancelAnimationFrame(frame);
-    }
-    if (!dialog.open) return;
-    const timer = setTimeout(
-      () => {
-        setEntered(false);
-        if (dialog.close) dialog.close();
-        else dialog.removeAttribute('open');
-      },
-      prefersReducedMotion() ? 0 : EXIT_MS,
-    );
-    return () => clearTimeout(timer);
-  }, [open]);
-
   const set = (path: number[], value: FilterValue) => setEdits(setFilterValue(draft, path, value));
   const changed = filters ? filterChanges(filters, draft).length : 0;
 
   return (
-    <dialog
-      ref={dialogRef}
-      className={styles.dialog}
-      data-shown={shown}
-      aria-label={`Filters for ${sourceName}`}
-      onCancel={(e) => {
-        e.preventDefault();
-        onClose();
-      }}
+    <Sheet
+      open={open}
+      label={`Filters for ${sourceName}`}
+      title="Filters"
+      closeLabel="Close filters"
+      onClose={onClose}
+      action={
+        <button
+          type="button"
+          className={sheet.ghost}
+          disabled={!filters || !changed}
+          onClick={() => filters && setEdits(defaultFilterState(filters))}
+        >
+          Reset
+        </button>
+      }
+      footer={
+        <button type="button" className={sheet.apply} disabled={!filters} onClick={() => onApply(draft)}>
+          {changed ? `Apply ${changed} ${changed === 1 ? 'filter' : 'filters'}` : 'Show all'}
+        </button>
+      }
     >
-      <div className={styles.scrim} onClick={onClose} aria-hidden="true" />
-      <div className={styles.sheet}>
-        <header className={styles.head}>
-          <h2 className={styles.title}>Filters</h2>
-          <button
-            type="button"
-            className={styles.ghost}
-            disabled={!filters || !changed}
-            onClick={() => filters && setEdits(defaultFilterState(filters))}
-          >
-            Reset
+      {error ? (
+        <div className={styles.error} role="alert">
+          <span>{error}</span>
+          <button type="button" className={sheet.ghost} onClick={onRetry}>
+            Retry
           </button>
-          <button type="button" className={styles.close} aria-label="Close filters" onClick={onClose}>
-            <IconClose />
-          </button>
-        </header>
-
-        <div className={styles.body}>
-          {error ? (
-            <div className={styles.error} role="alert">
-              <span>{error}</span>
-              <button type="button" className={styles.ghost} onClick={onRetry}>
-                Retry
-              </button>
-            </div>
-          ) : !filters ? (
-            <p className={styles.empty} aria-busy="true">
-              Loading filters…
-            </p>
-          ) : filters.length === 0 ? (
-            <p className={styles.empty}>{sourceName} has no filters.</p>
-          ) : (
-            <FilterList filters={filters} state={draft} path={[]} onChange={set} />
-          )}
         </div>
-
-        <footer className={styles.foot}>
-          <button type="button" className={styles.apply} disabled={!filters} onClick={() => onApply(draft)}>
-            {changed ? `Apply ${changed} ${changed === 1 ? 'filter' : 'filters'}` : 'Show all'}
-          </button>
-        </footer>
-      </div>
-    </dialog>
+      ) : !filters ? (
+        <p className={styles.empty} aria-busy="true">
+          Loading filters…
+        </p>
+      ) : filters.length === 0 ? (
+        <p className={styles.empty}>{sourceName} has no filters.</p>
+      ) : (
+        <FilterList filters={filters} state={draft} path={[]} onChange={set} />
+      )}
+    </Sheet>
   );
 }
 
