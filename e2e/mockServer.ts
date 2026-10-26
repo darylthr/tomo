@@ -11,8 +11,29 @@ const IMAGE = fs.readFileSync(path.join(here, 'fixtures', 'gradient.png'));
 export type Call = { op: string; variables: Record<string, unknown> };
 type Handler = unknown | ((variables: Record<string, unknown>) => unknown);
 
+type FeedNode = { fetchedAt: string; lastReadAt: string; manga: { inLibraryAt: string } };
+
+/**
+ * Moves a feed fixture's timestamps (epoch seconds) so its newest one was an hour ago,
+ * keeping the gaps between them. Zero ("never") stays zero. Pass one `now` per mock, so the
+ * times stay put across requests and reloads, as a real server's do.
+ */
+export function recent(json: { data: { chapters: { nodes: FeedNode[] } } }, now: number) {
+  const nodes = json.data.chapters.nodes;
+  const newest = Math.max(...nodes.flatMap((n) => [Number(n.fetchedAt), Number(n.lastReadAt)]));
+  const shift = Math.floor(now / 1000) - 3600 - newest;
+  const move = (v: string) => (Number(v) > 0 ? String(Number(v) + shift) : v);
+  for (const n of nodes) {
+    n.fetchedAt = move(n.fetchedAt);
+    n.lastReadAt = move(n.lastReadAt);
+    n.manga = { ...n.manga, inLibraryAt: move(n.manga.inLibraryAt) };
+  }
+  return json;
+}
+
 /** Default responses per GraphQL operation name, from the unit-test fixtures. */
 function defaults(): Record<string, Handler> {
+  const now = Date.now();
   return {
     ABOUT: read('about.json'),
     LIBRARY: read('library.json'),
@@ -33,6 +54,12 @@ function defaults(): Record<string, Handler> {
     SOURCE: read('source-filters.json'),
     SERVER_SETTINGS: { data: { settings: { maxSourcesInParallel: 2 } } },
     FETCH_SOURCE_MANGA: read('source-manga.json'),
+    UPDATES: () => recent(read('updates.json'), now),
+    HISTORY: () => recent(read('history.json'), now),
+    // Fresh by default, so opening the app doesn't start a library update in unrelated tests.
+    LAST_UPDATE: () => ({ data: { lastUpdateTimestamp: { timestamp: String(Date.now()) } } }),
+    UPDATE_LIBRARY: { data: { updateLibraryManga: { updateStatus: { isRunning: true } } } },
+    UPDATE_STATUS: { data: { updateStatus: { isRunning: false } } },
     FETCH_MANGA: (v: Record<string, unknown>) => {
       const nodes = read('library.json').data.mangas.nodes as { id: number }[];
       return { data: { fetchManga: { manga: nodes.find((n) => n.id === v.id) ?? nodes[0] } } };
