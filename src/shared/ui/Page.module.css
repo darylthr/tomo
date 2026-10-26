@@ -40,6 +40,40 @@
 
 .head .title {
   min-width: 0;
+  flex: 1;
+}
+
+.back {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  margin: 2px 0 12px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: var(--glass);
+  box-shadow: var(--glass-ring);
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    scale 150ms ease-out,
+    background-color 150ms ease-out;
+}
+
+.back svg {
+  width: 20px;
+  height: 20px;
+}
+
+.back:active {
+  scale: 0.96;
+}
+
+@media (hover: hover) {
+  .back:hover {
+    background: oklch(1 0 0 / 0.12);
+  }
 }
 
 .action {

@@ -1,12 +1,15 @@
 import { useState, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import type { ReaderMode } from '../../shared/model/types';
 import type { BackgroundSettings, LibrarySettings, ReaderSettings, ThemeMode } from '../../shared/settings/schema';
 import { useSettings } from '../../shared/settings/store';
 import { meetsAA } from '../../shared/theme/contrast';
+import { IconChevron } from '../../shared/ui/icons';
 import { Page } from '../../shared/ui/Page';
 import { Segmented } from '../../shared/ui/Segmented';
 import { Switch } from '../../shared/ui/Switch';
 import { clearBackgroundImage, saveBackgroundImage } from '../background/backgroundImage';
+import { useLibrary } from '../library/libraryStore';
 import { ServerSection } from '../server/ServerSection';
 import styles from './Settings.module.css';
 
@@ -43,6 +46,8 @@ const GRAIN = [
 
 /** The Settings tab: server, library, reading, background and appearance. */
 export function SettingsPage() {
+  // Shown once the library has loaded (the shelf loads it); Settings doesn't fetch it itself.
+  const categoryCount = useLibrary((s) => (s.status === 'ready' ? s.categories.filter((c) => c.id > 0).length : null));
   const settings = useSettings((s) => s.settings);
   const update = useSettings((s) => s.update);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -73,6 +78,17 @@ export function SettingsPage() {
 
         <section className={styles.section} aria-label="Library">
           <h3 className={styles.heading}>Library</h3>
+          <Link
+            to="/settings/categories"
+            className={`${styles.row} ${styles.link}`}
+            aria-label={categoryCount === null ? 'Categories' : `Categories, ${categoryCount}`}
+          >
+            <span className={styles.label}>Categories</span>
+            <span className={styles.linkSide}>
+              {categoryCount}
+              <IconChevron className={styles.chevron} />
+            </span>
+          </Link>
           <Row label="Show titles as">
             <Segmented
               label="Show titles as"

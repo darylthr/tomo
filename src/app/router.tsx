@@ -1,4 +1,5 @@
 import type { RouteObject } from 'react-router-dom';
+import { CategoriesPage } from '../features/categories/CategoriesPage';
 import { HistoryPage } from '../features/history/HistoryPage';
 import { LibraryPage } from '../features/library/LibraryPage';
 import { ReaderPage } from '../features/reader/ReaderPage';
@@ -19,6 +20,7 @@ export const routes: RouteObject[] = [
       { path: 'search', element: <SearchPage /> },
       { path: 'search/source/:sourceId', element: <SourcePage /> },
       { path: 'settings', element: <SettingsPage /> },
+      { path: 'settings/categories', element: <CategoriesPage /> },
       { path: 'title/:id', element: <TitlePage /> },
       { path: '*', element: <LibraryPage /> },
     ],

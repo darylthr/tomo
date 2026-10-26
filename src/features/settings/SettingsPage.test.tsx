@@ -1,7 +1,9 @@
 import 'fake-indexeddb/auto';
-import { act, render, screen } from '@testing-library/react';
+import { act, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { renderWithRouter } from '../../app/testRouter';
 import { useSettings } from '../../shared/settings/store';
+import { useLibrary } from '../library/libraryStore';
 import { SettingsPage } from './SettingsPage';
 
 vi.mock('../background/backgroundImage', () => ({
@@ -16,7 +18,7 @@ vi.mock('../background/backgroundImage', () => ({
 
 beforeEach(() => useSettings.getState().reset());
 
-const show = () => render(<SettingsPage />);
+const show = () => renderWithRouter(<SettingsPage />, '/settings');
 
 it('is a page named Settings with every group', () => {
   show();
@@ -64,4 +66,12 @@ it('moves through a segmented control with the arrow keys', async () => {
   await userEvent.keyboard('{ArrowRight}');
   expect(useSettings.getState().settings.library.display).toBe('covers');
   expect(screen.getByRole('radio', { name: 'Covers' })).toHaveFocus();
+});
+
+it('links to the categories, saying how many there are', async () => {
+  useLibrary.setState({ status: 'ready', categories: [{ id: 0, name: 'Default', order: 0 }, { id: 5, name: 'Reading', order: 1 }] });
+  show();
+  const link = screen.getByRole('link', { name: 'Categories, 1' });
+  await userEvent.click(link);
+  expect(screen.getByTestId('location')).toHaveTextContent('/settings/categories');
 });

@@ -1,4 +1,5 @@
 import { useRef, type ReactNode } from 'react';
+import { IconBack } from './icons';
 import styles from './Page.module.css';
 import { PULL_TRIGGER, usePullToRefresh } from './usePullToRefresh';
 
@@ -9,11 +10,14 @@ import { PULL_TRIGGER, usePullToRefresh } from './usePullToRefresh';
 export function Page({
   title,
   action,
+  onBack,
   onRefresh,
   children,
 }: {
   title: string;
   action?: ReactNode;
+  /** Shows a back button before the title, for screens below a tab. */
+  onBack?: () => void;
   onRefresh?: () => Promise<void>;
   children?: ReactNode;
 }) {
@@ -35,6 +39,11 @@ export function Page({
       )}
       <div className={styles.inner}>
         <div className={styles.head}>
+          {onBack && (
+            <button type="button" className={styles.back} aria-label="Back" onClick={onBack}>
+              <IconBack />
+            </button>
+          )}
           <h1 className={styles.title}>{title}</h1>
           {action && <div className={styles.action}>{action}</div>}
         </div>
