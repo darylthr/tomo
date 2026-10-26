@@ -1,0 +1,16 @@
+{
+  "data": {
+    "fetchSourceManga": {
+      "hasNextPage": true,
+      "mangas": [
+        { "id": 1, "title": "Blue Hour", "thumbnailUrl": "/api/v1/manga/1/thumbnail", "inLibrary": true, "meta": [] },
+        { "id": 21, "title": "Paper Lanterns", "thumbnailUrl": "/api/v1/manga/21/thumbnail", "inLibrary": false, "meta": [] },
+        { "id": 22, "title": "The Last Ferry", "thumbnailUrl": "/api/v1/manga/22/thumbnail", "inLibrary": false, "meta": [] },
+        { "id": 23, "title": "Salt and Iron", "thumbnailUrl": null, "inLibrary": false, "meta": [] },
+        { "id": 2, "title": "Kintsugi", "thumbnailUrl": "/api/v1/manga/2/thumbnail", "inLibrary": true,
+          "meta": [{ "key": "tomo.title", "value": "Kintsugi: Golden Seams" }] },
+        { "id": 24, "title": "Moth Season", "thumbnailUrl": "/api/v1/manga/24/thumbnail", "inLibrary": false, "meta": [] }
+      ]
+    }
+  }
+}

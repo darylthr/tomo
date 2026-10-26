@@ -90,3 +90,58 @@ export const UPDATE_MANGA = `
     updateManga(input: { id: $id, patch: { inLibrary: $inLibrary } }) { manga { id inLibrary } }
   }
 `;
+
+const BROWSE_FIELDS = `
+  fragment BROWSE_FIELDS on MangaType {
+    id
+    title
+    thumbnailUrl
+    inLibrary
+    meta { key value }
+  }
+`;
+
+export const SOURCES = `
+  query SOURCES {
+    sources {
+      nodes { id name displayName lang iconUrl supportsLatest extension { versionName } }
+    }
+  }
+`;
+
+// Filter fields are aliased per type because `default` has a different type on each.
+const FILTER_FIELDS = `
+  ... on HeaderFilter { type: __typename name }
+  ... on SeparatorFilter { type: __typename name }
+  ... on CheckBoxFilter { type: __typename name CheckBoxFilterDefault: default }
+  ... on TriStateFilter { type: __typename name TriStateFilterDefault: default }
+  ... on SelectFilter { type: __typename name values SelectFilterDefault: default }
+  ... on TextFilter { type: __typename name TextFilterDefault: default }
+  ... on SortFilter { type: __typename name values SortFilterDefault: default { index ascending } }
+`;
+
+/** Groups can nest; three levels covers every keiyoushi source (as the official WebUI does). */
+const filtersSelection = (depth: number): string =>
+  depth === 0
+    ? `filters { ${FILTER_FIELDS} }`
+    : `filters { ${FILTER_FIELDS} ... on GroupFilter { type: __typename name ${filtersSelection(depth - 1)} } }`;
+
+export const SOURCE = `
+  query SOURCE($id: LongString!) {
+    source(id: $id) { id ${filtersSelection(3)} }
+  }
+`;
+
+export const FETCH_SOURCE_MANGA = `
+  ${BROWSE_FIELDS}
+  mutation FETCH_SOURCE_MANGA($input: FetchSourceMangaInput!) {
+    fetchSourceManga(input: $input) { hasNextPage mangas { ...BROWSE_FIELDS } }
+  }
+`;
+
+export const SERVER_SETTINGS = `query SERVER_SETTINGS { settings { maxSourcesInParallel } }`;
+
+export const FETCH_MANGA = `
+  ${TITLE_FIELDS}
+  mutation FETCH_MANGA($id: Int!) { fetchManga(input: { id: $id }) { manga { ...TITLE_FIELDS } } }
+`;

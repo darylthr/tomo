@@ -1,0 +1,23 @@
+{
+  "data": {
+    "source": {
+      "id": "2499283573021220255",
+      "filters": [
+        { "type": "HeaderFilter", "name": "Filters ignore the search text on some sources" },
+        { "type": "CheckBoxFilter", "name": "Has available chapters", "CheckBoxFilterDefault": false },
+        { "type": "SelectFilter", "name": "Original language", "values": ["All", "Japanese", "Korean", "Chinese"], "SelectFilterDefault": 0 },
+        { "type": "SortFilter", "name": "Sort", "values": ["Relevance", "Latest upload", "Rating", "Follows"], "SortFilterDefault": { "index": 0, "ascending": false } },
+        { "type": "SeparatorFilter", "name": "" },
+        { "type": "TextFilter", "name": "Author", "TextFilterDefault": "" },
+        {
+          "type": "GroupFilter", "name": "Tags",
+          "filters": [
+            { "type": "TriStateFilter", "name": "Action", "TriStateFilterDefault": "IGNORE" },
+            { "type": "TriStateFilter", "name": "Romance", "TriStateFilterDefault": "IGNORE" },
+            { "type": "TriStateFilter", "name": "Horror", "TriStateFilterDefault": "IGNORE" }
+          ]
+        }
+      ]
+    }
+  }
+}

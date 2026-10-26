@@ -41,3 +41,39 @@ export type Chapter = {
 };
 
 export type Category = { id: number; name: string; order: number };
+
+/** A Suwayomi source: an installed extension's source, or the Local source ("Home server"). */
+export type Source = {
+  /** Suwayomi's LongString id, kept as a string. "0" is the Local source. */
+  id: string;
+  name: string;
+  /** Language code from the extension, e.g. "en", "all"; empty for the Local source. */
+  lang: string;
+  iconUrl: string | null;
+  supportsLatest: boolean;
+  /** Extension version, e.g. "1.4.12"; empty for the Local source. */
+  version: string;
+  isLocal: boolean;
+};
+
+/** A title as a source lists it while browsing; details load when it opens. */
+export type BrowseItem = Pick<Title, 'id' | 'title' | 'coverUrl' | 'inLibrary'>;
+
+export type BrowsePage = { items: BrowseItem[]; hasNextPage: boolean };
+
+export type BrowseMode = 'popular' | 'latest' | 'search';
+
+export type TriState = 'ignore' | 'include' | 'exclude';
+
+export type SortValue = { index: number; ascending: boolean };
+
+/** One entry of a source's filter list, in the order the source gives them. */
+export type SourceFilter =
+  | { type: 'header'; name: string }
+  | { type: 'separator'; name: string }
+  | { type: 'checkbox'; name: string; default: boolean }
+  | { type: 'tristate'; name: string; default: TriState }
+  | { type: 'select'; name: string; values: string[]; default: number }
+  | { type: 'text'; name: string; default: string }
+  | { type: 'sort'; name: string; values: string[]; default: SortValue | null }
+  | { type: 'group'; name: string; filters: SourceFilter[] };

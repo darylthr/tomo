@@ -1,7 +1,20 @@
-import type { Category, Chapter, Title } from '../../shared/model/types';
+import type { BrowseMode, BrowsePage, Category, Chapter, Source, SourceFilter, Title } from '../../shared/model/types';
 import { gql } from './client';
 import { resolveUrl } from './config';
-import { toCategory, toChapter, toTitle, type RawCategory, type RawChapter, type RawTitle } from './mappers';
+import {
+  toBrowseItem,
+  toCategory,
+  toChapter,
+  toFilter,
+  toSource,
+  toTitle,
+  type RawBrowseItem,
+  type RawCategory,
+  type RawChapter,
+  type RawFilter,
+  type RawSource,
+  type RawTitle,
+} from './mappers';
 import * as op from './operations';
 
 export async function getAbout(): Promise<{ name: string; version: string }> {
@@ -56,4 +69,70 @@ export async function setProgress(chapterId: number, patch: { lastPage?: number;
 
 export async function setInLibrary(titleId: number, inLibrary: boolean): Promise<void> {
   await gql(op.UPDATE_MANGA, { id: titleId, inLibrary });
+}
+
+/** Asks Suwayomi to load a title's details from its source (titles found while browsing). */
+export async function fetchTitle(id: number): Promise<Title> {
+  const data = await gql<{ fetchManga: { manga: RawTitle } }>(op.FETCH_MANGA, { id });
+  return toTitle(data.fetchManga.manga);
+}
+
+/** Installed sources: the Local source ("Home server") first, then by name and language. */
+export async function getSources(signal?: AbortSignal): Promise<Source[]> {
+  const data = await gql<{ sources: { nodes: RawSource[] } }>(op.SOURCES, undefined, { signal });
+  return data.sources.nodes
+    .map(toSource)
+    .sort((a, b) => Number(b.isLocal) - Number(a.isLocal) || a.name.localeCompare(b.name) || a.lang.localeCompare(b.lang));
+}
+
+export async function getSourceFilters(sourceId: string, signal?: AbortSignal): Promise<SourceFilter[]> {
+  const data = await gql<{ source: { filters: RawFilter[] } }>(op.SOURCE, { id: sourceId }, { signal });
+  return data.source.filters.map(toFilter);
+}
+
+/** Suwayomi's FilterChangeInput: one changed filter, by position; group children nest. */
+export type FilterChange = {
+  position: number;
+  checkBoxState?: boolean;
+  triState?: 'IGNORE' | 'INCLUDE' | 'EXCLUDE';
+  selectState?: number;
+  textState?: string;
+  sortState?: { index: number; ascending: boolean };
+  groupChange?: FilterChange;
+};
+
+export type BrowseRequest = {
+  sourceId: string;
+  mode: BrowseMode;
+  /** 1-based. */
+  page: number;
+  query?: string;
+  filters?: FilterChange[];
+};
+
+export async function browseSource(req: BrowseRequest, signal?: AbortSignal): Promise<BrowsePage> {
+  const input: Record<string, unknown> = { source: req.sourceId, type: req.mode.toUpperCase(), page: req.page };
+  if (req.mode === 'search') {
+    input.query = req.query ?? '';
+    if (req.filters?.length) input.filters = req.filters;
+  }
+  const data = await gql<{ fetchSourceManga: { hasNextPage: boolean; mangas: RawBrowseItem[] } }>(
+    op.FETCH_SOURCE_MANGA,
+    { input },
+    { signal },
+  );
+  return { items: data.fetchSourceManga.mangas.map(toBrowseItem), hasNextPage: data.fetchSourceManga.hasNextPage };
+}
+
+const DEFAULT_PARALLEL_SOURCES = 6;
+
+/** How many sources Suwayomi lets Tomo search at once (its MAX_SOURCES_IN_PARALLEL setting). */
+export async function getMaxSourcesInParallel(): Promise<number> {
+  try {
+    const data = await gql<{ settings: { maxSourcesInParallel?: number | null } }>(op.SERVER_SETTINGS);
+    const n = data.settings.maxSourcesInParallel;
+    return n && n > 0 ? Math.min(n, 20) : DEFAULT_PARALLEL_SOURCES;
+  } catch {
+    return DEFAULT_PARALLEL_SOURCES;
+  }
 }

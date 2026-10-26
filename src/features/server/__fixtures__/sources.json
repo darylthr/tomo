@@ -1,0 +1,28 @@
+{
+  "data": {
+    "sources": {
+      "nodes": [
+        {
+          "id": "2499283573021220255", "name": "MangaDex", "displayName": "MangaDex (EN)", "lang": "en",
+          "iconUrl": "/api/v1/extension/icon/tachiyomi-all.mangadex-v1.4.190.apk", "supportsLatest": true,
+          "extension": { "versionName": "1.4.190" }
+        },
+        {
+          "id": "0", "name": "Local source", "displayName": "Local source", "lang": "localsourcelang",
+          "iconUrl": "/api/v1/extension/icon/localSource", "supportsLatest": true,
+          "extension": { "versionName": "1.2" }
+        },
+        {
+          "id": "1998944621602463790", "name": "MANGA Plus by SHUEISHA", "displayName": "MANGA Plus by SHUEISHA (EN)", "lang": "en",
+          "iconUrl": "/api/v1/extension/icon/tachiyomi-all.mangaplus-v1.4.51.apk", "supportsLatest": false,
+          "extension": { "versionName": "1.4.51" }
+        },
+        {
+          "id": "7537715367149829912", "name": "Asura Scans", "displayName": "Asura Scans (EN)", "lang": "en",
+          "iconUrl": "/api/v1/extension/icon/tachiyomi-en.asurascans-v1.4.40.apk", "supportsLatest": true,
+          "extension": { "versionName": "1.4.40" }
+        }
+      ]
+    }
+  }
+}

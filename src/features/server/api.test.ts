@@ -3,7 +3,22 @@ import aboutFixture from './__fixtures__/about.json';
 import chaptersFixture from './__fixtures__/chapters-1.json';
 import libraryFixture from './__fixtures__/library.json';
 import pagesFixture from './__fixtures__/pages.json';
-import { getAbout, getChapters, getLibrary, getPages, setInLibrary, setProgress } from './api';
+import sourceFiltersFixture from './__fixtures__/source-filters.json';
+import sourceMangaFixture from './__fixtures__/source-manga.json';
+import sourcesFixture from './__fixtures__/sources.json';
+import {
+  browseSource,
+  fetchTitle,
+  getAbout,
+  getChapters,
+  getLibrary,
+  getMaxSourcesInParallel,
+  getPages,
+  getSourceFilters,
+  getSources,
+  setInLibrary,
+  setProgress,
+} from './api';
 
 type Call = { query: string; variables: Record<string, unknown> };
 let calls: Call[] = [];
@@ -133,5 +148,63 @@ describe('Tomo metadata from the server job', () => {
     serve({ LIBRARY: libraryFixture });
     await getLibrary();
     expect(calls[0]!.query).toMatch(/meta\s*\{\s*key\s+value\s*\}/);
+  });
+});
+
+describe('sources and browsing', () => {
+  it('lists the Local source first as Home server, then sources by name', async () => {
+    serve({ SOURCES: sourcesFixture });
+    const sources = await getSources();
+    expect(sources.map((s) => s.name)).toEqual(['Home server', 'Asura Scans', 'MANGA Plus by SHUEISHA', 'MangaDex']);
+    expect(sources[0]).toMatchObject({ id: '0', isLocal: true, lang: '', version: '' });
+    expect(sources[3]).toMatchObject({
+      id: '2499283573021220255',
+      lang: 'en',
+      version: '1.4.190',
+      supportsLatest: true,
+      iconUrl: 'https://tomo.home/api/v1/extension/icon/tachiyomi-all.mangadex-v1.4.190.apk',
+    });
+  });
+
+  it('maps a source filter list, groups included', async () => {
+    serve({ SOURCE: sourceFiltersFixture });
+    const filters = await getSourceFilters('2499283573021220255');
+    expect(calls[0]!.variables).toEqual({ id: '2499283573021220255' });
+    expect(filters.map((f) => f.type)).toEqual(['header', 'checkbox', 'select', 'sort', 'separator', 'text', 'group']);
+    expect(filters[2]).toEqual({ type: 'select', name: 'Original language', values: ['All', 'Japanese', 'Korean', 'Chinese'], default: 0 });
+    expect(filters[3]).toMatchObject({ type: 'sort', default: { index: 0, ascending: false } });
+    expect(filters[6]).toMatchObject({ type: 'group', filters: [{ type: 'tristate', name: 'Action', default: 'ignore' }, {}, {}] });
+  });
+
+  it('browses popular titles without a query or filters', async () => {
+    serve({ FETCH_SOURCE_MANGA: sourceMangaFixture });
+    const page = await browseSource({ sourceId: '42', mode: 'popular', page: 1, query: 'ignored' });
+    expect(calls[0]!.variables).toEqual({ input: { source: '42', type: 'POPULAR', page: 1 } });
+    expect(page.hasNextPage).toBe(true);
+    expect(page.items[0]).toEqual({ id: 1, title: 'Blue Hour', coverUrl: 'https://tomo.home/api/v1/manga/1/thumbnail', inLibrary: true });
+    expect(page.items.find((i) => i.id === 2)?.title).toBe('Kintsugi: Golden Seams');
+  });
+
+  it('searches with a query and changed filters', async () => {
+    serve({ FETCH_SOURCE_MANGA: sourceMangaFixture });
+    await browseSource({ sourceId: '42', mode: 'search', page: 2, query: 'ferry', filters: [{ position: 1, checkBoxState: true }] });
+    expect(calls[0]!.variables).toEqual({
+      input: { source: '42', type: 'SEARCH', page: 2, query: 'ferry', filters: [{ position: 1, checkBoxState: true }] },
+    });
+  });
+
+  it('reads how many sources can be searched at once, with a default', async () => {
+    serve({ SERVER_SETTINGS: { data: { settings: { maxSourcesInParallel: 3 } } } });
+    await expect(getMaxSourcesInParallel()).resolves.toBe(3);
+    serve({ SERVER_SETTINGS: { errors: [{ message: "Cannot query field 'maxSourcesInParallel'" }] } });
+    await expect(getMaxSourcesInParallel()).resolves.toBe(6);
+  });
+
+  it('fetches details for a title found while browsing', async () => {
+    const manga = { ...libraryFixture.data.mangas.nodes[2], initialized: true, description: 'Fetched' };
+    serve({ FETCH_MANGA: { data: { fetchManga: { manga } } } });
+    const title = await fetchTitle(3);
+    expect(calls[0]!.variables).toEqual({ id: 3 });
+    expect(title).toMatchObject({ id: 3, description: 'Fetched', initialized: true });
   });
 });
