@@ -390,3 +390,35 @@
     animation: none;
   }
 }
+
+/* A round header button (Check for updates, Refresh history). */
+.refreshButton {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: oklch(1 0 0 / 0.1);
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    scale 150ms ease-out,
+    background-color 150ms ease-out;
+}
+
+.refreshButton svg {
+  width: 18px;
+  height: 18px;
+}
+
+.refreshButton:not(:disabled):active {
+  scale: 0.96;
+}
+
+@media (hover: hover) {
+  .refreshButton:hover {
+    background: oklch(1 0 0 / 0.16);
+  }
+}

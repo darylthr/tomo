@@ -30,7 +30,7 @@ export function UpdatesPage() {
       action={
         <button
           type="button"
-          className={`${styles.refresh} ${checking ? styles.spinning : ''}`}
+          className={`${list.refreshButton} ${checking ? styles.spinning : ''}`}
           aria-label="Check for updates"
           onClick={() => void refresh()}
         >
@@ -81,13 +81,16 @@ export function UpdatesPage() {
 function UpdateRow({ entry, now, onOpen }: { entry: FeedEntry; now: number; onOpen: (e: MouseEvent<HTMLButtonElement>) => void }) {
   const { chapter, title } = entry;
   const label = chapterLabel(chapter);
+  const when = relativeTime(entry.at, now);
+  // The label replaces the button's content for screen readers, so it carries the read state too.
+  const spoken = `${title.title}, ${label}, ${chapter.read ? 'read' : 'unread'}, ${when}`;
   return (
     <li>
       <div className={`${list.feedRow} ${chapter.read ? list.dim : ''}`}>
         <Link to={`/title/${title.id}`} className={list.feedThumbLink} aria-label={`Open ${title.title}`}>
           <Thumb src={title.coverUrl} title={title.title} />
         </Link>
-        <button type="button" className={list.feedMain} aria-label={`${title.title}, ${label}`} onClick={onOpen}>
+        <button type="button" className={list.feedMain} aria-label={spoken} onClick={onOpen}>
           <span className={list.rowText}>
             <span className={list.rowTitle}>{title.title}</span>
             <span className={`${list.rowSub} ${chapter.read ? list.rowSubRead : ''}`}>
@@ -96,7 +99,7 @@ function UpdateRow({ entry, now, onOpen }: { entry: FeedEntry; now: number; onOp
           </span>
           <span className={list.feedSide}>
             <time dateTime={new Date(entry.at).toISOString()} title={dayLabel(entry.at, now)}>
-              {relativeTime(entry.at, now)}
+              {when}
             </time>
             {!chapter.read && <span className={list.unreadDot} role="img" aria-label="Unread" />}
           </span>

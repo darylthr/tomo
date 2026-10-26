@@ -106,8 +106,6 @@ it('loads older history on request', async () => {
   renderWithRouter(<HistoryPage />, '/history');
   await userEvent.click(await screen.findByRole('button', { name: 'Show older' }));
   expect(api.getHistory).toHaveBeenLastCalledWith(NOW - 2 * HISTORY_STEP_MS);
-  // Nothing new came back, so there is nothing older to show.
-  await vi.waitFor(() => expect(screen.queryByRole('button', { name: 'Show older' })).toBeNull());
 });
 
 it('offers a retry when history could not load', async () => {
@@ -116,4 +114,35 @@ it('offers a retry when history could not load', async () => {
   expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't load history");
   await userEvent.click(screen.getByRole('button', { name: 'Retry' }));
   expect(await screen.findByText('Today')).toBeInTheDocument();
+});
+
+it('has a refresh button as well as pull to refresh', async () => {
+  renderWithRouter(<HistoryPage />, '/history');
+  await screen.findByText('Today');
+  await userEvent.click(screen.getByRole('button', { name: 'Refresh history' }));
+  expect(api.getHistory).toHaveBeenCalledTimes(2);
+});
+
+it('keeps offering older history across one empty stretch, and stops after two', async () => {
+  renderWithRouter(<HistoryPage />, '/history');
+  await userEvent.click(await screen.findByRole('button', { name: 'Show older' }));
+  await vi.waitFor(() => expect(api.getHistory).toHaveBeenLastCalledWith(NOW - 2 * HISTORY_STEP_MS));
+  await userEvent.click(await screen.findByRole('button', { name: 'Show older' }));
+  await vi.waitFor(() => expect(api.getHistory).toHaveBeenLastCalledWith(NOW - 3 * HISTORY_STEP_MS));
+  await vi.waitFor(() => expect(screen.queryByRole('button', { name: 'Show older' })).toBeNull());
+  // A refresh doesn't bring it back.
+  await userEvent.click(screen.getByRole('button', { name: 'Refresh history' }));
+  await vi.waitFor(() => expect(api.getHistory).toHaveBeenCalledTimes(4));
+  expect(screen.queryByRole('button', { name: 'Show older' })).toBeNull();
+});
+
+it('says when older history could not load, and retries it', async () => {
+  renderWithRouter(<HistoryPage />, '/history');
+  vi.mocked(api.getHistory).mockRejectedValueOnce(new Error('offline'));
+  await userEvent.click(await screen.findByRole('button', { name: 'Show older' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't load older history");
+  expect(screen.getByRole('button', { name: 'Resume Blue Hour' })).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Retry' }));
+  await vi.waitFor(() => expect(api.getHistory).toHaveBeenLastCalledWith(NOW - 2 * HISTORY_STEP_MS));
+  await vi.waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
 });

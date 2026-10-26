@@ -42,17 +42,17 @@ it('groups new chapters by day', () => {
 
 it('marks unread chapters and dims read ones', () => {
   renderWithRouter(<UpdatesPage />, '/updates');
-  const unread = screen.getByRole('button', { name: 'Blue Hour, Ch. 12' });
+  const unread = screen.getByRole('button', { name: /^Blue Hour, Ch. 12,/ });
   expect(within(unread).getByLabelText('Unread')).toBeInTheDocument();
   expect(within(unread).getByText('2h')).toBeInTheDocument();
-  const read = screen.getByRole('button', { name: 'Kintsugi, Ch. 11' });
+  const read = screen.getByRole('button', { name: /^Kintsugi, Ch. 11,/ });
   expect(within(read).getByText('Ch. 11 · Read')).toBeInTheDocument();
   expect(within(read).queryByLabelText('Unread')).toBeNull();
 });
 
 it('opens the chapter in the reader', async () => {
   renderWithRouter(<UpdatesPage />, '/updates');
-  await userEvent.click(screen.getByRole('button', { name: 'Blue Hour, Ch. 12' }));
+  await userEvent.click(screen.getByRole('button', { name: /^Blue Hour, Ch. 12,/ }));
   expect(screen.getByTestId('location')).toHaveTextContent('/read/12');
 });
 
@@ -93,4 +93,10 @@ it('says when there is nothing new', () => {
 it('explains when checks happen', () => {
   renderWithRouter(<UpdatesPage />, '/updates');
   expect(screen.getByText('Checked when you open Tomo or pull to refresh. No background checks.')).toBeInTheDocument();
+});
+
+it('tells screen readers whether each chapter is unread, and when it came', () => {
+  renderWithRouter(<UpdatesPage />, '/updates');
+  expect(screen.getByRole('button', { name: 'Blue Hour, Ch. 12, unread, 2h' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Kintsugi, Ch. 11, read, 4d' })).toBeInTheDocument();
 });

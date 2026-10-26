@@ -30,10 +30,18 @@ let running: Promise<void> | null = null;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/** Resolves when Suwayomi's update ends, or after 10 minutes, or after 3 failed polls in a row. */
 async function waitWhileUpdating() {
+  let failures = 0;
   for (let i = 0; i < MAX_POLLS; i++) {
     await sleep(POLL_MS);
-    if (!(await isLibraryUpdateRunning())) return;
+    try {
+      if (!(await isLibraryUpdateRunning())) return;
+      failures = 0;
+    } catch {
+      // A dropped connection (Wi-Fi to cellular) shouldn't end the check on the spot.
+      if (++failures >= 3) return;
+    }
   }
 }
 
@@ -55,11 +63,17 @@ export const useUpdates = create<UpdatesState>()((set, get) => {
         }
       }
       set({ checking: true });
-      const { running: started } = await startLibraryUpdate();
-      if (started) await waitWhileUpdating();
-      await get().load();
+      let updated = false;
+      try {
+        const { running: started } = await startLibraryUpdate();
+        if (started) await waitWhileUpdating();
+        updated = true;
+      } finally {
+        // Whatever happened to the update, show what the server has now.
+        await get().load();
+      }
       // New chapters change the shelf's unread counts too.
-      if (useLibrary.getState().status !== 'idle') void useLibrary.getState().refresh();
+      if (updated && useLibrary.getState().status !== 'idle') void useLibrary.getState().refresh();
     } catch {
       // The check is best effort; Updates shows its own load errors.
     } finally {

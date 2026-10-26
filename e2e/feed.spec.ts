@@ -11,17 +11,17 @@ test.describe('Updates', () => {
     expect(mock.calls.filter((c) => c.op === 'UPDATE_LIBRARY')).toHaveLength(1);
 
     await page.getByRole('tab', { name: 'Updates' }).click();
-    await expect(page.getByRole('button', { name: 'Blue Hour, Ch. 3' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Blue Hour, Ch. 3,/ })).toBeVisible();
     // Chapters found when Night Tram joined the library are not news.
-    await expect(page.getByRole('button', { name: 'Night Tram, Ch. 1' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Night Tram, Ch. 2' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Night Tram, Ch. 1,/ })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /^Night Tram, Ch. 2,/ })).toBeVisible();
     await expect(page.getByText('Checked when you open Tomo or pull to refresh. No background checks.')).toBeVisible();
   });
 
   test('skips the check when Suwayomi checked recently, and checks on request', async ({ page }) => {
     const mock = await mockSuwayomi(page);
     await page.goto('/updates');
-    await expect(page.getByRole('button', { name: 'Blue Hour, Ch. 3' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Blue Hour, Ch. 3,/ })).toBeVisible();
     expect(mock.calls.filter((c) => c.op === 'UPDATE_LIBRARY')).toHaveLength(0);
 
     await page.getByRole('button', { name: 'Check for updates' }).click();
@@ -31,7 +31,7 @@ test.describe('Updates', () => {
   test('opens a new chapter in the reader', async ({ page }) => {
     await mockSuwayomi(page);
     await page.goto('/updates');
-    await page.getByRole('button', { name: 'Blue Hour, Ch. 3' }).click();
+    await page.getByRole('button', { name: /^Blue Hour, Ch. 3,/ }).click();
     await expect(page).toHaveURL(/\/read\/12$/);
   });
 

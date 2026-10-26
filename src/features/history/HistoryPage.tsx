@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import type { FeedEntry } from '../../shared/model/types';
 import { groupByDay } from '../../shared/time/days';
 import { useNow } from '../../shared/time/useNow';
-import { IconClose, IconPlay } from '../../shared/ui/icons';
+import { IconClose, IconPlay, IconRefresh } from '../../shared/ui/icons';
 import list from '../../shared/ui/List.module.css';
 import { rowThumb, Thumb } from '../../shared/ui/ListRow';
 import { Page } from '../../shared/ui/Page';
@@ -13,7 +13,18 @@ import { HISTORY_STEP_MS, historyLine, latestPerTitle, resumeChapterId, visible 
 import styles from './HistoryPage.module.css';
 import { useHistoryHidden } from './historyHidden';
 
-type Data = { status: 'loading' | 'ready' | 'error'; entries: FeedEntry[]; steps: number; exhausted: boolean };
+type Data = {
+  status: 'loading' | 'ready' | 'error';
+  entries: FeedEntry[];
+  /** How many HISTORY_STEP_MS windows back the list reaches. */
+  steps: number;
+  /** Older windows in a row that added nothing; two (half a year) ends "Show older". */
+  emptySteps: number;
+  /** An older window that failed to load, offered again with Retry. */
+  olderFailed: number | null;
+};
+
+const EMPTY_STEPS_TO_STOP = 2;
 
 const CONFIRM_MS = 4000;
 
@@ -22,7 +33,7 @@ export function HistoryPage() {
   const navigate = useNavigate();
   const now = useNow();
   const [origin] = useState(() => Date.now());
-  const [data, setData] = useState<Data>({ status: 'loading', entries: [], steps: 1, exhausted: false });
+  const [data, setData] = useState<Data>({ status: 'loading', entries: [], steps: 1, emptySteps: 0, olderFailed: null });
   const generation = useRef(0);
   const hidden = useHistoryHidden();
 
@@ -33,16 +44,20 @@ export function HistoryPage() {
       return getHistory(origin - steps * HISTORY_STEP_MS).then(
         (entries) => {
           if (gen !== generation.current) return;
-          setData((prev) => ({
-            status: 'ready',
-            entries,
-            steps,
-            // Going further back found no other titles: stop offering it.
-            exhausted: steps > prev.steps && latestPerTitle(entries).length <= latestPerTitle(prev.entries).length,
-          }));
+          setData((prev) => {
+            const older = steps > prev.steps;
+            // A refresh keeps the count; going further back resets it when the window had reads.
+            const emptySteps = !older ? prev.emptySteps : entries.length > prev.entries.length ? 0 : prev.emptySteps + 1;
+            return { status: 'ready', entries, steps, emptySteps, olderFailed: null };
+          });
         },
         () => {
-          if (gen === generation.current) setData((prev) => ({ ...prev, status: 'error' }));
+          if (gen !== generation.current) return;
+          setData((prev) =>
+            steps > prev.steps && prev.entries.length > 0
+              ? { ...prev, olderFailed: steps }
+              : { ...prev, status: 'error' },
+          );
         },
       );
     },
@@ -64,7 +79,14 @@ export function HistoryPage() {
     <Page
       title="History"
       onRefresh={() => load(data.steps)}
-      action={shown.length > 0 && <ClearAll onClear={() => hidden.clearAll(Date.now())} />}
+      action={
+        <>
+          {shown.length > 0 && <ClearAll onClear={() => hidden.clearAll(Date.now())} />}
+          <button type="button" className={list.refreshButton} aria-label="Refresh history" onClick={() => void load(data.steps)}>
+            <IconRefresh />
+          </button>
+        </>
+      }
     >
       {data.status === 'error' && data.entries.length === 0 ? (
         <div className={`${list.state} ${list.stateError}`} role="alert">
@@ -138,12 +160,22 @@ export function HistoryPage() {
           ))}
         </div>
       )}
-      {data.status !== 'error' && !data.exhausted && (data.status === 'ready' || data.entries.length > 0) && (
-        <div className={styles.more}>
-          <button type="button" className={list.ghost} onClick={() => void load(data.steps + 1)}>
-            Show older
+      {data.olderFailed !== null ? (
+        <div className={`${list.state} ${list.stateError} ${styles.more}`} role="alert">
+          <span>Couldn't load older history</span>
+          <button type="button" className={list.ghost} onClick={() => void load(data.olderFailed!)}>
+            Retry
           </button>
         </div>
+      ) : (
+        data.status === 'ready' &&
+        data.emptySteps < EMPTY_STEPS_TO_STOP && (
+          <div className={styles.more}>
+            <button type="button" className={list.ghost} onClick={() => void load(data.steps + 1)}>
+              Show older
+            </button>
+          </div>
+        )
       )}
     </Page>
   );

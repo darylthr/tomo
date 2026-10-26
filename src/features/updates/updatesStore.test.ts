@@ -100,3 +100,22 @@ it('keeps the previous entries when a reload fails', async () => {
   expect(useUpdates.getState().status).toBe('error');
   expect(useUpdates.getState().entries).toHaveLength(5);
 });
+
+it('still reloads the list when a status poll fails during an update', async () => {
+  vi.mocked(api.getLastUpdateTime).mockResolvedValue(0);
+  vi.mocked(api.isLibraryUpdateRunning).mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(false);
+  const done = useUpdates.getState().check();
+  await vi.advanceTimersByTimeAsync(6000);
+  await done;
+  expect(api.getUpdates).toHaveBeenCalledTimes(1);
+  expect(useUpdates.getState().checking).toBe(false);
+});
+
+it('reloads the list even when every status poll fails', async () => {
+  vi.mocked(api.getLastUpdateTime).mockResolvedValue(0);
+  vi.mocked(api.isLibraryUpdateRunning).mockRejectedValue(new Error('offline'));
+  const done = useUpdates.getState().check();
+  await vi.advanceTimersByTimeAsync(10 * 60_000);
+  await done;
+  expect(api.getUpdates).toHaveBeenCalledTimes(1);
+});
