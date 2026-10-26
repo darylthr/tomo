@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import type { Chapter, Title } from '../../shared/model/types';
 import * as api from '../server/api';
+import { useChapterViews } from './chapterViewStore';
 import { TitlePage } from './TitlePage';
 
 vi.mock('../server/api', () => ({
@@ -63,6 +64,7 @@ function open() {
 }
 
 beforeEach(() => {
+  useChapterViews.setState({ views: {} });
   vi.mocked(api.getTitle).mockResolvedValue(title);
   vi.mocked(api.getChapters).mockResolvedValue(three);
   vi.mocked(api.fetchChapters).mockResolvedValue(three);
@@ -121,4 +123,60 @@ it('does not fetch details the server already has', async () => {
   open();
   await screen.findByText('Chapter 3');
   expect(api.fetchTitle).not.toHaveBeenCalled();
+});
+
+const names = () =>
+  within(screen.getByRole('list', { name: 'Chapters' }))
+    .getAllByRole('listitem')
+    .map((r) => r.querySelector('[data-chapter-name]')?.textContent);
+
+it('sorts chapters oldest first and remembers it for the title', async () => {
+  open();
+  await screen.findByText('Chapter 3');
+  const toggle = screen.getByRole('button', { name: 'Sort and filter chapters' });
+  expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await userEvent.click(toggle);
+  expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await userEvent.click(screen.getByRole('radio', { name: 'Oldest first' }));
+  expect(names()).toEqual(['Chapter 1', 'Chapter 2', 'Chapter 3']);
+  expect(useChapterViews.getState().views[1]).toMatchObject({ descending: false });
+});
+
+it('sorts by upload date', async () => {
+  vi.mocked(api.getChapters).mockResolvedValue([chapter(12, 3, { uploadedAt: 1 }), chapter(11, 2, { uploadedAt: 3 }), chapter(10, 1, { uploadedAt: 2 })]);
+  open();
+  await screen.findByText('Chapter 3');
+  await userEvent.click(screen.getByRole('button', { name: 'Sort and filter chapters' }));
+  await userEvent.click(screen.getByRole('radio', { name: 'Upload date' }));
+  expect(names()).toEqual(['Chapter 2', 'Chapter 1', 'Chapter 3']);
+});
+
+it('shows only unread chapters and says how many are shown', async () => {
+  open();
+  await screen.findByText('Chapter 3');
+  await userEvent.click(screen.getByRole('button', { name: 'Sort and filter chapters' }));
+  await userEvent.click(screen.getByRole('switch', { name: 'Unread only' }));
+  expect(names()).toEqual(['Chapter 3', 'Chapter 2']);
+  expect(screen.getByRole('heading', { name: '2 of 3 chapters' })).toBeInTheDocument();
+});
+
+it('opens with the view saved for the title, and offers Show all when nothing matches', async () => {
+  useChapterViews.setState({ views: { 1: { sort: 'chapter', descending: true, unreadOnly: false, bookmarkedOnly: true, dedupe: false } } });
+  open();
+  expect(await screen.findByText('No chapters match these filters.')).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Show all' }));
+  expect(names()).toEqual(['Chapter 3', 'Chapter 2', 'Chapter 1']);
+  expect(useChapterViews.getState().views[1]).toBeUndefined();
+});
+
+it('hides duplicate releases of a chapter', async () => {
+  vi.mocked(api.getChapters).mockResolvedValue([
+    chapter(13, 2, { name: 'Chapter 2', number: 2, scanlator: 'Beta' }),
+    ...three.map((c) => ({ ...c, scanlator: 'Alpha' })),
+  ]);
+  open();
+  await screen.findByText('Chapter 3');
+  await userEvent.click(screen.getByRole('button', { name: 'Sort and filter chapters' }));
+  await userEvent.click(screen.getByRole('switch', { name: 'Hide duplicates' }));
+  expect(names()).toEqual(['Chapter 3', 'Chapter 2', 'Chapter 1']);
 });

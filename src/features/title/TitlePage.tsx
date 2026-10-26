@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { Chapter, Title, TitleStatus } from '../../shared/model/types';
 import { fetchTitle, getTitle, setInLibrary, setProgress } from '../server/api';
@@ -6,7 +6,12 @@ import { ServerError } from '../server/client';
 import { loadChapters, pickContinueChapter } from '../library/continueReading';
 import { useLibrary } from '../library/libraryStore';
 import styles from './TitlePage.module.css';
+import { IconFilter } from '../../shared/ui/icons';
 import { TitleName } from '../../shared/ui/TitleName';
+import { prefersReducedMotion } from '../../shared/ui/useReducedMotion';
+import { arrangeChapters, isDefaultView } from './chapterList';
+import { ChapterViewPanel } from './ChapterViewPanel';
+import { useChapterView, useChapterViews } from './chapterViewStore';
 
 const STATUS: Record<TitleStatus, string> = {
   ongoing: 'Ongoing',
@@ -25,6 +30,18 @@ export function TitlePage() {
   const navigate = useNavigate();
   const [load, setLoad] = useState<Load>({ state: 'loading' });
   const [expanded, setExpanded] = useState(false);
+  const view = useChapterView(id);
+  const setView = useChapterViews((s) => s.setView);
+  const [panel, setPanel] = useState<'closed' | 'open' | 'closing'>('closed');
+  const closeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(closeTimer.current), []);
+  const togglePanel = () => {
+    clearTimeout(closeTimer.current);
+    if (panel === 'open') {
+      setPanel('closing');
+      closeTimer.current = setTimeout(() => setPanel('closed'), prefersReducedMotion() ? 0 : 150);
+    } else setPanel('open');
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -69,6 +86,7 @@ export function TitlePage() {
   const next = pickContinueChapter(chapters);
   const allRead = chapters.length > 0 && chapters.every((c) => c.read);
   const noneRead = chapters.every((c) => !c.read && c.lastPage === 0);
+  const shown = arrangeChapters(chapters, view);
   const action = !next ? 'No chapters yet' : allRead ? 'Read again' : noneRead ? 'Start reading' : `Continue · Ch. ${next.number}`;
 
   const update = (patch: (s: { title: Title; chapters: Chapter[] }) => { title: Title; chapters: Chapter[] }) =>
@@ -145,39 +163,66 @@ export function TitlePage() {
           </ul>
         )}
 
-        <h2 className={styles.heading}>
-          {chapters.length} {chapters.length === 1 ? 'chapter' : 'chapters'}
-        </h2>
-        <ul className={styles.chapters} aria-label="Chapters">
-          {chapters.map((c) => {
-            const name = c.name || `Chapter ${c.number}`;
-            return (
-              <li key={c.id} className={`${styles.chapter} ${c.read ? styles.read : ''}`}>
-                <button type="button" className={styles.open} onClick={() => navigate(`/read/${c.id}`)}>
-                  <span className={styles.chapterName} data-chapter-name="">
-                    {name}
-                  </span>
-                  <span className={styles.chapterMeta}>
-                    {c.uploadedAt > 0 && <span>{dateFormat.format(c.uploadedAt)}</span>}
-                    {c.scanlator && <span>{c.scanlator}</span>}
-                    {!c.read && c.lastPage > 0 && <span className={styles.resume}>Page {c.lastPage + 1}</span>}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  className={styles.toggle}
-                  aria-label={`Mark ${name} as ${c.read ? 'unread' : 'read'}`}
-                  aria-pressed={c.read}
-                  onClick={() => toggleRead(c)}
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="m5 12.5 4.5 4.5L19 7.5" />
-                  </svg>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+        <div className={styles.listHead}>
+          <h2 className={styles.heading}>
+            {shown.length < chapters.length && `${shown.length} of `}
+            {chapters.length} {chapters.length === 1 ? 'chapter' : 'chapters'}
+          </h2>
+          {chapters.length > 1 && (
+            <button
+              type="button"
+              className={styles.sortButton}
+              aria-label="Sort and filter chapters"
+              aria-expanded={panel === 'open'}
+              aria-controls="chapter-view"
+              onClick={togglePanel}
+            >
+              <IconFilter />
+              {view.sort === 'uploaded' ? 'Upload date' : 'Chapter'} · {view.descending ? 'Newest' : 'Oldest'}
+              {!isDefaultView(view) && <span className={styles.sortDot} aria-hidden="true" />}
+            </button>
+          )}
+        </div>
+        {panel !== 'closed' && <ChapterViewPanel id="chapter-view" view={view} onChange={(v) => setView(id, v)} closing={panel === 'closing'} />}
+        {shown.length === 0 && chapters.length > 0 ? (
+          <div className={styles.noMatch}>
+            <p>No chapters match these filters.</p>
+            <button type="button" className={styles.viewReset} onClick={() => setView(id, { ...view, unreadOnly: false, bookmarkedOnly: false })}>
+              Show all
+            </button>
+          </div>
+        ) : (
+          <ul className={styles.chapters} aria-label="Chapters">
+            {shown.map((c) => {
+              const name = c.name || `Chapter ${c.number}`;
+              return (
+                <li key={c.id} className={`${styles.chapter} ${c.read ? styles.read : ''}`}>
+                  <button type="button" className={styles.open} onClick={() => navigate(`/read/${c.id}`)}>
+                    <span className={styles.chapterName} data-chapter-name="">
+                      {name}
+                    </span>
+                    <span className={styles.chapterMeta}>
+                      {c.uploadedAt > 0 && <span>{dateFormat.format(c.uploadedAt)}</span>}
+                      {c.scanlator && <span>{c.scanlator}</span>}
+                      {!c.read && c.lastPage > 0 && <span className={styles.resume}>Page {c.lastPage + 1}</span>}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.toggle}
+                    aria-label={`Mark ${name} as ${c.read ? 'unread' : 'read'}`}
+                    aria-pressed={c.read}
+                    onClick={() => toggleRead(c)}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="m5 12.5 4.5 4.5L19 7.5" />
+                    </svg>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
     </section>
   );
