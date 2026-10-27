@@ -32,6 +32,13 @@ describe('parseSettings', () => {
       brightness: 1,
       warm: 0,
       pageTransitions: true,
+      spreads: 'auto',
+      coverAlone: true,
+      coverAloneByTitle: {},
+      tapZones: 'default',
+      grayscale: false,
+      cropBorders: false,
+      hintsSeen: {},
     });
   });
 
@@ -60,6 +67,19 @@ describe('parseSettings', () => {
     const parsed = parseSettings({ future: { x: 1 }, theme: { current: 'nord' } });
     expect(parsed.theme.current).toBe('nord');
     expect(parsed).not.toHaveProperty('future');
+  });
+});
+
+it('has reader defaults for spreads, covers, tap zones, grayscale and crop', () => {
+  expect(DEFAULTS.reader).toMatchObject({
+    spreads: 'auto',
+    coverAlone: true,
+    coverAloneByTitle: {},
+    tapZones: 'default',
+    grayscale: false,
+    cropBorders: false,
+    hintsSeen: {},
+    pageTransitions: true,
   });
 });
 

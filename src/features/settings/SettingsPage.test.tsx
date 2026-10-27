@@ -97,6 +97,22 @@ describe('Library', () => {
 });
 
 describe('Reader', () => {
+  it('sets spreads, tap zones, page-turn animation and crop borders', async () => {
+    renderWithRouter(<ReaderSettings />, '/settings/reader');
+    await userEvent.click(within(screen.getByRole('radiogroup', { name: 'Double pages' })).getByRole('radio', { name: 'On' }));
+    await userEvent.click(within(screen.getByRole('radiogroup', { name: 'Tap zones' })).getByRole('radio', { name: 'Inverted' }));
+    await userEvent.click(screen.getByRole('switch', { name: 'Page-turn animation' }));
+    await userEvent.click(screen.getByRole('switch', { name: 'Crop white borders' }));
+    await userEvent.click(screen.getByRole('switch', { name: 'First page is a cover' }));
+    expect(useSettings.getState().settings.reader).toMatchObject({
+      spreads: 'on',
+      tapZones: 'inverted',
+      pageTransitions: false,
+      cropBorders: true,
+      coverAlone: false,
+    });
+  });
+
   it('picks the default reading mode and page fit', async () => {
     renderWithRouter(<ReaderSettings />, '/settings/reader');
     await userEvent.click(screen.getByRole('radio', { name: 'Webtoon' }));

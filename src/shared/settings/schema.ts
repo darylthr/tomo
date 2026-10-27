@@ -109,6 +109,22 @@ const readerSchema = z.object({
   brightness: z.number().min(0.2).max(1).catch(1),
   warm: z.number().min(0).max(1).catch(0),
   pageTransitions: z.boolean().catch(true),
+  /** Double pages on wide screens: auto = landscape and at least 900px wide. */
+  spreads: z.enum(['auto', 'on', 'off']).catch('auto'),
+  /** In spreads, the first page stands alone; titles can override it. */
+  coverAlone: z.boolean().catch(true),
+  coverAloneByTitle: z
+    .record(z.string(), z.unknown())
+    .transform((entries) => Object.fromEntries(Object.entries(entries).filter(([, v]) => typeof v === 'boolean')) as Record<string, boolean>)
+    .catch({}),
+  tapZones: z.enum(['default', 'inverted', 'off']).catch('default'),
+  grayscale: z.boolean().catch(false),
+  cropBorders: z.boolean().catch(false),
+  /** Direction hints already shown, keyed "<titleId>:<mode>". */
+  hintsSeen: z
+    .record(z.string(), z.unknown())
+    .transform((entries) => Object.fromEntries(Object.entries(entries).filter(([, v]) => v === true)) as Record<string, true>)
+    .catch({}),
 });
 
 // Each section parses an empty object when missing or invalid, so one bad
