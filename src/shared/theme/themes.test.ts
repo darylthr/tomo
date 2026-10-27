@@ -1,5 +1,5 @@
 import { contrastRatio } from './contrast';
-import { BUILTINS, newTheme, onAccent, resolveTheme, schemeOf, type ThemeState } from './themes';
+import { BUILTINS, deleteTheme, newTheme, onAccent, renameTheme, resetTheme, resolveTheme, schemeOf, setColour, type ThemeState } from './themes';
 
 const state = (patch: Partial<ThemeState>): ThemeState => ({ current: 'tomo-dark', overrides: {}, custom: [], ...patch });
 
@@ -51,4 +51,30 @@ it('makes a new theme from the current one, numbering repeated names', () => {
   const second = newTheme(first);
   expect(second.custom.map((t) => t.name)).toEqual(['My theme', 'My theme 2']);
   expect(new Set(second.custom.map((t) => t.id)).size).toBe(2);
+});
+
+describe('editing themes', () => {
+  const colours = { bg: '#f5ecd7', surface: '#fffaf0', ink: '#3b2f1e', accent: '#b5651d', chrome: '#efe3c8' };
+  const withPaper = state({ current: 'p', custom: [{ id: 'p', name: 'Paper', colours }] });
+
+  it('edits a built-in through overrides, and a custom theme directly', () => {
+    expect(setColour(state({}), 'nord', 'accent', '#ff0000').overrides).toEqual({ nord: { accent: '#ff0000' } });
+    expect(setColour(withPaper, 'p', 'ink', '#000000').custom[0]!.colours.ink).toBe('#000000');
+  });
+
+  it('resets a built-in to how it shipped', () => {
+    const edited = setColour(state({}), 'nord', 'accent', '#ff0000');
+    expect(resetTheme(edited, 'nord').overrides).toEqual({});
+  });
+
+  it('renames a custom theme', () => {
+    expect(renameTheme(withPaper, 'p', 'Sepia').custom[0]!.name).toBe('Sepia');
+  });
+
+  it('deletes a custom theme, falling back to Tomo Dark when it was current', () => {
+    const after = deleteTheme(withPaper, 'p');
+    expect(after.custom).toEqual([]);
+    expect(after.current).toBe('tomo-dark');
+    expect(deleteTheme({ ...withPaper, current: 'nord' }, 'p').current).toBe('nord');
+  });
 });

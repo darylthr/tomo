@@ -5,6 +5,7 @@ import { Segmented } from '../../shared/ui/Segmented';
 import { Switch } from '../../shared/ui/Switch';
 import { clearBackgroundImage, saveBackgroundImage } from '../background/backgroundImage';
 import { Card, Row, SettingsSubpage } from './parts';
+import { ThemeEditor } from './ThemeEditor';
 import { ThemeGrid } from './ThemeGrid';
 import styles from './Settings.module.css';
 
@@ -25,8 +26,8 @@ export function AppearanceSettings() {
   const update = useSettings((s) => s.update);
   const [imageError, setImageError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  // The theme editor (the themes plan's Task 6) opens for this id.
-  const [, setEditing] = useState<string | null>(null);
+  // The theme open in the editor, if any.
+  const [editing, setEditing] = useState<string | null>(null);
 
   const bg = (patch: Partial<BackgroundSettings>) => update({ background: patch });
 
@@ -47,6 +48,7 @@ export function AppearanceSettings() {
     <SettingsSubpage title="Appearance">
       <Card label="Theme" heading>
         <ThemeGrid onEdit={setEditing} />
+        <ThemeEditor id={editing} onClose={() => setEditing(null)} />
       </Card>
 
       <Card label="Background" heading>

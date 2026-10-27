@@ -60,3 +60,27 @@ export function newTheme(state: ThemeState): ThemeState {
   const id = newId();
   return { ...state, current: id, custom: [...state.custom, { id, name, colours: resolveTheme(state).colours }] };
 }
+
+const isBuiltin = (id: string) => BUILTINS.some((t) => t.id === id);
+
+/** Changes one colour: a built-in keeps it as an override, a custom theme stores it. */
+export function setColour(state: ThemeState, id: string, key: keyof Colours, hex: string): ThemeState {
+  if (isBuiltin(id)) return { ...state, overrides: { ...state.overrides, [id]: { ...state.overrides[id], [key]: hex } } };
+  return { ...state, custom: state.custom.map((t) => (t.id === id ? { ...t, colours: { ...t.colours, [key]: hex } } : t)) };
+}
+
+/** Puts a built-in back the way it shipped. */
+export function resetTheme(state: ThemeState, id: string): ThemeState {
+  const overrides = { ...state.overrides };
+  delete overrides[id];
+  return { ...state, overrides };
+}
+
+export function renameTheme(state: ThemeState, id: string, name: string): ThemeState {
+  return { ...state, custom: state.custom.map((t) => (t.id === id ? { ...t, name } : t)) };
+}
+
+/** Removes a custom theme; if it was in use, Tomo Dark takes over. */
+export function deleteTheme(state: ThemeState, id: string): ThemeState {
+  return { ...state, current: state.current === id ? 'tomo-dark' : state.current, custom: state.custom.filter((t) => t.id !== id) };
+}

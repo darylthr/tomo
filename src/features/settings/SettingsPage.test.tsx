@@ -133,6 +133,13 @@ describe('Appearance', () => {
     expect(theme.custom).toHaveLength(1);
     expect(theme.current).toBe(theme.custom[0]!.id);
     expect(screen.getByRole('radio', { name: 'My theme' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('dialog', { name: 'My theme' })).toBeInTheDocument();
+  });
+
+  it('opens the editor from a theme card', async () => {
+    show();
+    await userEvent.click(screen.getByRole('button', { name: 'Edit Dracula' }));
+    expect(screen.getByRole('dialog', { name: 'Dracula' })).toBeInTheDocument();
   });
 
   it('holds the theme and the background', () => {

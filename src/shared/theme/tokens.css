@@ -8,7 +8,19 @@
   --chrome: #0e0e10;
   --chrome-ink: #f1f1f4;
 
-  /* Derived from the five. Cards stay a little see-through so the dithered background shows. */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --top-h: 56px;
+  --nav-h: 68px;
+  --gap: 6px;
+  --frame-radius: 16px;
+
+  color-scheme: dark;
+}
+
+/* Derived from the five, here and in any preview that sets its own five (data-theme-scope).
+   Cards stay a little see-through so the dithered background shows. */
+:root,
+[data-theme-scope] {
   --surface: color-mix(in oklch, var(--surface-base) 84%, transparent);
   --surface-solid: var(--surface-base);
   --surface-2: color-mix(in oklch, var(--surface-base), var(--ink) 6%);
@@ -29,15 +41,6 @@
   --danger: #ffb4b4;
   --warning: #ffc879;
   --on-danger: #3a0d0d;
-
-
-  --ease: cubic-bezier(0.2, 0, 0, 1);
-  --top-h: 56px;
-  --nav-h: 68px;
-  --gap: 6px;
-  --frame-radius: 16px;
-
-  color-scheme: dark;
 }
 
 @media (min-width: 760px) {
