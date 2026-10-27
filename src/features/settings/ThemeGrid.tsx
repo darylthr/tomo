@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import { useRef, type CSSProperties, type KeyboardEvent } from 'react';
 import { useSettings } from '../../shared/settings/store';
 import { BUILTINS, newTheme, type Colours } from '../../shared/theme/themes';
 import styles from './ThemeGrid.module.css';
@@ -17,19 +17,33 @@ export function ThemeGrid({ onEdit }: Props) {
     ...theme.custom.map((t) => ({ ...t, custom: true })),
   ];
   const current = cards.some((c) => c.id === theme.current) ? theme.current : 'tomo-dark';
+  const groupRef = useRef<HTMLDivElement>(null);
+
+  // A radio group: one Tab stop (the current theme); arrow keys move and pick, wrapping round.
+  const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
+    if (!step) return;
+    e.preventDefault();
+    const next = cards[(index + step + cards.length) % cards.length]!;
+    setTheme({ ...theme, current: next.id });
+    groupRef.current?.querySelector<HTMLButtonElement>(`[data-theme-id="${next.id}"]`)?.focus();
+  };
 
   return (
     <>
-      <div className={styles.grid} role="radiogroup" aria-label="Theme">
-        {cards.map((c) => (
+      <div ref={groupRef} className={styles.grid} role="radiogroup" aria-label="Theme">
+        {cards.map((c, i) => (
           <div key={c.id} className={styles.card} data-current={c.id === current || undefined}>
             <button
               type="button"
               role="radio"
               aria-checked={c.id === current}
               aria-label={c.name}
+              data-theme-id={c.id}
+              tabIndex={c.id === current ? 0 : -1}
               className={styles.pick}
               onClick={() => setTheme({ ...theme, current: c.id })}
+              onKeyDown={(e) => onKeyDown(e, i)}
             >
               <Preview colours={c.colours} />
               <span className={styles.name}>

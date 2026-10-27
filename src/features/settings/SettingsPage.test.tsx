@@ -119,6 +119,18 @@ describe('Appearance', () => {
     expect(within(grid).getByRole('button', { name: 'Edit Paper' })).toBeInTheDocument();
   });
 
+  it('moves through the themes with the arrow keys, with one Tab stop for the group', async () => {
+    show();
+    const radios = within(screen.getByRole('radiogroup', { name: 'Theme' })).getAllByRole('radio');
+    expect(radios.filter((r) => r.tabIndex === 0)).toEqual([screen.getByRole('radio', { name: 'Tomo Dark' })]);
+    screen.getByRole('radio', { name: 'Tomo Dark' }).focus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(useSettings.getState().settings.theme.current).toBe('tomo-light');
+    expect(screen.getByRole('radio', { name: 'Tomo Light' })).toHaveFocus();
+    await userEvent.keyboard('{ArrowLeft}{ArrowLeft}');
+    expect(useSettings.getState().settings.theme.current).toBe('catppuccin-latte');
+  });
+
   it('applies a theme when it is picked', async () => {
     show();
     await userEvent.click(screen.getByRole('radio', { name: 'GitHub Light' }));

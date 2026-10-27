@@ -40,8 +40,10 @@ function migrateTheme(raw: unknown): unknown {
   const old = raw as { mode?: string; bg?: string; ink?: string; accent?: string };
   if (old.mode === 'light') return { current: 'tomo-light' };
   if (old.mode !== 'custom') return { current: 'tomo-dark' };
-  const bg = hex('#0e0e10').parse(old.bg);
-  const colours = { bg, surface: bg, ink: hex('#f1f1f4').parse(old.ink), accent: hex('#8b6cff').parse(old.accent), chrome: bg };
+  // The old picker allowed #rgb; themes store #rrggbb.
+  const long = (v: string) => (v.length === 4 ? `#${[...v.slice(1)].map((c) => c + c).join('')}` : v).toLowerCase();
+  const bg = long(hex('#0e0e10').parse(old.bg));
+  const colours = { bg, surface: bg, ink: long(hex('#f1f1f4').parse(old.ink)), accent: long(hex('#8b6cff').parse(old.accent)), chrome: bg };
   return { current: 'custom-migrated', custom: [{ id: 'custom-migrated', name: 'My theme', colours }] };
 }
 

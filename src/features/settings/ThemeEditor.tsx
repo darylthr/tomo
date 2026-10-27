@@ -37,8 +37,10 @@ export function ThemeEditor({ id, onClose }: Props) {
   const [shownId, setShownId] = useState(id);
   if (id && id !== shownId) setShownId(id);
 
-  const builtin = BUILTINS.find((t) => t.id === shownId);
-  const custom = theme.custom.find((t) => t.id === shownId);
+  // The theme to show: the one being opened, or the last one while the sheet animates out.
+  const target = id ?? shownId;
+  const builtin = BUILTINS.find((t) => t.id === target);
+  const custom = theme.custom.find((t) => t.id === target);
   const name = builtin?.name ?? custom?.name ?? '';
   const colours: Colours | null = builtin ? { ...builtin.colours, ...theme.overrides[builtin.id] } : (custom?.colours ?? null);
   const edited = !!builtin && Object.keys(theme.overrides[builtin.id] ?? {}).length > 0;
@@ -53,7 +55,7 @@ export function ThemeEditor({ id, onClose }: Props) {
   }
   if (!id && openFor) setOpenFor(null);
 
-  if (!shownId || !colours) return <Sheet open={false} label="Theme" title="Theme" onClose={onClose}>{null}</Sheet>;
+  if (!target || !colours) return <Sheet open={false} label="Theme" title="Theme" onClose={onClose}>{null}</Sheet>;
 
   const unreadable = contrastRatio(colours.ink, colours.bg) < 4.5 || contrastRatio(colours.ink, colours.surface) < 4.5;
   const preview = {
@@ -96,7 +98,7 @@ export function ThemeEditor({ id, onClose }: Props) {
                 className={styles.swatch}
                 aria-label={label}
                 value={colours[key]}
-                onChange={(e) => setTheme(setColour(theme, shownId, key, e.target.value))}
+                onChange={(e) => setTheme(setColour(theme, target, key, e.target.value))}
               />
             </span>
           </label>

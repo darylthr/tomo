@@ -1,4 +1,4 @@
-import { contrastRatio, luminance } from './contrast';
+import { contrastRatio } from './contrast';
 
 /** A theme's five colours (`#rrggbb`); everything else in the app is derived from them. */
 export type Colours = { bg: string; surface: string; ink: string; accent: string; chrome: string };
@@ -28,8 +28,8 @@ export const BUILTINS: BuiltinTheme[] = [
 
 const DEFAULT = BUILTINS[0]!;
 
-/** Light backgrounds get light-scheme treatment (status colours, the background wash). */
-export const schemeOf = (bg: string): Scheme => (luminance(bg) > 0.4 ? 'light' : 'dark');
+/** A background is light when dark text reads better on it than light text (status colours, the wash follow). */
+export const schemeOf = (bg: string): Scheme => (contrastRatio('#000000', bg) > contrastRatio('#ffffff', bg) ? 'light' : 'dark');
 
 /** Black or white, whichever reads better on the accent. */
 export const onAccent = (accent: string): '#000000' | '#ffffff' =>

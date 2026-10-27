@@ -48,3 +48,14 @@ it('keeps a custom theme with an empty name from being saved nameless', async ()
   await userEvent.clear(screen.getByRole('textbox', { name: 'Name' }));
   expect(useSettings.getState().settings.theme.custom[0]!.name).toBe('Paper');
 });
+
+it('shows the right name when opened after mounting closed, and when switching themes', () => {
+  const two = { id: 'q', name: 'Slate', colours: { ...paper, bg: '#20242c', ink: '#e6e6e6' } };
+  useSettings.getState().setTheme({ current: 'tomo-dark', overrides: {}, custom: [{ id: 'p', name: 'Paper', colours: paper }, two] });
+  const { rerender } = render(<ThemeEditor id={null} onClose={() => {}} />);
+  rerender(<ThemeEditor id="p" onClose={() => {}} />);
+  expect(screen.getByRole('textbox', { name: 'Name' })).toHaveValue('Paper');
+  rerender(<ThemeEditor id={null} onClose={() => {}} />);
+  rerender(<ThemeEditor id="q" onClose={() => {}} />);
+  expect(screen.getByRole('textbox', { name: 'Name' })).toHaveValue('Slate');
+});

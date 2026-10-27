@@ -1,5 +1,5 @@
 import { contrastRatio } from './contrast';
-import { BUILTINS, deleteTheme, newTheme, onAccent, renameTheme, resetTheme, resolveTheme, schemeOf, setColour, type ThemeState } from './themes';
+import { BUILTINS, chromeInk, deleteTheme, newTheme, onAccent, renameTheme, resetTheme, resolveTheme, schemeOf, setColour, type ThemeState } from './themes';
 
 const state = (patch: Partial<ThemeState>): ThemeState => ({ current: 'tomo-dark', overrides: {}, custom: [], ...patch });
 
@@ -15,6 +15,12 @@ it("Tomo Dark is today's look", () => {
     id: 'tomo-dark',
     colours: { bg: '#050506', surface: '#07070a', ink: '#f1f1f4', accent: '#8b6cff', chrome: '#0e0e10' },
   });
+});
+
+it('treats a mid-grey background as light, since dark text reads better on it', () => {
+  expect(schemeOf('#a0a0a0')).toBe('light');
+  expect(chromeInk('#808080')).toBe('#111114');
+  expect(schemeOf('#3a3a3a')).toBe('dark');
 });
 
 it('built-ins declare the scheme their background implies', () => {

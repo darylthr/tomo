@@ -76,6 +76,12 @@ describe('themes', () => {
     ]);
   });
 
+  it('keeps an old Custom theme saved with three-digit colours', () => {
+    const { theme } = parseSettings({ theme: { mode: 'custom', bg: '#fff', ink: '#000', accent: '#f0a' } });
+    expect(theme.custom[0]?.colours).toEqual({ bg: '#ffffff', surface: '#ffffff', ink: '#000000', accent: '#ff00aa', chrome: '#ffffff' });
+    expect(theme.current).toBe(theme.custom[0]?.id);
+  });
+
   it('drops bad custom entries and bad override colours one by one', () => {
     const colours = { bg: '#000000', surface: '#111111', ink: '#ffffff', accent: '#ff0000', chrome: '#000000' };
     const { theme } = parseSettings({
