@@ -57,7 +57,7 @@ export function CategoriesPage() {
     sync(deleteCategory(category.id));
   };
 
-  const back = () => (window.history.length > 1 ? navigate(-1) : navigate('/settings'));
+  const back = () => (window.history.length > 1 ? navigate(-1) : navigate('/settings/library'));
 
   return (
     <Page title="Categories" onBack={back}>

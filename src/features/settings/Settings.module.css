@@ -187,3 +187,19 @@ a.ghost {
   height: 18px;
   color: var(--faint);
 }
+
+/* the icon tile beside each section in the Settings list */
+.sectionIcon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: oklch(1 0 0 / 0.12);
+  color: var(--ink);
+}
+
+.sectionIcon svg {
+  width: 20px;
+  height: 20px;
+}

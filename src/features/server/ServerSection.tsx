@@ -9,7 +9,7 @@ import { normalizeServerUrl, resolveUrl } from './config';
 type Check = { state: 'idle' | 'checking' } | { state: 'ok'; version: string } | { state: 'failed'; message: string; details?: string };
 
 /** Settings for the Suwayomi connection: address, login mode and a connection test. */
-export function ServerSection() {
+export function ServerSection({ heading = true }: { heading?: boolean } = {}) {
   const server = useSettings((s) => s.settings.server);
   const update = useSettings((s) => s.update);
   const [draft, setDraft] = useState(server.url);
@@ -43,7 +43,7 @@ export function ServerSection() {
 
   return (
     <section className={styles.section} aria-label="Server">
-      <h3 className={styles.heading}>Server</h3>
+      {heading && <h3 className={styles.heading}>Server</h3>}
       <div className={styles.row}>
         <label className={styles.label} htmlFor="server-url">
           Server address

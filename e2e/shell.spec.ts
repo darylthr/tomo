@@ -46,6 +46,7 @@ test('the search icon opens a field that searches all sources', async ({ page })
 test('a background image is dithered, fades to black and survives a reload', async ({ page, browserName }) => {
   await page.goto('/');
   await page.getByRole('tab', { name: 'Settings' }).click();
+  await page.getByRole('link', { name: /^Customization/ }).click();
   await page.getByLabel('Choose image').setInputFiles(GRADIENT);
   const toggle = page.getByRole('switch', { name: 'Dithered background' });
   await expect(toggle).toBeEnabled();
@@ -83,6 +84,8 @@ test('a background image is dithered, fades to black and survives a reload', asy
   await page.reload();
   await expect(page.locator('main canvas')).toBeVisible();
   await page.getByRole('tab', { name: 'Settings' }).click();
+  await expect(page.getByRole('link', { name: /^Customization/ })).toContainText('Dithered background');
+  await page.getByRole('link', { name: /^Customization/ }).click();
   await expect(page.getByRole('switch', { name: 'Dithered background' })).toHaveAttribute('aria-checked', 'true');
 });
 

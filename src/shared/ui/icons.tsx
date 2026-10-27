@@ -148,3 +148,22 @@ export function IconRefresh(p: Omit<IconProps, "filled">) {
     </Svg>
   );
 }
+
+export function IconServer(p: Omit<IconProps, "filled">) {
+  return (
+    <Svg {...p}>
+      <rect x="4" y="4" width="16" height="7" rx="2" />
+      <rect x="4" y="13" width="16" height="7" rx="2" />
+      <path d="M8 7.5h.01M8 16.5h.01" strokeWidth={2.5} />
+    </Svg>
+  );
+}
+
+export function IconPalette(p: Omit<IconProps, "filled">) {
+  return (
+    <Svg {...p}>
+      <path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.7-.8 1.7-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H16a5 5 0 0 0 5-5c0-4-4-7.2-9-7.2Z" />
+      <path d="M7.5 11h.01M10 7.5h.01M14.5 7.5h.01" strokeWidth={2.5} />
+    </Svg>
+  );
+}

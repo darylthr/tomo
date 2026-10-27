@@ -18,12 +18,15 @@ test('dragging a category by its handle reorders the shelf tabs', async ({ page 
   await expect.poll(() => mock.calls.filter((c) => c.op === 'MOVE_CATEGORY').map((c) => c.variables)).toEqual([{ id: 1, position: 2 }]);
 });
 
-test('Settings leads to the categories page and back', async ({ page }) => {
+test('Settings → Library leads to the categories page and back', async ({ page }) => {
   await mockSuwayomi(page);
   await page.goto('/');
   await page.getByRole('tab', { name: 'Settings' }).click();
+  await page.getByRole('link', { name: /^Library/ }).click();
   await page.getByRole('link', { name: /^Categories/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Categories' })).toBeVisible();
+  await page.getByRole('button', { name: 'Back' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Library' })).toBeVisible();
   await page.getByRole('button', { name: 'Back' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
 });
