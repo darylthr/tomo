@@ -49,3 +49,14 @@ export function resolveTheme(state: ThemeState): ResolvedTheme {
   // An edited background can change a built-in's scheme (built-ins' declared schemes match their backgrounds).
   return { id: base.id, name: base.name, scheme: schemeOf(colours.bg), colours, builtin: true, edited };
 }
+
+const newId = () => `custom-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+
+/** A copy of the current theme's colours as "My theme" (numbered if taken), made current. */
+export function newTheme(state: ThemeState): ThemeState {
+  const taken = new Set(state.custom.map((t) => t.name));
+  let name = 'My theme';
+  for (let n = 2; taken.has(name); n++) name = `My theme ${n}`;
+  const id = newId();
+  return { ...state, current: id, custom: [...state.custom, { id, name, colours: resolveTheme(state).colours }] };
+}

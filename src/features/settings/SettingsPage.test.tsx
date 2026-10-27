@@ -3,6 +3,7 @@ import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithRouter } from '../../app/testRouter';
 import { useSettings } from '../../shared/settings/store';
+import { BUILTINS } from '../../shared/theme/themes';
 import { useLibrary } from '../library/libraryStore';
 import { AppearanceSettings } from './AppearanceSettings';
 import { LibrarySettings } from './LibrarySettings';
@@ -106,6 +107,33 @@ describe('Reader', () => {
 
 describe('Appearance', () => {
   const show = () => renderWithRouter(<AppearanceSettings />, '/settings/appearance');
+
+  it('lists every built-in and custom theme, marking the current one', () => {
+    const colours = { bg: '#f5ecd7', surface: '#fffaf0', ink: '#3b2f1e', accent: '#b5651d', chrome: '#efe3c8' };
+    useSettings.getState().setTheme({ current: 'tomo-dark', overrides: {}, custom: [{ id: 'p', name: 'Paper', colours }] });
+    show();
+    const grid = screen.getByRole('radiogroup', { name: 'Theme' });
+    const names = within(grid).getAllByRole('radio').map((r) => r.getAttribute('aria-label'));
+    expect(names).toEqual([...BUILTINS.map((t) => t.name), 'Paper']);
+    expect(within(grid).getByRole('radio', { name: 'Tomo Dark' })).toHaveAttribute('aria-checked', 'true');
+    expect(within(grid).getByRole('button', { name: 'Edit Paper' })).toBeInTheDocument();
+  });
+
+  it('applies a theme when it is picked', async () => {
+    show();
+    await userEvent.click(screen.getByRole('radio', { name: 'GitHub Light' }));
+    expect(useSettings.getState().settings.theme.current).toBe('github-light');
+    expect(document.documentElement.dataset.scheme).toBe('light');
+  });
+
+  it('makes a new theme from the current one and opens it', async () => {
+    show();
+    await userEvent.click(screen.getByRole('button', { name: 'New theme' }));
+    const { theme } = useSettings.getState().settings;
+    expect(theme.custom).toHaveLength(1);
+    expect(theme.current).toBe(theme.custom[0]!.id);
+    expect(screen.getByRole('radio', { name: 'My theme' })).toHaveAttribute('aria-checked', 'true');
+  });
 
   it('holds the theme and the background', () => {
     show();

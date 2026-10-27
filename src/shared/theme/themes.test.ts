@@ -1,5 +1,5 @@
 import { contrastRatio } from './contrast';
-import { BUILTINS, onAccent, resolveTheme, schemeOf, type ThemeState } from './themes';
+import { BUILTINS, newTheme, onAccent, resolveTheme, schemeOf, type ThemeState } from './themes';
 
 const state = (patch: Partial<ThemeState>): ThemeState => ({ current: 'tomo-dark', overrides: {}, custom: [], ...patch });
 
@@ -41,4 +41,14 @@ it('falls back to Tomo Dark for an unknown or deleted theme', () => {
 it('puts dark text on light accents', () => {
   expect(onAccent('#ffd400')).toBe('#000000');
   expect(onAccent('#5865f2')).toBe('#ffffff');
+});
+
+it('makes a new theme from the current one, numbering repeated names', () => {
+  const first = newTheme(state({ current: 'nord' }));
+  const made = first.custom[0]!;
+  expect(made).toMatchObject({ name: 'My theme', colours: BUILTINS.find((t) => t.id === 'nord')!.colours });
+  expect(first.current).toBe(made.id);
+  const second = newTheme(first);
+  expect(second.custom.map((t) => t.name)).toEqual(['My theme', 'My theme 2']);
+  expect(new Set(second.custom.map((t) => t.id)).size).toBe(2);
 });

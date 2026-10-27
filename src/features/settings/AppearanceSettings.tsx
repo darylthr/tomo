@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import type { BackgroundSettings } from '../../shared/settings/schema';
 import { useSettings } from '../../shared/settings/store';
-import { resolveTheme } from '../../shared/theme/themes';
 import { Segmented } from '../../shared/ui/Segmented';
 import { Switch } from '../../shared/ui/Switch';
 import { clearBackgroundImage, saveBackgroundImage } from '../background/backgroundImage';
 import { Card, Row, SettingsSubpage } from './parts';
+import { ThemeGrid } from './ThemeGrid';
 import styles from './Settings.module.css';
 
 const LEVELS = [
@@ -21,10 +21,12 @@ const GRAIN = [
 
 /** Settings → Appearance: the theme and the dithered background. */
 export function AppearanceSettings() {
-  const { theme, background } = useSettings((s) => s.settings);
+  const background = useSettings((s) => s.settings.background);
   const update = useSettings((s) => s.update);
   const [imageError, setImageError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // The theme editor (the themes plan's Task 6) opens for this id.
+  const [, setEditing] = useState<string | null>(null);
 
   const bg = (patch: Partial<BackgroundSettings>) => update({ background: patch });
 
@@ -44,9 +46,7 @@ export function AppearanceSettings() {
   return (
     <SettingsSubpage title="Appearance">
       <Card label="Theme" heading>
-        <Row label="Theme">
-          <span className={styles.linkSide}>{resolveTheme(theme).name}</span>
-        </Row>
+        <ThemeGrid onEdit={setEditing} />
       </Card>
 
       <Card label="Background" heading>
