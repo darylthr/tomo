@@ -36,7 +36,7 @@ describe('the Settings tab', () => {
       'ServerSame address as Tomo',
       'LibraryBooks · 1 category',
       'ReaderManga · Fit screen',
-      'AppearanceDark · No background image',
+      'AppearanceTomo Dark · No background image',
     ]);
   });
 
@@ -122,11 +122,5 @@ describe('Appearance', () => {
     await userEvent.upload(screen.getByLabelText('Choose image'), new File(['x'], 'photo.heic', { type: 'image/heic' }));
     expect(await screen.findByText("Couldn't read that image")).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: 'Dithered background' })).toBeDisabled();
-  });
-
-  it('warns when custom theme text would be hard to read', () => {
-    show();
-    act(() => useSettings.getState().update({ theme: { mode: 'custom', bg: '#777777', ink: '#ffffff' } }));
-    expect(screen.getByText('Text may be hard to read on this background')).toBeInTheDocument();
   });
 });

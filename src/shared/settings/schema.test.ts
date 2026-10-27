@@ -6,7 +6,7 @@ describe('parseSettings', () => {
   });
 
   it('has the spec defaults', () => {
-    expect(DEFAULTS.theme).toEqual({ mode: 'dark', bg: '#0e0e10', ink: '#f1f1f4', accent: '#8b6cff' });
+    expect(DEFAULTS.theme).toEqual({ current: 'tomo-dark', overrides: {}, custom: [] });
     expect(DEFAULTS.background).toEqual({ enabled: false, levels: 6, cell: 2, imageKey: null });
     expect(DEFAULTS.library).toEqual({
       display: 'books',
@@ -57,8 +57,35 @@ describe('parseSettings', () => {
   });
 
   it('drops unknown keys and keeps known ones', () => {
-    const parsed = parseSettings({ future: { x: 1 }, theme: { mode: 'light' } });
-    expect(parsed.theme.mode).toBe('light');
+    const parsed = parseSettings({ future: { x: 1 }, theme: { current: 'nord' } });
+    expect(parsed.theme.current).toBe('nord');
     expect(parsed).not.toHaveProperty('future');
+  });
+});
+
+describe('themes', () => {
+  it('migrates the old Dark and Light modes', () => {
+    expect(parseSettings({ theme: { mode: 'light', bg: '#f4f4f6', ink: '#111114', accent: '#8b6cff' } }).theme.current).toBe('tomo-light');
+    expect(parseSettings({ theme: { mode: 'dark' } }).theme).toEqual({ current: 'tomo-dark', overrides: {}, custom: [] });
+  });
+
+  it('migrates an old Custom theme into a custom theme called My theme', () => {
+    const { theme } = parseSettings({ theme: { mode: 'custom', bg: '#102030', ink: '#fafafa', accent: '#ff8800' } });
+    expect(theme.custom).toEqual([
+      { id: theme.current, name: 'My theme', colours: { bg: '#102030', surface: '#102030', ink: '#fafafa', accent: '#ff8800', chrome: '#102030' } },
+    ]);
+  });
+
+  it('drops bad custom entries and bad override colours one by one', () => {
+    const colours = { bg: '#000000', surface: '#111111', ink: '#ffffff', accent: '#ff0000', chrome: '#000000' };
+    const { theme } = parseSettings({
+      theme: {
+        current: 'ok',
+        overrides: { nord: { accent: 'red', bg: '#123456' } },
+        custom: [{ id: 'broken', name: 'No colours' }, { id: 'ok', name: 'Fine', colours }],
+      },
+    });
+    expect(theme.custom).toEqual([{ id: 'ok', name: 'Fine', colours }]);
+    expect(theme.overrides).toEqual({ nord: { bg: '#123456' } });
   });
 });

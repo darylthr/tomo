@@ -6,12 +6,53 @@ const hex = (fallback: string) =>
     .regex(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i)
     .catch(fallback);
 
-const themeSchema = z.object({
-  mode: z.enum(['dark', 'light', 'custom']).catch('dark'),
-  bg: hex('#0e0e10'),
-  ink: hex('#f1f1f4'),
-  accent: hex('#8b6cff'),
-});
+const colour = z.string().regex(/^#[0-9a-f]{6}$/i);
+const coloursSchema = z.object({ bg: colour, surface: colour, ink: colour, accent: colour, chrome: colour });
+const customThemeSchema = z.object({ id: z.string().min(1), name: z.string().min(1), colours: coloursSchema });
+
+/** Keeps the valid entries of a list or record, dropping bad ones one by one. */
+const each = <T>(item: z.ZodType<T>) =>
+  z
+    .array(z.unknown())
+    .transform((items) => items.flatMap((x) => (item.safeParse(x).success ? [item.parse(x)] : [])))
+    .catch([]);
+
+/** Per built-in edits: only valid colours survive. */
+const overridesSchema = z
+  .record(z.string(), z.unknown())
+  .transform((entries) =>
+    Object.fromEntries(
+      Object.entries(entries).map(([id, v]) => [
+        id,
+        Object.fromEntries(
+          Object.entries(typeof v === 'object' && v !== null ? v : {}).filter(
+            ([k, c]) => k in coloursSchema.shape && colour.safeParse(c).success,
+          ),
+        ) as Partial<z.infer<typeof coloursSchema>>,
+      ]),
+    ),
+  )
+  .catch({});
+
+/** Settings from before themes: { mode, bg, ink, accent } becomes a built-in, or a custom "My theme". */
+function migrateTheme(raw: unknown): unknown {
+  if (typeof raw !== 'object' || raw === null || !('mode' in raw) || 'current' in raw) return raw;
+  const old = raw as { mode?: string; bg?: string; ink?: string; accent?: string };
+  if (old.mode === 'light') return { current: 'tomo-light' };
+  if (old.mode !== 'custom') return { current: 'tomo-dark' };
+  const bg = hex('#0e0e10').parse(old.bg);
+  const colours = { bg, surface: bg, ink: hex('#f1f1f4').parse(old.ink), accent: hex('#8b6cff').parse(old.accent), chrome: bg };
+  return { current: 'custom-migrated', custom: [{ id: 'custom-migrated', name: 'My theme', colours }] };
+}
+
+const themeSchema = z.preprocess(
+  migrateTheme,
+  z.object({
+    current: z.string().min(1).catch('tomo-dark'),
+    overrides: overridesSchema,
+    custom: each(customThemeSchema),
+  }),
+);
 
 const backgroundSchema = z.object({
   /** Opt-in: stays off until an image has been chosen. */
@@ -70,7 +111,7 @@ const readerSchema = z.object({
 
 // Each section parses an empty object when missing or invalid, so one bad
 // field never resets its neighbours and a bad section never breaks boot.
-const section = <T extends z.ZodObject>(schema: T) => schema.catch(() => schema.parse({}));
+const section = <T extends z.ZodType>(schema: T) => schema.catch(() => schema.parse({}));
 
 export const settingsSchema = z.object({
   theme: section(themeSchema),
@@ -82,7 +123,6 @@ export const settingsSchema = z.object({
 
 export type Settings = z.infer<typeof settingsSchema>;
 export type ThemeSettings = Settings['theme'];
-export type ThemeMode = ThemeSettings['mode'];
 export type BackgroundSettings = Settings['background'];
 export type LibrarySettings = Settings['library'];
 export type ServerSettings = Settings['server'];

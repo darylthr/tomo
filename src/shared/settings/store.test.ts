@@ -32,10 +32,17 @@ describe('useSettings', () => {
     expect(saved.state.settings.library.display).toBe('covers');
   });
 
+  it('replaces the theme section whole, so a reset override is gone', async () => {
+    const useSettings = await freshStore();
+    useSettings.getState().setTheme({ current: 'nord', overrides: { nord: { accent: '#ff0000' } }, custom: [] });
+    useSettings.getState().setTheme({ current: 'nord', overrides: {}, custom: [] });
+    expect(useSettings.getState().settings.theme.overrides).toEqual({});
+  });
+
   it('applies the theme when it changes', async () => {
     const useSettings = await freshStore();
-    useSettings.getState().update({ theme: { mode: 'light' } });
-    expect(document.documentElement.dataset.theme).toBe('light');
+    useSettings.getState().update({ theme: { current: 'tomo-light' } });
+    expect(document.documentElement.dataset.theme).toBe('tomo-light');
   });
 
   it('reset restores the defaults', async () => {

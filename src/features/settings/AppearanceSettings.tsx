@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import type { BackgroundSettings, ThemeMode } from '../../shared/settings/schema';
+import type { BackgroundSettings } from '../../shared/settings/schema';
 import { useSettings } from '../../shared/settings/store';
-import { meetsAA } from '../../shared/theme/contrast';
+import { resolveTheme } from '../../shared/theme/themes';
 import { Segmented } from '../../shared/ui/Segmented';
 import { Switch } from '../../shared/ui/Switch';
 import { clearBackgroundImage, saveBackgroundImage } from '../background/backgroundImage';
@@ -27,7 +27,6 @@ export function AppearanceSettings() {
   const [busy, setBusy] = useState(false);
 
   const bg = (patch: Partial<BackgroundSettings>) => update({ background: patch });
-  const lowContrast = theme.mode === 'custom' && !meetsAA(theme.ink, theme.bg);
 
   const onImage = async (file: File | undefined) => {
     if (!file) return;
@@ -45,37 +44,9 @@ export function AppearanceSettings() {
   return (
     <SettingsSubpage title="Appearance">
       <Card label="Theme" heading>
-        <Row label="Mode">
-          <Segmented<ThemeMode>
-            label="Theme"
-            value={theme.mode}
-            onChange={(mode) => update({ theme: { mode } })}
-            options={[
-              { value: 'dark', label: 'Dark' },
-              { value: 'light', label: 'Light' },
-              { value: 'custom', label: 'Custom' },
-            ]}
-          />
+        <Row label="Theme">
+          <span className={styles.linkSide}>{resolveTheme(theme).name}</span>
         </Row>
-        {theme.mode === 'custom' && (
-          <>
-            {(['bg', 'ink', 'accent'] as const).map((key) => {
-              const name = { bg: 'Background color', ink: 'Text color', accent: 'Accent color' }[key];
-              return (
-                <Row key={key} label={name}>
-                  <input
-                    className={styles.color}
-                    type="color"
-                    aria-label={name}
-                    value={theme[key]}
-                    onChange={(e) => update({ theme: { [key]: e.target.value } })}
-                  />
-                </Row>
-              );
-            })}
-            {lowContrast && <p className={styles.warning}>Text may be hard to read on this background</p>}
-          </>
-        )}
       </Card>
 
       <Card label="Background" heading>

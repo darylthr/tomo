@@ -1,9 +1,4 @@
-import type { ThemeSettings } from '../settings/schema';
-
-const PRESETS: Record<'dark' | 'light', { bg: string; ink: string }> = {
-  dark: { bg: '#0e0e10', ink: '#f1f1f4' },
-  light: { bg: '#f4f4f6', ink: '#111114' },
-};
+import type { ResolvedTheme } from './themes';
 
 /**
  * Turns off every transition while `fn` changes colors, so a theme switch
@@ -19,12 +14,11 @@ export function withTransitionsSuppressed(fn: () => void, root: HTMLElement = do
 }
 
 /** Writes the theme to `data-theme` and the `--c-*` CSS variables on `root`. */
-export function applyTheme(theme: ThemeSettings, root: HTMLElement = document.documentElement): void {
-  const colors = theme.mode === 'custom' ? { bg: theme.bg, ink: theme.ink } : PRESETS[theme.mode];
+export function applyTheme(theme: ResolvedTheme, root: HTMLElement = document.documentElement): void {
   withTransitionsSuppressed(() => {
-    root.dataset.theme = theme.mode;
-    root.style.setProperty('--c-bg', colors.bg);
-    root.style.setProperty('--c-ink', colors.ink);
-    root.style.setProperty('--c-accent', theme.accent);
+    root.dataset.theme = theme.id;
+    root.style.setProperty('--c-bg', theme.colours.chrome);
+    root.style.setProperty('--c-ink', theme.scheme === 'light' ? '#111114' : '#f1f1f4');
+    root.style.setProperty('--c-accent', theme.colours.accent);
   }, root);
 }

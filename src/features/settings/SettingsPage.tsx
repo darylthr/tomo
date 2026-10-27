@@ -1,14 +1,13 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useSettings } from '../../shared/settings/store';
+import { resolveTheme } from '../../shared/theme/themes';
 import { IconBook, IconChevron, IconLibrary, IconPalette, IconServer } from '../../shared/ui/icons';
 import list from '../../shared/ui/List.module.css';
 import { Page } from '../../shared/ui/Page';
 import { useLibrary } from '../library/libraryStore';
 import { FITS, MODES } from './parts';
 import styles from './Settings.module.css';
-
-const THEMES = { dark: 'Dark', light: 'Light', custom: 'Custom theme' } as const;
 
 /** The Settings tab: a list of sections, each on its own page. */
 export function SettingsPage() {
@@ -37,7 +36,7 @@ export function SettingsPage() {
     {
       to: 'appearance',
       name: 'Appearance',
-      summary: `${THEMES[theme.mode]} · ${background.enabled && background.imageKey ? 'Dithered background' : 'No background image'}`,
+      summary: `${resolveTheme(theme).name} · ${background.enabled && background.imageKey ? 'Dithered background' : 'No background image'}`,
       icon: <IconPalette />,
     },
   ];

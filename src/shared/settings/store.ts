@@ -1,11 +1,14 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 import { applyTheme } from '../theme/applyTheme';
+import { resolveTheme } from '../theme/themes';
 import { DEFAULTS, parseSettings, type DeepPartial, type Settings } from './schema';
 
 type SettingsState = {
   settings: Settings;
   update: (patch: DeepPartial<Settings>) => void;
+  /** Replaces the theme section whole: a deep merge can't remove a reset override or a deleted theme. */
+  setTheme: (theme: Settings['theme']) => void;
   reset: () => void;
 };
 
@@ -43,6 +46,7 @@ export const useSettings = create<SettingsState>()(
     (set) => ({
       settings: DEFAULTS,
       update: (patch) => set((s) => ({ settings: parseSettings(merge(s.settings, patch)) })),
+      setTheme: (theme) => set((s) => ({ settings: parseSettings({ ...s.settings, theme }) })),
       reset: () => set({ settings: DEFAULTS }),
     }),
     {
@@ -59,12 +63,14 @@ export const useSettings = create<SettingsState>()(
   ),
 );
 
-let lastTheme = useSettings.getState().settings.theme;
-applyTheme(lastTheme);
+// Applied when the resolved theme actually changes, so unrelated settings don't restyle the page.
+let lastTheme = JSON.stringify(resolveTheme(useSettings.getState().settings.theme));
+applyTheme(resolveTheme(useSettings.getState().settings.theme));
 useSettings.subscribe((state) => {
-  const t = state.settings.theme;
-  if (t.mode !== lastTheme.mode || t.bg !== lastTheme.bg || t.ink !== lastTheme.ink || t.accent !== lastTheme.accent) {
-    lastTheme = state.settings.theme;
-    applyTheme(lastTheme);
+  const resolved = resolveTheme(state.settings.theme);
+  const key = JSON.stringify(resolved);
+  if (key !== lastTheme) {
+    lastTheme = key;
+    applyTheme(resolved);
   }
 });
