@@ -12,7 +12,7 @@
 }
 
 .list li + li {
-  border-top: 1px solid oklch(1 0 0 / 0.06);
+  border-top: 1px solid color-mix(in oklch, var(--ink) 6%, transparent);
 }
 
 .option {
@@ -32,7 +32,7 @@
   display: grid;
   place-items: center;
   border-radius: 7px;
-  box-shadow: inset 0 0 0 2px oklch(1 0 0 / 0.3);
+  box-shadow: inset 0 0 0 2px color-mix(in oklch, var(--ink) 30%, transparent);
   cursor: pointer;
   transition:
     background-color 150ms ease-out,
@@ -44,8 +44,8 @@
   content: '';
   width: 10px;
   height: 5px;
-  border-left: 2.5px solid var(--on-ink);
-  border-bottom: 2.5px solid var(--on-ink);
+  border-left: 2.5px solid var(--on-accent);
+  border-bottom: 2.5px solid var(--on-accent);
   rotate: -45deg;
   translate: 0 -1px;
   opacity: 0;
@@ -53,7 +53,7 @@
 }
 
 .box:checked {
-  background: var(--ink);
+  background: var(--accent);
   box-shadow: none;
 }
 
@@ -93,7 +93,7 @@
   min-height: 52px;
   padding: 0;
   border: 0;
-  border-top: 1px solid oklch(1 0 0 / 0.06);
+  border-top: 1px solid color-mix(in oklch, var(--ink) 6%, transparent);
   background: none;
   color: var(--ink);
   font: inherit;
@@ -120,7 +120,7 @@
   align-items: center;
   gap: 8px;
   min-height: 52px;
-  border-top: 1px solid oklch(1 0 0 / 0.06);
+  border-top: 1px solid color-mix(in oklch, var(--ink) 6%, transparent);
 }
 
 .field {
@@ -128,9 +128,9 @@
   min-width: 0;
   height: 38px;
   padding: 0 12px;
-  border: 1px solid oklch(1 0 0 / 0.16);
+  border: 1px solid color-mix(in oklch, var(--ink) 16%, transparent);
   border-radius: 10px;
-  background: oklch(1 0 0 / 0.06);
+  background: color-mix(in oklch, var(--ink) 6%, transparent);
   color: var(--ink);
   font: inherit;
   font-size: 16px;
@@ -139,10 +139,10 @@
 
 .field:focus-visible {
   outline: none;
-  border-color: oklch(1 0 0 / 0.4);
+  border-color: color-mix(in oklch, var(--ink) 40%, transparent);
 }
 
 .danger {
-  background: #ffb4b4;
-  color: #3a0d0d;
+  background: var(--danger);
+  color: var(--on-danger);
 }

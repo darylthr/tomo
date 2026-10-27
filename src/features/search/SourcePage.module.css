@@ -26,7 +26,7 @@
   padding: 4px 12px 4px 4px;
   border: 1px solid transparent;
   border-radius: 999px;
-  background: oklch(0.13 0.008 280 / 0.94);
+  background: color-mix(in oklch, var(--surface-base) 94%, transparent);
   box-shadow:
     var(--glass-ring),
     0 8px 24px oklch(0 0 0 / 0.35);
@@ -40,7 +40,7 @@
   place-items: center;
   border: 0;
   border-radius: 999px;
-  background: oklch(1 0 0 / 0.1);
+  background: color-mix(in oklch, var(--ink) 10%, transparent);
   color: var(--ink);
   cursor: pointer;
   transition:
@@ -60,7 +60,7 @@
 
 @media (hover: hover) {
   .back:hover {
-    background: oklch(1 0 0 / 0.16);
+    background: color-mix(in oklch, var(--ink) 16%, transparent);
   }
 }
 
@@ -108,13 +108,13 @@
   padding: 0 6px 0 12px;
   border: 1px solid transparent;
   border-radius: 14px;
-  background: oklch(0.13 0.008 280 / 0.84);
+  background: color-mix(in oklch, var(--surface-base) 84%, transparent);
   box-shadow: var(--glass-ring);
   transition: box-shadow 150ms ease-out;
 }
 
 .field:focus-within {
-  box-shadow: 0 0 0 1px oklch(1 0 0 / 0.3);
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--ink) 30%, transparent);
 }
 
 .field > svg {
@@ -181,7 +181,7 @@
   place-items: center;
   border: 1px solid transparent;
   border-radius: 14px;
-  background: oklch(0.13 0.008 280 / 0.84);
+  background: color-mix(in oklch, var(--surface-base) 84%, transparent);
   box-shadow: var(--glass-ring);
   color: var(--ink);
   cursor: pointer;
@@ -204,8 +204,8 @@
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: var(--ink);
-  box-shadow: 0 0 0 2px oklch(0.13 0.008 280);
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--surface-solid);
 }
 
 .grid {
@@ -227,7 +227,7 @@
 .skeleton {
   aspect-ratio: 0.68;
   border-radius: 4px;
-  background: oklch(1 0 0 / 0.06);
+  background: color-mix(in oklch, var(--ink) 6%, transparent);
 }
 
 .more {

@@ -11,7 +11,7 @@
   right: var(--gap);
   border-radius: var(--frame-radius);
   overflow: hidden;
-  background: var(--panel);
+  background: var(--bg);
   color: var(--ink);
   box-shadow: var(--frame-ring);
   isolation: isolate;

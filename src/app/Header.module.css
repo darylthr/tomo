@@ -64,7 +64,7 @@
 
 @media (hover: hover) {
   .iconBtn:hover {
-    background: oklch(1 0 0 / 0.08);
+    background: color-mix(in oklch, var(--ink) 8%, transparent);
     color: var(--ink);
   }
 }
@@ -118,7 +118,7 @@
 
 .search:focus-within {
   box-shadow:
-    0 0 0 1px oklch(1 0 0 / 0.24),
+    0 0 0 1px color-mix(in oklch, var(--ink) 24%, transparent),
     0 6px 20px oklch(0 0 0 / 0.3);
 }
 

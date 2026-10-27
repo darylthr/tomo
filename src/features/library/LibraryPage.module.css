@@ -63,8 +63,8 @@
 }
 
 .button {
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 .ghost {
@@ -92,13 +92,13 @@
   max-width: 170px;
   aspect-ratio: 0.68;
   border-radius: 4px;
-  background: oklch(1 0 0 / 0.06);
+  background: color-mix(in oklch, var(--ink) 6%, transparent);
 }
 
 .skeleton span:nth-child(2) {
   width: 34%;
   max-width: 220px;
-  background: oklch(1 0 0 / 0.09);
+  background: color-mix(in oklch, var(--ink) 9%, transparent);
 }
 
 @media (prefers-reduced-motion: no-preference) {

@@ -1,8 +1,8 @@
 .reader {
   position: fixed;
   inset: 0;
-  background: #000;
-  color: #f1f1f4;
+  background: var(--bg);
+  color: var(--ink);
   overflow: hidden;
   touch-action: manipulation;
 }
@@ -149,7 +149,7 @@
   align-items: center;
   gap: 10px;
   padding: calc(8px + env(safe-area-inset-top)) 12px 28px;
-  background: linear-gradient(oklch(0 0 0 / 0.78), transparent);
+  background: linear-gradient(color-mix(in oklch, var(--bg) 78%, transparent), transparent);
 }
 
 .titles {
@@ -177,7 +177,7 @@
 
 .titles span {
   font-size: 12.5px;
-  color: oklch(1 0 0 / 0.6);
+  color: color-mix(in oklch, var(--ink) 60%, transparent);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -186,7 +186,7 @@
 .bottom {
   bottom: 0;
   padding: 36px 14px calc(14px + env(safe-area-inset-bottom));
-  background: linear-gradient(transparent, oklch(0 0 0 / 0.85) 40%);
+  background: linear-gradient(transparent, color-mix(in oklch, var(--bg) 85%, transparent) 40%);
 }
 
 /* one centred row, capped so controls stay within reach on wide screens */
@@ -201,14 +201,14 @@
 
 .scrubber {
   width: 100%;
-  color: #f1f1f4;
+  color: var(--ink);
 }
 
 .counter {
   min-width: 56px;
   text-align: right;
   font-size: 12.5px;
-  color: oklch(1 0 0 / 0.65);
+  color: color-mix(in oklch, var(--ink) 65%, transparent);
   font-variant-numeric: tabular-nums;
 }
 
@@ -229,9 +229,9 @@
   padding: 16px;
   border: 1px solid transparent;
   border-radius: 22px;
-  background: oklch(0.14 0.008 280 / 0.94);
+  background: color-mix(in oklch, var(--surface-base) 94%, transparent);
   box-shadow:
-    0 0 0 1px oklch(1 0 0 / 0.1),
+    0 0 0 1px color-mix(in oklch, var(--ink) 10%, transparent),
     0 16px 40px oklch(0 0 0 / 0.5);
   opacity: 0;
   pointer-events: none;
@@ -271,17 +271,17 @@
   display: flex;
   justify-content: space-between;
   font-size: 12.5px;
-  color: oklch(1 0 0 / 0.6);
+  color: color-mix(in oklch, var(--ink) 60%, transparent);
 }
 
 .optionLabel b {
   font-weight: 600;
-  color: #f1f1f4;
+  color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
 
 .options [role='slider'] {
-  color: #f1f1f4;
+  color: var(--ink);
 }
 
 .round {
@@ -292,8 +292,8 @@
   place-items: center;
   border: 0;
   border-radius: 999px;
-  background: oklch(1 0 0 / 0.1);
-  color: #f1f1f4;
+  background: color-mix(in oklch, var(--ink) 10%, transparent);
+  color: var(--ink);
   cursor: pointer;
   transition:
     scale 150ms ease-out,
@@ -311,8 +311,8 @@
 }
 
 .round[data-active] {
-  background: #f1f1f4;
-  color: #0b0b0d;
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 .round:disabled {
@@ -322,7 +322,7 @@
 
 @media (hover: hover) {
   .round:not(:disabled):not([data-active]):hover {
-    background: oklch(1 0 0 / 0.16);
+    background: color-mix(in oklch, var(--ink) 16%, transparent);
   }
 }
 
@@ -334,7 +334,7 @@
   place-content: center;
   justify-items: center;
   gap: 14px;
-  background: oklch(0 0 0 / 0.82);
+  background: color-mix(in oklch, var(--bg) 82%, transparent);
   text-align: center;
   padding: 24px;
 }
@@ -350,8 +350,8 @@
   padding: 0 20px;
   border: 0;
   border-radius: 14px;
-  background: #f1f1f4;
-  color: #0b0b0d;
+  background: var(--accent);
+  color: var(--on-accent);
   font-weight: 600;
   cursor: pointer;
   transition: scale 150ms ease-out;
@@ -372,7 +372,7 @@
 .openingBackdrop {
   position: absolute;
   inset: 0;
-  background: #000;
+  background: var(--bg);
 }
 
 .openingBook {

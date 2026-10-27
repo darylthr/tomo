@@ -14,7 +14,7 @@
   width: 100%;
   margin: 8px 0;
   border: 0;
-  border-top: 1px solid oklch(1 0 0 / 0.08);
+  border-top: 1px solid color-mix(in oklch, var(--ink) 8%, transparent);
 }
 
 .row {
@@ -35,9 +35,9 @@
   max-width: 200px;
   height: 36px;
   padding: 0 12px;
-  border: 1px solid oklch(1 0 0 / 0.16);
+  border: 1px solid color-mix(in oklch, var(--ink) 16%, transparent);
   border-radius: 10px;
-  background: oklch(1 0 0 / 0.06);
+  background: color-mix(in oklch, var(--ink) 6%, transparent);
   color: var(--ink);
   font-size: 16px;
   transition: border-color 150ms ease-out;
@@ -50,7 +50,7 @@
 .select:focus-visible,
 .field:focus-visible {
   outline: none;
-  border-color: oklch(1 0 0 / 0.4);
+  border-color: color-mix(in oklch, var(--ink) 40%, transparent);
 }
 
 .sort {
@@ -65,9 +65,9 @@
   flex: none;
   display: grid;
   place-items: center;
-  border: 1px solid oklch(1 0 0 / 0.16);
+  border: 1px solid color-mix(in oklch, var(--ink) 16%, transparent);
   border-radius: 10px;
-  background: oklch(1 0 0 / 0.06);
+  background: color-mix(in oklch, var(--ink) 6%, transparent);
   color: var(--ink);
   cursor: pointer;
   transition: scale 150ms ease-out;
@@ -95,11 +95,11 @@
 }
 
 .group {
-  border-top: 1px solid oklch(1 0 0 / 0.08);
+  border-top: 1px solid color-mix(in oklch, var(--ink) 8%, transparent);
 }
 
 .group:last-child {
-  border-bottom: 1px solid oklch(1 0 0 / 0.08);
+  border-bottom: 1px solid color-mix(in oklch, var(--ink) 8%, transparent);
 }
 
 .summary {
@@ -141,8 +141,8 @@
   height: 20px;
   padding: 0 6px;
   border-radius: 999px;
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--accent);
+  color: var(--on-accent);
   font-size: 11.5px;
   font-weight: 700;
   line-height: 20px;
@@ -164,7 +164,7 @@
   gap: 4px;
   height: 32px;
   padding: 0 12px;
-  border: 1px solid oklch(1 0 0 / 0.14);
+  border: 1px solid color-mix(in oklch, var(--ink) 14%, transparent);
   border-radius: 999px;
   background: transparent;
   color: var(--ink);
@@ -186,20 +186,20 @@
 }
 
 .chip[data-state='include'] {
-  border-color: var(--ink);
-  background: var(--ink);
-  color: var(--on-ink);
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 .chip[data-state='exclude'] {
   border-color: #ff8f8f;
-  color: #ffb4b4;
+  color: var(--danger);
   text-decoration: line-through;
 }
 
 @media (hover: hover) {
   .chip[data-state='ignore']:hover {
-    background: oklch(1 0 0 / 0.08);
+    background: color-mix(in oklch, var(--ink) 8%, transparent);
   }
 }
 
@@ -214,5 +214,5 @@
   justify-content: space-between;
   gap: 10px;
   margin: 12px 0;
-  color: #ffb4b4;
+  color: var(--danger);
 }

@@ -53,9 +53,9 @@
   aspect-ratio: 0.68;
   border-radius: 4px;
   overflow: hidden;
-  background: oklch(1 0 0 / 0.08);
+  background: color-mix(in oklch, var(--ink) 8%, transparent);
   box-shadow: 0 14px 30px -10px oklch(0 0 0 / 0.75);
-  outline: 1px solid oklch(1 0 0 / 0.1);
+  outline: 1px solid color-mix(in oklch, var(--ink) 10%, transparent);
   outline-offset: -1px;
   display: grid;
   place-items: center;
@@ -120,16 +120,16 @@
 }
 
 .ongoing {
-  color: #8fe3a5;
+  color: var(--status-ongoing);
 }
 .completed {
-  color: #aab4ff;
+  color: var(--status-completed);
 }
 .hiatus {
-  color: #ffc879;
+  color: var(--status-hiatus);
 }
 .cancelled {
-  color: #ffb4b4;
+  color: var(--status-cancelled);
 }
 .unknown {
   color: var(--muted);
@@ -157,8 +157,8 @@
 }
 
 .primary {
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 .primary:disabled {
@@ -201,7 +201,7 @@
 .categoryChips li {
   padding: 5px 11px;
   border-radius: 999px;
-  background: oklch(1 0 0 / 0.1);
+  background: color-mix(in oklch, var(--ink) 10%, transparent);
   font-size: 13px;
   font-weight: 550;
 }
@@ -212,7 +212,7 @@
   border: 0;
   border-radius: 999px;
   background: transparent;
-  box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.14);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--ink) 14%, transparent);
   color: var(--muted);
   font: inherit;
   font-size: 13px;
@@ -230,7 +230,7 @@
 
 @media (hover: hover) {
   .categoryEdit:hover {
-    background: oklch(1 0 0 / 0.08);
+    background: color-mix(in oklch, var(--ink) 8%, transparent);
     color: var(--ink);
   }
 }
@@ -275,7 +275,7 @@
 .genres li {
   padding: 4px 10px;
   border-radius: 999px;
-  background: oklch(1 0 0 / 0.08);
+  background: color-mix(in oklch, var(--ink) 8%, transparent);
   font-size: 12.5px;
   color: var(--muted);
 }
@@ -332,12 +332,12 @@
 }
 
 .sortButton[aria-expanded='true'] {
-  background: oklch(1 0 0 / 0.14);
+  background: color-mix(in oklch, var(--ink) 14%, transparent);
 }
 
 @media (hover: hover) {
   .sortButton:hover {
-    background: oklch(1 0 0 / 0.12);
+    background: color-mix(in oklch, var(--ink) 12%, transparent);
   }
 }
 
@@ -349,7 +349,7 @@
   width: 6px;
   height: 6px;
   border-radius: 999px;
-  background: var(--ink);
+  background: var(--accent);
 }
 
 .viewPanel {
@@ -469,7 +469,7 @@
 }
 
 .chapter + .chapter {
-  border-top: 1px solid oklch(1 0 0 / 0.06);
+  border-top: 1px solid color-mix(in oklch, var(--ink) 6%, transparent);
 }
 
 .open {
@@ -487,12 +487,12 @@
 
 /* full-width rows show a pressed tint instead of scaling */
 .open:active {
-  background: oklch(1 0 0 / 0.06);
+  background: color-mix(in oklch, var(--ink) 6%, transparent);
 }
 
 @media (hover: hover) {
   .open:hover {
-    background: oklch(1 0 0 / 0.06);
+    background: color-mix(in oklch, var(--ink) 6%, transparent);
   }
 }
 
@@ -550,7 +550,7 @@
 }
 
 .toggle[aria-pressed='true'] {
-  color: #8fe3a5;
+  color: var(--status-ongoing);
 }
 
 .toggle:not(:disabled):active {
@@ -559,7 +559,7 @@
 
 @media (hover: hover) {
   .toggle:hover {
-    background: oklch(1 0 0 / 0.08);
+    background: color-mix(in oklch, var(--ink) 8%, transparent);
   }
 }
 
@@ -568,7 +568,7 @@
   width: 112px;
   aspect-ratio: 0.68;
   border-radius: 4px;
-  background: oklch(1 0 0 / 0.06);
+  background: color-mix(in oklch, var(--ink) 6%, transparent);
 }
 
 .error {

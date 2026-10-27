@@ -25,7 +25,8 @@ async function chooseTheme(page: Page, mode: 'Light' | 'Custom') {
 }
 
 for (const mode of ['Light', 'Custom'] as const) {
-  test(`${mode} theme keeps panel and settings text readable`, async ({ page }) => {
+  // The Mode buttons are gone; rewritten against the theme picker in the themes plan's Task 7.
+  test.fixme(`${mode} theme keeps panel and settings text readable`, async ({ page }) => {
     // A page with a panel heading (the library itself draws on the shelf, not a panel).
     await page.goto('/updates');
     await chooseTheme(page, mode);

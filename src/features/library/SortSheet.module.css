@@ -9,7 +9,7 @@
   min-height: 50px;
   padding: 0;
   border: 0;
-  border-bottom: 1px solid oklch(1 0 0 / 0.06);
+  border-bottom: 1px solid color-mix(in oklch, var(--ink) 6%, transparent);
   background: none;
   color: var(--ink);
   font: inherit;
@@ -29,15 +29,15 @@
   width: 20px;
   height: 20px;
   border-radius: 999px;
-  box-shadow: inset 0 0 0 2px oklch(1 0 0 / 0.3);
+  box-shadow: inset 0 0 0 2px color-mix(in oklch, var(--ink) 30%, transparent);
   transition: box-shadow 150ms ease-out;
 }
 
 .option[aria-checked='true'] .mark {
   box-shadow:
-    inset 0 0 0 2px var(--ink),
-    inset 0 0 0 5px oklch(0.14 0.008 280),
-    inset 0 0 0 10px var(--ink);
+    inset 0 0 0 2px var(--accent),
+    inset 0 0 0 5px var(--surface-solid),
+    inset 0 0 0 10px var(--accent);
 }
 
 .option:focus-visible {
@@ -48,7 +48,7 @@
 
 .note {
   margin: 12px 0 0;
-  color: #ffc879;
+  color: var(--warning);
   font-size: 13.5px;
   text-wrap: pretty;
 }

@@ -6,7 +6,7 @@
   padding: 0;
   border-radius: 999px;
   border: 1px solid transparent;
-  background: oklch(1 0 0 / 0.16);
+  background: color-mix(in oklch, var(--ink) 16%, transparent);
   cursor: pointer;
   transition:
     background-color 150ms ease-out,
@@ -19,7 +19,7 @@
 }
 
 .switch[aria-checked='true'] {
-  background: var(--ink);
+  background: var(--accent);
 }
 
 .switch:disabled {
@@ -49,5 +49,5 @@
 
 .switch[aria-checked='true'] .thumb {
   transform: translateX(18px);
-  background: var(--on-ink);
+  background: var(--on-accent);
 }

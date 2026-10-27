@@ -79,16 +79,16 @@
 }
 
 .ongoing {
-  color: #8fe3a5;
+  color: var(--status-ongoing);
 }
 .completed {
-  color: #aab4ff;
+  color: var(--status-completed);
 }
 .hiatus {
-  color: #ffc879;
+  color: var(--status-hiatus);
 }
 .cancelled {
-  color: #ffb4b4;
+  color: var(--status-cancelled);
 }
 .unknown {
   color: var(--muted);
@@ -115,7 +115,7 @@
 .bar {
   height: 4px;
   border-radius: 4px;
-  background: oklch(1 0 0 / 0.14);
+  background: color-mix(in oklch, var(--ink) 14%, transparent);
   overflow: hidden;
 }
 
@@ -123,7 +123,7 @@
   display: block;
   height: 100%;
   width: 100%;
-  background: var(--ink);
+  background: var(--accent);
   transform-origin: left;
 }
 
@@ -137,8 +137,8 @@
   height: 52px;
   border-radius: 16px;
   border: 0;
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--accent);
+  color: var(--on-accent);
   font-weight: 600;
   font-size: 16px;
   cursor: pointer;
@@ -164,7 +164,7 @@
 
 @media (hover: hover) {
   .primary:hover {
-    background: #fff;
+    background: color-mix(in oklch, var(--accent), white 12%);
   }
 }
 

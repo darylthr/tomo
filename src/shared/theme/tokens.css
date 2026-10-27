@@ -28,13 +28,8 @@
   --status-cancelled: #ffb4b4;
   --danger: #ffb4b4;
   --warning: #ffc879;
+  --on-danger: #3a0d0d;
 
-  /* Old names, kept until every stylesheet uses the tokens above. */
-  --c-bg: var(--chrome);
-  --c-ink: var(--chrome-ink);
-  --c-accent: var(--accent);
-  --panel: var(--bg);
-  --on-ink: var(--bg);
 
   --ease: cubic-bezier(0.2, 0, 0, 1);
   --top-h: 56px;
@@ -58,6 +53,7 @@
   --status-cancelled: #cf222e;
   --danger: #cf222e;
   --warning: #9a6700;
+  --on-danger: #ffffff;
 }
 
 /* better-ui: no press scaling under reduced motion; color and opacity cues remain */
