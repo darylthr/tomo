@@ -15,7 +15,31 @@
   place-items: center;
   user-select: none;
   -webkit-user-select: none;
-  touch-action: pan-y pinch-zoom;
+  /* Tomo handles pinch and pan itself; the browser must not zoom the whole app. */
+  touch-action: none;
+}
+
+/* The page's zoom transform; it fills the surface so a 1× page sits exactly as before. */
+.zoomLayer {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 100%;
+  transform-origin: center center;
+}
+
+.fit-screen .zoomLayer {
+  height: 100%;
+  min-height: 0;
+  /* as on the surface: a content-sized row would let a tall page's 100% height overflow */
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+}
+
+.fit-height .zoomLayer {
+  height: 100%;
+  width: max-content;
+  min-width: 100%;
+  grid-template-rows: minmax(0, 1fr);
 }
 
 /* vertical swipes turn pages, so the browser may only pan sideways */
@@ -43,6 +67,8 @@
 }
 
 .fit-width {
+  /* tall pages scroll natively; pinch still belongs to Tomo */
+  touch-action: pan-y;
   overflow-y: auto;
   place-items: start center;
   overscroll-behavior: contain;
@@ -69,7 +95,9 @@
 .webtoon {
   position: absolute;
   inset: 0;
-  overflow-y: auto;
+  overflow: auto;
+  /* vertical scrolling stays native; pinch belongs to Tomo */
+  touch-action: pan-x pan-y;
   overscroll-behavior: contain;
   scrollbar-width: none;
 }
@@ -78,10 +106,15 @@
   display: none;
 }
 
-.strip {
-  width: min(100%, 800px);
+/* The strip's width carries the zoom, so a zoomed strip still scrolls all the way down. */
+.webtoonColumn {
+  width: calc(min(100%, 800px) * var(--zoom, 1));
   margin: 0 auto;
-  background: #0a0a0c;
+}
+
+.strip {
+  width: 100%;
+  background: var(--surface-2);
   content-visibility: auto;
 }
 

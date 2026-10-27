@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { Chapter } from '../../shared/model/types';
 import { useReader } from './readerStore';
 import { WebtoonView } from './WebtoonView';
@@ -50,4 +50,34 @@ it('finishes the chapter before Next chapter moves on', () => {
   show(next);
   fireEvent.click(screen.getByRole('button', { name: 'Next chapter' }));
   expect(next).toHaveBeenCalledTimes(1);
+});
+
+describe('zoom', () => {
+  const zoomOf = (strip: HTMLElement) => strip.querySelector<HTMLElement>('[data-webtoon-column]')!.style.getPropertyValue('--zoom');
+
+  it('double-tap widens the strip to 2× and back', () => {
+    const strip = show();
+    fireEvent.click(strip, { clientX: 200, clientY: 300 });
+    fireEvent.click(strip, { clientX: 200, clientY: 300 });
+    expect(zoomOf(strip)).toBe('2');
+    fireEvent.click(strip, { clientX: 200, clientY: 300 });
+    fireEvent.click(strip, { clientX: 200, clientY: 300 });
+    expect(zoomOf(strip)).toBe('1');
+  });
+
+  it('Ctrl + wheel zooms up to 3×', () => {
+    const strip = show();
+    for (let i = 0; i < 20; i++) fireEvent.wheel(strip, { ctrlKey: true, deltaY: -100 });
+    expect(zoomOf(strip)).toBe('3');
+  });
+
+  it('a single tap still shows or hides the controls', () => {
+    vi.useFakeTimers();
+    const strip = show();
+    const before = useReader.getState().chromeVisible;
+    fireEvent.click(strip, { clientX: 200, clientY: 300 });
+    act(() => vi.advanceTimersByTime(300));
+    expect(useReader.getState().chromeVisible).toBe(!before);
+    vi.useRealTimers();
+  });
 });

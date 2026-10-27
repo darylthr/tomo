@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { Chapter, ReaderMode } from '../../shared/model/types';
 import { PagedView } from './PagedView';
 import { useReader } from './readerStore';
@@ -72,11 +72,15 @@ it('turns vertical pages from the bottom', () => {
   expect(index()).toBe(0);
 });
 
-it('toggles the controls from the middle', () => {
+it('toggles the controls from the middle, once a double-tap is ruled out', () => {
+  vi.useFakeTimers();
   const surface = show('rtl');
   const before = useReader.getState().chromeVisible;
   fireEvent.click(surface, { clientX: 500, clientY: 500 });
+  expect(useReader.getState().chromeVisible).toBe(before);
+  act(() => vi.advanceTimersByTime(300));
   expect(useReader.getState().chromeVisible).toBe(!before);
+  vi.useRealTimers();
 });
 
 it('turns forward with space in every mode', () => {
@@ -101,4 +105,60 @@ it('a tap right after a touch swipe still turns the page', () => {
   fireEvent.pointerUp(surface, { clientX: 900, clientY: 500 });
   fireEvent.click(surface, { clientX: 900, clientY: 500 });
   expect(index()).toBe(2);
+});
+
+describe('zoom', () => {
+  const layer = () => document.querySelector<HTMLElement>('[data-zoom-layer]')!;
+  const doubleTap = (surface: HTMLElement, x = 500, y = 500) => {
+    fireEvent.click(surface, { clientX: x, clientY: y });
+    fireEvent.click(surface, { clientX: x, clientY: y });
+  };
+  const drag = (surface: HTMLElement, from: number, to: number) => {
+    fireEvent.pointerDown(surface, { pointerId: 1, clientX: from, clientY: 500 });
+    fireEvent.pointerMove(surface, { pointerId: 1, clientX: to, clientY: 500 });
+    fireEvent.pointerUp(surface, { pointerId: 1, clientX: to, clientY: 500 });
+  };
+
+  it('double-tap zooms in and double-tap again zooms out', () => {
+    const surface = show('rtl');
+    doubleTap(surface);
+    expect(layer().style.transform).toContain('scale(2.5)');
+    expect(useReader.getState().chromeVisible).toBe(true);
+    doubleTap(surface);
+    expect(layer().style.transform).toContain('scale(1)');
+  });
+
+  it('a swipe pans while zoomed and only turns past the edge', () => {
+    const surface = show('ltr');
+    doubleTap(surface);
+    // 2.5× of a 1000px page in a 1000px box leaves 750px to pan on each side.
+    drag(surface, 900, 100);
+    expect(index()).toBe(0);
+    expect(layer().style.transform).toContain('translate(-750px');
+    drag(surface, 900, 800);
+    expect(index()).toBe(1);
+    expect(layer().style.transform).toContain('scale(1)');
+  });
+
+  it('side taps do not turn the page while zoomed', () => {
+    const surface = show('ltr');
+    doubleTap(surface);
+    fireEvent.click(surface, { clientX: 950, clientY: 500 });
+    expect(index()).toBe(0);
+  });
+
+  it('keys zoom on the laptop', () => {
+    show('rtl');
+    fireEvent.keyDown(window, { key: '+' });
+    expect(layer().style.transform).toContain('scale(1.5)');
+    fireEvent.keyDown(window, { key: '0' });
+    expect(layer().style.transform).toContain('scale(1)');
+  });
+
+  it('turning the page resets zoom', () => {
+    show('rtl');
+    fireEvent.keyDown(window, { key: '+' });
+    act(() => useReader.getState().next());
+    expect(layer().style.transform).toContain('scale(1)');
+  });
 });
