@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { seedSettings } from './mockServer';
 
 const GRADIENT = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', 'gradient.png');
 
@@ -97,4 +98,14 @@ test('reduced motion makes the pill jump instead of slide', async ({ page }) => 
     () => getComputedStyle(document.querySelector('[role="tablist"][class*="tabs"] [class*="pill"]')!).transitionDuration,
   );
   expect(duration).toBe('0s');
+});
+
+test('a light theme washes the background image so text stays readable', async ({ page }) => {
+  await seedSettings(page, { theme: { current: 'github-light' } });
+  await page.goto('/');
+  await page.getByRole('tab', { name: 'Settings' }).click();
+  await page.getByRole('link', { name: /^Appearance/ }).click();
+  await page.getByLabel('Choose image').setInputFiles(GRADIENT);
+  await expect(page.getByRole('switch', { name: 'Dithered background' })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('main [data-wash]')).toHaveCount(1);
 });
