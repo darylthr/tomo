@@ -148,3 +148,44 @@ it('shows a bookmarked chapter as bookmarked', () => {
   show({ bookmarked: true, onBookmark: () => {} });
   expect(screen.getByRole('button', { name: 'Remove chapter bookmark' })).toHaveAttribute('aria-pressed', 'true');
 });
+
+describe('more controls', () => {
+  afterEach(() => Reflect.deleteProperty(document, 'fullscreenEnabled'));
+
+  it('shows a fullscreen button only where fullscreen exists', () => {
+    Object.defineProperty(document, 'fullscreenEnabled', { configurable: true, value: false });
+    show();
+    expect(screen.queryByRole('button', { name: 'Fullscreen' })).toBeNull();
+  });
+
+  it('enters fullscreen where it exists', async () => {
+    Object.defineProperty(document, 'fullscreenEnabled', { configurable: true, value: true });
+    const request = vi.fn(async () => {});
+    document.documentElement.requestFullscreen = request;
+    show();
+    await userEvent.click(screen.getByRole('button', { name: 'Fullscreen' }));
+    expect(request).toHaveBeenCalled();
+  });
+
+  it('turns pages grey when grayscale is on', async () => {
+    show();
+    await userEvent.click(screen.getByRole('button', { name: 'Reading options' }));
+    await userEvent.click(screen.getByRole('switch', { name: 'Grayscale' }));
+    expect(useSettings.getState().settings.reader.grayscale).toBe(true);
+  });
+
+  it('opens the chapter list', async () => {
+    const onChapters = vi.fn();
+    show({ onChapters });
+    await userEvent.click(screen.getByRole('button', { name: 'Chapters' }));
+    expect(onChapters).toHaveBeenCalled();
+  });
+
+  it('shows where the tap zones are', async () => {
+    show();
+    await userEvent.click(screen.getByRole('button', { name: 'Reading options' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Show tap zones' }));
+    expect(screen.getByText('Next page')).toBeInTheDocument();
+    expect(screen.getByText('Menu')).toBeInTheDocument();
+  });
+});

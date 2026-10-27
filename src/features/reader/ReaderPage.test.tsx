@@ -92,7 +92,7 @@ it('finishes a webtoon before its end card moves on to the next chapter', async 
   vi.mocked(api.getChapters).mockResolvedValue([chapter(11, 2), chapter(12, 3)]);
   vi.mocked(api.getPages).mockResolvedValue(pages(6));
   open('/read/11');
-  const card = await screen.findByRole('status');
+  const card = (await screen.findByText('Finished · Ch. 2')).closest<HTMLElement>('[role="status"]')!;
   await userEvent.click(within(card).getByRole('button', { name: 'Next chapter' }));
   await vi.waitFor(() => expect(api.setProgress).toHaveBeenCalledWith(11, { lastPage: 5, read: true }));
   vi.unstubAllGlobals();

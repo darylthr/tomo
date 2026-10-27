@@ -13,6 +13,8 @@ import { PagedView } from './PagedView';
 import { startReadingClock } from '../insights/readingTime';
 import { useUpdates } from '../updates/updatesStore';
 import { createProgressSync, savesSettled, startPage } from './progress';
+import { ChapterDrawer } from './ChapterDrawer';
+import { DirectionHint } from './DirectionHint';
 import { EndCard } from './EndCard';
 import { prefetchChapter, takePrefetched } from './nextChapterCache';
 import { PageActions } from './PageActions';
@@ -49,6 +51,7 @@ export function ReaderPage() {
   const atEnd = useReader((s) => s.atEnd);
   const [load, setLoad] = useState<Load>({ state: 'loading' });
   // The chapter bookmark as toggled here; the loaded chapter's value until then.
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [bookmark, setBookmark] = useState<{ chapterId: number; on: boolean } | null>(null);
   const [opening, setOpening] = useState<OpeningFrom | null>(() => useUi.getState().openingFrom);
   // Only this chapter's first page; the store may still hold the previous session's pages.
@@ -154,7 +157,7 @@ export function ReaderPage() {
   };
 
   return (
-    <div className={styles.reader}>
+    <div className={`${styles.reader} ${reader.grayscale ? styles.grayscale : ''}`}>
       {load.state === 'error' && (
         <div className={styles.message}>
           <p>{load.message}</p>
@@ -202,6 +205,7 @@ export function ReaderPage() {
           titleId={ready.title.id}
           titleName={ready.title.title}
           bookmarked={bookmark?.chapterId === ready.chapter.id ? bookmark.on : ready.chapter.bookmarked}
+          onChapters={() => setDrawerOpen(true)}
           onBookmark={(on) => {
             setBookmark({ chapterId: ready.chapter.id, on });
             void setChapterBookmark(ready.chapter.id, on).catch(() => setBookmark({ chapterId: ready.chapter.id, on: !on }));
@@ -236,6 +240,21 @@ export function ReaderPage() {
           }
         />
       )}
+
+      {ready && (
+        <ChapterDrawer
+          open={drawerOpen}
+          titleId={ready.title.id}
+          chapters={ready.chapters}
+          currentId={ready.chapter.id}
+          onPick={(c) => {
+            setDrawerOpen(false);
+            if (c.id !== ready.chapter.id) goChapter(c);
+          }}
+          onClose={() => setDrawerOpen(false)}
+        />
+      )}
+      {ready && !opening && <DirectionHint titleId={ready.title.id} mode={mode} />}
 
       {opening && <Opening from={opening} pageSrc={firstPage} onDone={() => setOpening(null)} />}
     </div>

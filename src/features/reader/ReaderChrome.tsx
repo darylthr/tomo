@@ -2,13 +2,14 @@ import { useEffect, useId, useState } from 'react';
 import type { ReaderMode } from '../../shared/model/types';
 import type { ReaderSettings } from '../../shared/settings/schema';
 import { useSettings } from '../../shared/settings/store';
-import { IconBookmark, IconSettings } from '../../shared/ui/icons';
+import { IconBookmark, IconFullscreen, IconList, IconSettings } from '../../shared/ui/icons';
 import { Segmented } from '../../shared/ui/Segmented';
 import { Switch } from '../../shared/ui/Switch';
 import { TickSlider } from '../../shared/ui/TickSlider';
 import styles from './ReaderPage.module.css';
 import { useReader } from './readerStore';
 import { wantsSpreads } from './spreads';
+import { zoneLabels } from './tapZones';
 import { useViewport } from './useViewport';
 
 type Props = {
@@ -19,6 +20,8 @@ type Props = {
   /** The chapter's own bookmark (Suwayomi's isBookmarked). */
   bookmarked?: boolean;
   onBookmark?: (bookmarked: boolean) => void;
+  /** Opens the chapter list. */
+  onChapters?: () => void;
   onBack: () => void;
   onPrevChapter: (() => void) | null;
   onNextChapter: (() => void) | null;
@@ -44,12 +47,26 @@ const percent = (v: number) => `${Math.round(v * 100)}%`;
  * Reader controls: back, the centred title and chapter, and reading options on top;
  * chapter buttons around a page slider (one line per page) at the bottom.
  */
-export function ReaderChrome({ titleId, titleName, chapterName, bookmarked = false, onBookmark, onBack, onPrevChapter, onNextChapter, onModeChange }: Props) {
+export function ReaderChrome({ titleId, titleName, chapterName, bookmarked = false, onBookmark, onChapters, onBack, onPrevChapter, onNextChapter, onModeChange }: Props) {
   const { index, view, layout, pages, mode, chromeVisible, goTo, openPageActions } = useReader();
   const viewport = useViewport();
   // Double pages only matter where they could show; the cover options only while they do.
   const canSpread = wantsSpreads('auto', viewport, mode);
   const spreadsShowing = layout.some((e) => e.length > 1);
+  // Fullscreen isn't on iPhone; the button only shows where it works.
+  const canFullscreen = typeof document !== 'undefined' && document.fullscreenEnabled === true;
+  const [fullscreen, setFullscreen] = useState(false);
+  useEffect(() => {
+    const onChange = () => setFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+  const [zonesShown, setZonesShown] = useState(false);
+  useEffect(() => {
+    if (!zonesShown) return;
+    const t = setTimeout(() => setZonesShown(false), 1500);
+    return () => clearTimeout(t);
+  }, [zonesShown]);
   const reader = useSettings((s) => s.settings.reader);
   const update = useSettings((s) => s.update);
   const [optionsWanted, setOptions] = useState(false);
@@ -90,6 +107,21 @@ export function ReaderChrome({ titleId, titleName, chapterName, bookmarked = fal
           <span>{chapterName}</span>
         </div>
         <div className={styles.topActions}>
+        {onChapters && (
+          <button type="button" className={styles.round} aria-label="Chapters" onClick={onChapters}>
+            <IconList />
+          </button>
+        )}
+        {canFullscreen && (
+          <button
+            type="button"
+            className={styles.round}
+            aria-label={fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+            onClick={() => void (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen())}
+          >
+            <IconFullscreen exit={fullscreen} />
+          </button>
+        )}
         {onBookmark && (
           <button
             type="button"
@@ -158,6 +190,25 @@ export function ReaderChrome({ titleId, titleName, chapterName, bookmarked = fal
           />
         )}
         <div className={styles.optionRow}>
+          <span className={styles.optionLabel}>Grayscale</span>
+          <Switch label="Grayscale" checked={reader.grayscale} onChange={(grayscale) => update({ reader: { grayscale } })} />
+        </div>
+        {paged && (
+          <div className={styles.optionRow}>
+            <span className={styles.optionLabel}>Tap zones</span>
+            <button
+              type="button"
+              className={styles.optionButton}
+              onClick={() => {
+                setOptions(false);
+                setZonesShown(true);
+              }}
+            >
+              Show tap zones
+            </button>
+          </div>
+        )}
+        <div className={styles.optionRow}>
           <span className={styles.optionLabel}>This page</span>
           <button
             type="button"
@@ -199,6 +250,16 @@ export function ReaderChrome({ titleId, titleName, chapterName, bookmarked = fal
           />
         </div>
       </section>
+
+      {zonesShown && (
+        <div className={`${styles.zones} ${mode === 'vertical' ? styles.zonesVertical : ''}`}>
+          {zoneLabels(mode, reader.tapZones).map((label, i) => (
+            <span key={i} className={styles.zone}>
+              {label}
+            </span>
+          ))}
+        </div>
+      )}
 
       <footer className={styles.bottom}>
         <div className={styles.scrubRow}>

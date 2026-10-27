@@ -183,3 +183,23 @@ export function IconBookmark({ filled, ...p }: IconProps) {
     </Svg>
   );
 }
+
+export function IconList(p: Omit<IconProps, "filled">) {
+  return (
+    <Svg {...p}>
+      <path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" />
+    </Svg>
+  );
+}
+
+export function IconFullscreen({ exit, ...p }: Omit<IconProps, "filled"> & { exit?: boolean }) {
+  return (
+    <Svg {...p}>
+      {exit ? (
+        <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
+      ) : (
+        <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+      )}
+    </Svg>
+  );
+}

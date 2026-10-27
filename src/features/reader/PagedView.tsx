@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { prefersReducedMotion } from '../../shared/ui/useReducedMotion';
+import { tapAction } from './tapZones';
 import { useCrop } from './useCrop';
 import { useLongPress } from './useLongPress';
 import { useZoom } from './useZoom';
@@ -26,6 +27,7 @@ export function PagedView() {
   const fit = useSettings((s) => s.settings.reader.fit);
   const animated = useSettings((s) => s.settings.reader.pageTransitions);
   const crop = useSettings((s) => s.settings.reader.cropBorders);
+  const tapZones = useSettings((s) => s.settings.reader.tapZones);
   const start = useRef<{ x: number; y: number; t: number } | null>(null);
   const swiped = useRef(false);
   const vertical = mode === 'vertical';
@@ -110,7 +112,8 @@ export function PagedView() {
     const fx = (e.clientX - r.left) / r.width;
     const fy = (e.clientY - r.top) / r.height;
     const f = vertical ? fy : fx;
-    const centre = f > 1 / 3 && f < 2 / 3;
+    const action = tapAction(f, mode, tapZones);
+    const centre = action === 'chrome';
     if (centre || zoom.zoomed) {
       const prevTap = lastTap.current;
       const now = performance.now();
@@ -124,10 +127,7 @@ export function PagedView() {
       chromeTimer.current = setTimeout(toggleChrome, CHROME_DELAY_MS);
       return;
     }
-    const early = f <= 1 / 3; // left third, or top third when vertical
-    if (vertical) return early ? prev() : next();
-    if (mode === 'rtl') return early ? next() : prev();
-    return early ? prev() : next();
+    return action === 'next' ? next() : prev();
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
