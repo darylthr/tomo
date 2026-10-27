@@ -10,6 +10,7 @@ import { ServerError } from '../server/client';
 import { playOpening } from './opening';
 import { preferredMode } from './mode';
 import { PagedView } from './PagedView';
+import { startReadingClock } from '../insights/readingTime';
 import { useUpdates } from '../updates/updatesStore';
 import { createProgressSync, savesSettled, startPage } from './progress';
 import { ReaderChrome } from './ReaderChrome';
@@ -39,6 +40,9 @@ export function ReaderPage() {
   const [opening, setOpening] = useState<OpeningFrom | null>(() => useUi.getState().openingFrom);
   // Only this chapter's first page; the store may still hold the previous session's pages.
   const firstPage = useReader((s) => (s.chapter?.id === chapterId ? s.pages[0] : undefined));
+
+  // Reading Insights: time spent counts while the reader is open and in use.
+  useEffect(() => startReadingClock(), []);
 
   useEffect(() => {
     useUi.setState({ openingFrom: null });

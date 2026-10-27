@@ -218,3 +218,10 @@ export const LAST_UPDATE = `query LAST_UPDATE { lastUpdateTimestamp { timestamp 
 export const UPDATE_LIBRARY = `mutation UPDATE_LIBRARY { updateLibraryManga(input: {}) { updateStatus { isRunning } } }`;
 
 export const UPDATE_STATUS = `query UPDATE_STATUS { updateStatus { isRunning } }`;
+
+// Server-wide key/value store: Tomo keeps each device's reading time here (`tomo.time.<device>`).
+export const GLOBAL_METAS = `query GLOBAL_METAS { metas { nodes { key value } } }`;
+
+export const SET_GLOBAL_META = `
+  mutation SET_GLOBAL_META($key: String!, $value: String!) { setGlobalMeta(input: { meta: { key: $key, value: $value } }) { meta { key } } }
+`;

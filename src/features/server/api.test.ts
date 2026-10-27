@@ -21,6 +21,7 @@ import {
   isLibraryUpdateRunning,
   startLibraryUpdate,
   getLibrary,
+  getGlobalMetas,
   getLibrarySortInfo,
   getMaxSourcesInParallel,
   getPages,
@@ -30,6 +31,7 @@ import {
   deleteCategory,
   moveCategory,
   renameCategory,
+  setGlobalMeta,
   setInLibrary,
   setTitleCategories,
   setProgress,
@@ -328,4 +330,13 @@ it('reads the dates the library can be sorted by, in milliseconds', async () => 
   const info = await getLibrarySortInfo();
   expect(info.get(1)).toEqual({ addedAt: 1792600000000, lastReadAt: 1792700000000, latestAt: 1792800000000 });
   expect(info.get(2)).toEqual({ addedAt: 1792600000000, lastReadAt: 0, latestAt: 0 });
+});
+
+it('reads and writes server-wide meta', async () => {
+  serve({ GLOBAL_METAS: { data: { metas: { nodes: [{ key: 'tomo.time.a', value: '{}' }] } } } });
+  await expect(getGlobalMetas()).resolves.toEqual([{ key: 'tomo.time.a', value: '{}' }]);
+  await setGlobalMeta('tomo.time.a', '{"2026-10-29":60}', true);
+  expect(calls[1]!.variables).toEqual({ key: 'tomo.time.a', value: '{"2026-10-29":60}' });
+  const init = (vi.mocked(fetch).mock.calls[1] as unknown as [string, RequestInit])[1];
+  expect(init.keepalive).toBe(true);
 });

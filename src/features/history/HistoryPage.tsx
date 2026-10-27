@@ -7,6 +7,7 @@ import { IconClose, IconPlay, IconRefresh } from '../../shared/ui/icons';
 import list from '../../shared/ui/List.module.css';
 import { rowThumb, Thumb } from '../../shared/ui/ListRow';
 import { Page } from '../../shared/ui/Page';
+import { InsightsCard } from '../insights/InsightsCard';
 import { openBook } from '../reader/opening';
 import { getHistory } from '../server/api';
 import { HISTORY_STEP_MS, historyLine, latestPerTitle, resumeChapterId, visible } from './history';
@@ -88,6 +89,7 @@ export function HistoryPage() {
         </>
       }
     >
+      <InsightsCard />
       {data.status === 'error' && data.entries.length === 0 ? (
         <div className={`${list.state} ${list.stateError}`} role="alert">
           <span>Couldn't load history</span>

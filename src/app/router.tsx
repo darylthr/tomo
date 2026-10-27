@@ -1,6 +1,7 @@
 import type { RouteObject } from 'react-router-dom';
 import { CategoriesPage } from '../features/categories/CategoriesPage';
 import { HistoryPage } from '../features/history/HistoryPage';
+import { InsightsPage } from '../features/insights/InsightsPage';
 import { LibraryPage } from '../features/library/LibraryPage';
 import { ReaderPage } from '../features/reader/ReaderPage';
 import { SearchPage } from '../features/search/SearchPage';
@@ -21,6 +22,7 @@ export const routes: RouteObject[] = [
       { index: true, element: <LibraryPage /> },
       { path: 'updates', element: <UpdatesPage /> },
       { path: 'history', element: <HistoryPage /> },
+      { path: 'insights', element: <InsightsPage /> },
       { path: 'search', element: <SearchPage /> },
       { path: 'search/source/:sourceId', element: <SourcePage /> },
       { path: 'settings', element: <SettingsPage /> },

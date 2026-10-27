@@ -16,6 +16,8 @@ const TABS: Tab[] = [
 ];
 
 function activeTab(pathname: string): string {
+  // Insights opens from History, so History stays selected there.
+  if (pathname.startsWith('/insights')) return '/history';
   return TABS.find((t) => t.to !== '/' && pathname.startsWith(t.to))?.to ?? '/';
 }
 

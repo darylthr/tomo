@@ -229,3 +229,12 @@ export async function isLibraryUpdateRunning(): Promise<boolean> {
   const data = await gql<{ updateStatus: { isRunning: boolean } }>(op.UPDATE_STATUS);
   return data.updateStatus.isRunning;
 }
+
+export async function getGlobalMetas(): Promise<{ key: string; value: string }[]> {
+  const data = await gql<{ metas: { nodes: { key: string; value: string }[] } }>(op.GLOBAL_METAS);
+  return data.metas.nodes;
+}
+
+export async function setGlobalMeta(key: string, value: string, keepalive = false): Promise<void> {
+  await gql(op.SET_GLOBAL_META, { key, value }, { keepalive });
+}

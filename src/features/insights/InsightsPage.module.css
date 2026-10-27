@@ -1,0 +1,306 @@
+/* Card surfaces match the list groups: opaque enough over any background, no blur. */
+.tiles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (min-width: 640px) {
+  .tiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.tile,
+.card {
+  border: 1px solid transparent;
+  background: oklch(0.13 0.008 280 / 0.84);
+  box-shadow: var(--glass-ring);
+}
+
+.tile {
+  display: grid;
+  /* rows stay at the top, so values line up when one tile's detail wraps */
+  align-content: start;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: 18px;
+}
+
+.tileKey,
+.cardHead {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tileValue {
+  font-size: 26px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.tileDetail {
+  font-size: 12.5px;
+  color: var(--faint);
+  text-wrap: pretty;
+}
+
+.card {
+  margin-top: 10px;
+  padding: 12px 14px 14px;
+  border-radius: 20px;
+}
+
+.cardHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+
+.cardHead span {
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--faint);
+}
+
+/* ---------- heatmap ---------- */
+.heatScroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  padding: 2px;
+}
+
+.heatScroll::-webkit-scrollbar {
+  display: none;
+}
+
+.months,
+.heat {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 13px;
+  gap: 3px;
+  width: max-content;
+}
+
+.month {
+  height: 14px;
+  overflow: visible;
+  white-space: nowrap;
+  font-size: 10.5px;
+  color: var(--faint);
+}
+
+.week {
+  display: grid;
+  grid-template-rows: repeat(7, 13px);
+  gap: 3px;
+}
+
+.day,
+.future,
+.legendCell {
+  width: 13px;
+  height: 13px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+}
+
+/* One hue, dim to bright: none, then the accent at rising strength. */
+[data-level='0'] {
+  background: oklch(1 0 0 / 0.07);
+}
+[data-level='1'] {
+  background: color-mix(in oklch, var(--c-accent) 35%, oklch(0.2 0.01 280));
+}
+[data-level='2'] {
+  background: color-mix(in oklch, var(--c-accent) 60%, oklch(0.2 0.01 280));
+}
+[data-level='3'] {
+  background: var(--c-accent);
+}
+[data-level='4'] {
+  background: color-mix(in oklch, var(--c-accent) 55%, white);
+}
+
+.day {
+  cursor: pointer;
+  transition: scale 150ms ease-out;
+}
+
+.day:active {
+  scale: 0.96;
+}
+
+.day:focus-visible,
+.picked {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.future {
+  visibility: hidden;
+}
+
+.heatFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.pickedText {
+  margin: 0;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex: none;
+  font-size: 11px;
+  color: var(--faint);
+}
+
+.legendCell {
+  display: block;
+  width: 10px;
+  height: 10px;
+}
+
+/* ---------- weekly bars ---------- */
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 104px;
+  padding-top: 18px;
+  border-bottom: 1px solid oklch(1 0 0 / 0.08);
+}
+
+.barSlot {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+.bar {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+  background: color-mix(in oklch, var(--c-accent) 75%, oklch(0.2 0.01 280));
+}
+
+.barNow {
+  background: color-mix(in oklch, var(--c-accent) 55%, white);
+}
+
+.barLabel {
+  position: absolute;
+  left: 50%;
+  translate: -50% 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 10.5px;
+  color: var(--faint);
+}
+
+.skeleton {
+  height: 420px;
+  border-radius: 20px;
+  background: oklch(1 0 0 / 0.05);
+}
+
+/* ---------- History's summary card ---------- */
+.summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  background: oklch(0.13 0.008 280 / 0.84);
+  box-shadow: var(--glass-ring);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    scale 150ms ease-out,
+    background-color 150ms ease-out;
+}
+
+.summary:active {
+  scale: 0.96;
+}
+
+@media (hover: hover) {
+  .summary:hover {
+    background: oklch(0.16 0.008 280 / 0.9);
+  }
+}
+
+.mini {
+  display: grid;
+  grid-template-columns: repeat(7, 9px);
+  gap: 2px;
+  flex: none;
+}
+
+.mini i {
+  display: block;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+}
+
+.mini i[data-future] {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.1);
+}
+
+.summaryText {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.summaryTitle {
+  font-weight: 650;
+}
+
+.summarySub {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.chevron {
+  width: 18px;
+  height: 18px;
+  color: var(--faint);
+}

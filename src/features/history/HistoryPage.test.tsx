@@ -8,6 +8,8 @@ import { HistoryPage } from './HistoryPage';
 import { HISTORY_STEP_MS } from './history';
 import { useHistoryHidden } from './historyHidden';
 
+// Insights has its own tests; here it would add a second history request.
+vi.mock('../insights/InsightsCard', () => ({ InsightsCard: () => null }));
 vi.mock('../server/api', () => ({ getHistory: vi.fn() }));
 vi.mock('../library/continueReading', () => ({ loadChapters: vi.fn() }));
 
