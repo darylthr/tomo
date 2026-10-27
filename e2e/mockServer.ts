@@ -48,6 +48,8 @@ function defaults(): Record<string, Handler> {
       return { data: { manga: nodes.find((n) => n.id === v.id) ?? nodes[0] } };
     },
     FETCH_PAGES: read('pages.json'),
+    MANGA_META: { data: { manga: { meta: [] } } },
+    SET_MANGA_META: { data: { setMangaMeta: { meta: { key: 'tomo.bookmarks' } } } },
     UPDATE_CHAPTER: (v: Record<string, unknown>) => ({ data: { updateChapter: { chapter: { id: v.id, isRead: false, lastPageRead: 0 } } } }),
     UPDATE_MANGA: (v: Record<string, unknown>) => ({ data: { updateManga: { manga: { id: v.id, inLibrary: v.inLibrary } } } }),
     SOURCES: read('sources.json'),

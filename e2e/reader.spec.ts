@@ -68,3 +68,52 @@ for (const fit of ['screen', 'height'] as const) {
     expect(box.y + box.height).toBeLessThanOrEqual(800);
   });
 }
+
+test.describe('reader upgrade', () => {
+  const TALL = '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200"><rect width="800" height="1200" fill="#eee"/></svg>';
+
+  test('shows two pages side by side on a wide screen', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await mockSuwayomi(page);
+    await page.route('**/chapter/*/page/*', (route) => route.fulfill({ contentType: 'image/svg+xml', body: TALL }));
+    await page.goto('/read/11');
+    await expect(pageImage(page, 4)).toBeVisible();
+    await expect(pageImage(page, 5)).toBeVisible();
+    await expect(page.getByText('4–5 / 8')).toBeVisible();
+  });
+
+  test('double-tap zooms the page', async ({ page }) => {
+    await seedSettings(page, { reader: { spreads: 'off' } });
+    await mockSuwayomi(page);
+    await page.goto('/read/11');
+    await expect(pageImage(page, 4)).toBeVisible();
+    const box = (await page.locator('[data-reader-surface]').boundingBox())!;
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 2;
+    await page.mouse.click(x, y);
+    await page.mouse.click(x, y);
+    await expect.poll(() => page.locator('[data-zoom-layer]').evaluate((el) => (el as HTMLElement).style.transform)).toContain('scale(2.5)');
+  });
+
+  test('a page bookmark is saved to the server and listed on the title page', async ({ page }) => {
+    await seedSettings(page, { reader: { spreads: 'off' } });
+    const mock = await mockSuwayomi(page);
+    await page.goto('/read/11');
+    await expect(pageImage(page, 4)).toBeVisible();
+    await pageImage(page, 4).click({ button: 'right' });
+    await page.getByRole('dialog', { name: 'Page 4' }).getByRole('button', { name: 'Bookmark page' }).click();
+    await expect.poll(() => mock.calls.filter((c) => c.op === 'SET_MANGA_META').map((c) => c.variables.key)).toEqual(['tomo.bookmarks']);
+    const saved = JSON.parse(String(mock.calls.find((c) => c.op === 'SET_MANGA_META')!.variables.value));
+    expect(saved).toMatchObject([{ chapterId: 11, page: 3 }]);
+  });
+
+  test('the end card shows the next chapter', async ({ page }) => {
+    await seedSettings(page, { reader: { spreads: 'off' } });
+    await mockSuwayomi(page);
+    await page.goto('/read/11');
+    await expect(pageImage(page, 4)).toBeVisible();
+    for (let i = 0; i < 5; i++) await page.keyboard.press('ArrowLeft');
+    await expect(page.getByText(/^Finished · Ch\./)).toBeVisible();
+    await expect(page.getByText(/^Next · Ch\./)).toBeVisible();
+  });
+});
