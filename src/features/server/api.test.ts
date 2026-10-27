@@ -31,6 +31,7 @@ import {
   deleteCategory,
   moveCategory,
   renameCategory,
+  setChapterBookmark,
   setGlobalMeta,
   setInLibrary,
   setTitleCategories,
@@ -339,4 +340,11 @@ it('reads and writes server-wide meta', async () => {
   expect(calls[1]!.variables).toEqual({ key: 'tomo.time.a', value: '{"2026-10-29":60}' });
   const init = (vi.mocked(fetch).mock.calls[1] as unknown as [string, RequestInit])[1];
   expect(init.keepalive).toBe(true);
+});
+
+it('bookmarks a chapter', async () => {
+  serve({});
+  await setChapterBookmark(11, true);
+  expect(calls[0]!.variables).toEqual({ id: 11, patch: { isBookmarked: true } });
+  expect(calls[0]!.query).toMatch(/UPDATE_CHAPTER/);
 });

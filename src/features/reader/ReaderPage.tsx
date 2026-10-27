@@ -5,7 +5,7 @@ import { useSettings } from '../../shared/settings/store';
 import { useUi, type OpeningFrom } from '../../shared/ui/uiStore';
 import { loadChapters } from '../library/continueReading';
 import { useLibrary } from '../library/libraryStore';
-import { getChapter, getPages, getTitle, setProgress } from '../server/api';
+import { getChapter, getPages, getTitle, setChapterBookmark, setProgress } from '../server/api';
 import { ServerError } from '../server/client';
 import { playOpening } from './opening';
 import { preferredMode } from './mode';
@@ -41,6 +41,8 @@ export function ReaderPage() {
   const mode = useReader((s) => s.mode);
   const [load, setLoad] = useState<Load>({ state: 'loading' });
   const [caughtUp, setCaughtUp] = useState(false);
+  // The chapter bookmark as toggled here; the loaded chapter's value until then.
+  const [bookmark, setBookmark] = useState<{ chapterId: number; on: boolean } | null>(null);
   const [opening, setOpening] = useState<OpeningFrom | null>(() => useUi.getState().openingFrom);
   // Only this chapter's first page; the store may still hold the previous session's pages.
   const firstPage = useReader((s) => (s.chapter?.id === chapterId ? s.pages[0] : undefined));
@@ -148,6 +150,11 @@ export function ReaderPage() {
         <ReaderChrome
           titleId={ready.title.id}
           titleName={ready.title.title}
+          bookmarked={bookmark?.chapterId === ready.chapter.id ? bookmark.on : ready.chapter.bookmarked}
+          onBookmark={(on) => {
+            setBookmark({ chapterId: ready.chapter.id, on });
+            void setChapterBookmark(ready.chapter.id, on).catch(() => setBookmark({ chapterId: ready.chapter.id, on: !on }));
+          }}
           chapterName={ready.chapter.name || `Chapter ${ready.chapter.number}`}
           onBack={back}
           onPrevChapter={near.prev ? () => goChapter(near.prev!) : null}

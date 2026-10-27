@@ -2,7 +2,7 @@ import { useEffect, useId, useState } from 'react';
 import type { ReaderMode } from '../../shared/model/types';
 import type { ReaderSettings } from '../../shared/settings/schema';
 import { useSettings } from '../../shared/settings/store';
-import { IconSettings } from '../../shared/ui/icons';
+import { IconBookmark, IconSettings } from '../../shared/ui/icons';
 import { Segmented } from '../../shared/ui/Segmented';
 import { Switch } from '../../shared/ui/Switch';
 import { TickSlider } from '../../shared/ui/TickSlider';
@@ -16,6 +16,9 @@ type Props = {
   titleId?: number;
   titleName: string;
   chapterName: string;
+  /** The chapter's own bookmark (Suwayomi's isBookmarked). */
+  bookmarked?: boolean;
+  onBookmark?: (bookmarked: boolean) => void;
   onBack: () => void;
   onPrevChapter: (() => void) | null;
   onNextChapter: (() => void) | null;
@@ -41,7 +44,7 @@ const percent = (v: number) => `${Math.round(v * 100)}%`;
  * Reader controls: back, the centred title and chapter, and reading options on top;
  * chapter buttons around a page slider (one line per page) at the bottom.
  */
-export function ReaderChrome({ titleId, titleName, chapterName, onBack, onPrevChapter, onNextChapter, onModeChange }: Props) {
+export function ReaderChrome({ titleId, titleName, chapterName, bookmarked = false, onBookmark, onBack, onPrevChapter, onNextChapter, onModeChange }: Props) {
   const { index, view, layout, pages, mode, chromeVisible, goTo, openPageActions } = useReader();
   const viewport = useViewport();
   // Double pages only matter where they could show; the cover options only while they do.
@@ -86,6 +89,19 @@ export function ReaderChrome({ titleId, titleName, chapterName, onBack, onPrevCh
           <b>{titleName}</b>
           <span>{chapterName}</span>
         </div>
+        <div className={styles.topActions}>
+        {onBookmark && (
+          <button
+            type="button"
+            className={styles.round}
+            aria-label={bookmarked ? 'Remove chapter bookmark' : 'Bookmark chapter'}
+            aria-pressed={bookmarked}
+            data-active={bookmarked || undefined}
+            onClick={() => onBookmark(!bookmarked)}
+          >
+            <IconBookmark filled={bookmarked} />
+          </button>
+        )}
         <button
           type="button"
           className={styles.round}
@@ -97,6 +113,7 @@ export function ReaderChrome({ titleId, titleName, chapterName, onBack, onPrevCh
         >
           <IconSettings filled={optionsOpen} />
         </button>
+        </div>
       </header>
 
       {optionsOpen && <div className={styles.optionsScrim} aria-hidden="true" onClick={() => setOptions(false)} />}

@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import type { Chapter, Title } from '../../shared/model/types';
@@ -15,6 +15,7 @@ vi.mock('../server/api', () => ({
   setProgress: vi.fn(async () => {}),
   setInLibrary: vi.fn(async () => {}),
   setTitleCategories: vi.fn(async () => {}),
+  setChapterBookmark: vi.fn(async () => {}),
   createCategory: vi.fn(async (name: string) => ({ id: 9, name, order: 4 })),
   getLibrary: vi.fn(async () => ({ titles: [], categories: CATEGORIES })),
 }));
@@ -243,5 +244,31 @@ describe('categories', () => {
     await userEvent.type(within(sheet).getByRole('textbox', { name: 'Category name' }), 'Dropped{Enter}');
     expect(api.createCategory).toHaveBeenCalledWith('Dropped');
     expect(await within(sheet).findByRole('checkbox', { name: /Dropped/ })).toBeChecked();
+  });
+});
+
+describe('chapter bookmarks', () => {
+  it('marks bookmarked chapters', async () => {
+    vi.mocked(api.getChapters).mockResolvedValue([chapter(12, 3, { bookmarked: true }), chapter(11, 2)]);
+    open();
+    await screen.findByText('Chapter 3');
+    const rows = within(screen.getByRole('list', { name: 'Chapters' })).getAllByRole('listitem');
+    expect(within(rows[0]!).getByLabelText('Bookmarked')).toBeInTheDocument();
+    expect(within(rows[1]!).queryByLabelText('Bookmarked')).toBeNull();
+  });
+
+  it('long-pressing a chapter offers bookmark and read actions', async () => {
+    open();
+    const name = await screen.findByText('Chapter 3');
+    vi.useFakeTimers();
+    fireEvent.pointerDown(name, { pointerId: 1, clientX: 10, clientY: 10 });
+    act(() => vi.advanceTimersByTime(500));
+    fireEvent.pointerUp(name, { pointerId: 1, clientX: 10, clientY: 10 });
+    vi.useRealTimers();
+    const sheet = screen.getByRole('dialog', { name: 'Chapter 3' });
+    await userEvent.click(within(sheet).getByRole('button', { name: 'Bookmark chapter' }));
+    expect(api.setChapterBookmark).toHaveBeenCalledWith(12, true);
+    const rows = within(screen.getByRole('list', { name: 'Chapters' })).getAllByRole('listitem');
+    expect(within(rows[0]!).getByLabelText('Bookmarked')).toBeInTheDocument();
   });
 });

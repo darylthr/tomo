@@ -92,6 +92,11 @@ export async function setProgress(chapterId: number, patch: { lastPage?: number;
   await gql(op.UPDATE_CHAPTER, { id: chapterId, patch: body }, { keepalive: true });
 }
 
+/** Suwayomi's own chapter bookmark: syncs everywhere and drives "Bookmarked only". */
+export async function setChapterBookmark(chapterId: number, bookmarked: boolean): Promise<void> {
+  await gql(op.UPDATE_CHAPTER, { id: chapterId, patch: { isBookmarked: bookmarked } });
+}
+
 export async function setInLibrary(titleId: number, inLibrary: boolean): Promise<void> {
   await gql(op.UPDATE_MANGA, { id: titleId, inLibrary });
 }

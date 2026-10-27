@@ -175,3 +175,11 @@ export function IconSort(p: Omit<IconProps, "filled">) {
     </Svg>
   );
 }
+
+export function IconBookmark({ filled, ...p }: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1Z" fill={fill(filled)} />
+    </Svg>
+  );
+}

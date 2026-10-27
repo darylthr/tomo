@@ -134,3 +134,17 @@ it('opens the page actions from the reading options', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'Save page' }));
   expect(useReader.getState().pageActions).toBe(2);
 });
+
+it('toggles the chapter bookmark', async () => {
+  const onBookmark = vi.fn();
+  show({ bookmarked: false, onBookmark });
+  const button = screen.getByRole('button', { name: 'Bookmark chapter' });
+  expect(button).toHaveAttribute('aria-pressed', 'false');
+  await userEvent.click(button);
+  expect(onBookmark).toHaveBeenCalledWith(true);
+});
+
+it('shows a bookmarked chapter as bookmarked', () => {
+  show({ bookmarked: true, onBookmark: () => {} });
+  expect(screen.getByRole('button', { name: 'Remove chapter bookmark' })).toHaveAttribute('aria-pressed', 'true');
+});

@@ -218,7 +218,8 @@
 .top {
   top: 0;
   display: grid;
-  grid-template-columns: 44px 1fr 44px;
+  /* sides fit their buttons; the title centres in what is left */
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   padding: calc(8px + env(safe-area-inset-top)) 12px 28px;
@@ -516,4 +517,9 @@
   .optionButton:hover {
     background: var(--surface-2);
   }
+}
+
+.topActions {
+  display: flex;
+  gap: 8px;
 }

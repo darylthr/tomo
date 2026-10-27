@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { Chapter, Title, TitleStatus } from '../../shared/model/types';
-import { createCategory, fetchTitle, getTitle, setInLibrary, setProgress, setTitleCategories } from '../server/api';
+import { createCategory, fetchTitle, getTitle, setChapterBookmark, setInLibrary, setProgress, setTitleCategories } from '../server/api';
 import { ServerError } from '../server/client';
 import { loadChapters, pickContinueChapter } from '../library/continueReading';
 import { useLibrary } from '../library/libraryStore';
 import styles from './TitlePage.module.css';
-import { IconFilter } from '../../shared/ui/icons';
+import { IconBookmark, IconFilter } from '../../shared/ui/icons';
+import { Sheet } from '../../shared/ui/Sheet';
+import sheet from '../../shared/ui/Sheet.module.css';
+import { useLongPress } from '../reader/useLongPress';
 import { TitleName } from '../../shared/ui/TitleName';
 import { prefersReducedMotion } from '../../shared/ui/useReducedMotion';
 import { arrangeChapters, isDefaultView } from './chapterList';
@@ -34,6 +37,9 @@ export function TitlePage() {
   const view = useChapterView(id);
   const setView = useChapterViews((s) => s.setView);
   const [picking, setPicking] = useState(false);
+  // Long-press a chapter row for its actions (rows carry the chapter id in data-page).
+  const [actionsFor, setActionsFor] = useState<number | null>(null);
+  const press = useLongPress(setActionsFor, () => -1);
   const allCategories = useLibrary((s) => s.categories);
   const libraryTitles = useLibrary((s) => s.titles);
   useEffect(() => {
@@ -123,6 +129,12 @@ export function TitlePage() {
   };
 
   // With categories set up, adding asks where the title goes (as in Mihon); without, it just adds.
+  const toggleBookmark = (c: Chapter) => {
+    const bookmarked = !c.bookmarked;
+    void setChapterBookmark(c.id, bookmarked);
+    update((s) => ({ title: s.title, chapters: s.chapters.map((x) => (x.id === c.id ? { ...x, bookmarked } : x)) }));
+  };
+
   const toggleLibrary = () => {
     if (title.inLibrary) setLibrary(false);
     else if (categories.length > 0) setPicking(true);
@@ -257,9 +269,22 @@ export function TitlePage() {
               const name = c.name || `Chapter ${c.number}`;
               return (
                 <li key={c.id} className={`${styles.chapter} ${c.read ? styles.read : ''}`}>
-                  <button type="button" className={styles.open} onClick={() => navigate(`/read/${c.id}`)}>
-                    <span className={styles.chapterName} data-chapter-name="">
-                      {name}
+                  <button
+                    type="button"
+                    className={styles.open}
+                    data-page={c.id}
+                    onClick={() => !press.consumeClick() && navigate(`/read/${c.id}`)}
+                    onPointerDown={press.onPointerDown}
+                    onPointerMove={press.onPointerMove}
+                    onPointerUp={press.onPointerUp}
+                    onPointerCancel={press.onPointerCancel}
+                    onContextMenu={press.onContextMenu}
+                  >
+                    <span className={styles.chapterTitleRow}>
+                      <span className={styles.chapterName} data-chapter-name="">
+                        {name}
+                      </span>
+                      {c.bookmarked && <IconBookmark filled className={styles.ribbon} role="img" aria-hidden={false} aria-label="Bookmarked" />}
                     </span>
                     <span className={styles.chapterMeta}>
                       {c.uploadedAt > 0 && <span>{dateFormat.format(c.uploadedAt)}</span>}
@@ -283,8 +308,57 @@ export function TitlePage() {
             })}
           </ul>
         )}
+        <ChapterActions
+          chapter={chapters.find((c) => c.id === actionsFor) ?? null}
+          onBookmark={toggleBookmark}
+          onRead={toggleRead}
+          onClose={() => setActionsFor(null)}
+        />
       </div>
     </section>
+  );
+}
+
+/** A long-pressed chapter's actions: bookmark it, or mark it read. */
+function ChapterActions({
+  chapter,
+  onBookmark,
+  onRead,
+  onClose,
+}: {
+  chapter: Chapter | null;
+  onBookmark: (c: Chapter) => void;
+  onRead: (c: Chapter) => void;
+  onClose: () => void;
+}) {
+  const name = chapter ? chapter.name || `Chapter ${chapter.number}` : 'Chapter';
+  return (
+    <Sheet open={chapter !== null} label={name} title={name} closeLabel="Close chapter actions" onClose={onClose}>
+      {chapter && (
+        <div className={styles.chapterActions}>
+          <button
+            type="button"
+            className={sheet.apply}
+            onClick={() => {
+              onBookmark(chapter);
+              onClose();
+            }}
+          >
+            {chapter.bookmarked ? 'Remove bookmark' : 'Bookmark chapter'}
+          </button>
+          <button
+            type="button"
+            className={`${sheet.ghost} ${styles.wideGhost}`}
+            onClick={() => {
+              onRead(chapter);
+              onClose();
+            }}
+          >
+            {chapter.read ? 'Mark as unread' : 'Mark as read'}
+          </button>
+        </div>
+      )}
+    </Sheet>
   );
 }
 
