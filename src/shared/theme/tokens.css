@@ -1,24 +1,40 @@
 :root {
-  /* theme colors, written by applyTheme() */
-  --c-bg: #0e0e10;
-  --c-ink: #f1f1f4;
-  --c-accent: #8b6cff;
-
-  /* The outer chrome (gap around the panel, navbar) follows the theme. */
-  --chrome: var(--c-bg);
-  --chrome-ink: var(--c-ink);
-
-  /* The panel and the settings sheet always stay dark (spec §5.2), so their text is always light. */
-  --panel: #050506;
+  /* The theme's colours, written by applyTheme(); these defaults are Tomo Dark. */
+  --bg: #050506;
+  --surface-base: #07070a;
   --ink: #f1f1f4;
+  --accent: #8b6cff;
+  --on-accent: #ffffff;
+  --chrome: #0e0e10;
+  --chrome-ink: #f1f1f4;
+
+  /* Derived from the five. Cards stay a little see-through so the dithered background shows. */
+  --surface: color-mix(in oklch, var(--surface-base) 84%, transparent);
+  --surface-solid: var(--surface-base);
+  --surface-2: color-mix(in oklch, var(--surface-base), var(--ink) 6%);
   --muted: color-mix(in oklch, var(--ink) 60%, transparent);
   --faint: color-mix(in oklch, var(--ink) 40%, transparent);
-  /* Text and icons sitting on an --ink pill. */
-  --on-ink: #0b0b0d;
+  --line: color-mix(in oklch, var(--ink) 9%, transparent);
+  --hover: color-mix(in oklch, var(--ink) 6%, transparent);
+  --press: color-mix(in oklch, var(--ink) 8%, transparent);
+  --glass: color-mix(in oklch, var(--surface-base) 66%, transparent);
+  --glass-ring: 0 0 0 1px var(--line);
+  --frame-ring: 0 0 0 1px var(--line);
 
-  --glass: oklch(0.13 0.008 280 / 0.66);
-  --glass-ring: 0 0 0 1px oklch(1 0 0 / 0.09);
-  --frame-ring: 0 0 0 1px oklch(1 0 0 / 0.08);
+  /* Status colours: fixed, with darker steps for light themes below. */
+  --status-ongoing: #8fe3a5;
+  --status-completed: #aab4ff;
+  --status-hiatus: #ffc879;
+  --status-cancelled: #ffb4b4;
+  --danger: #ffb4b4;
+  --warning: #ffc879;
+
+  /* Old names, kept until every stylesheet uses the tokens above. */
+  --c-bg: var(--chrome);
+  --c-ink: var(--chrome-ink);
+  --c-accent: var(--accent);
+  --panel: var(--bg);
+  --on-ink: var(--bg);
 
   --ease: cubic-bezier(0.2, 0, 0, 1);
   --top-h: 56px;
@@ -35,8 +51,13 @@
   }
 }
 
-[data-theme='light'] {
-  color-scheme: light;
+[data-scheme='light'] {
+  --status-ongoing: #1a7f37;
+  --status-completed: #4f5bd5;
+  --status-hiatus: #9a6700;
+  --status-cancelled: #cf222e;
+  --danger: #cf222e;
+  --warning: #9a6700;
 }
 
 /* better-ui: no press scaling under reduced motion; color and opacity cues remain */

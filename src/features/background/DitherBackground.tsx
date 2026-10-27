@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSettings } from '../../shared/settings/store';
+import { resolveTheme } from '../../shared/theme/themes';
 import { loadBackgroundImage } from './backgroundImage';
 import { coverRect, ditherPixels } from './dither';
 import { createGlRenderer, type GlRenderer } from './glRenderer';
@@ -28,6 +29,7 @@ function renderCpu(canvas: HTMLCanvasElement, img: ImageBitmap, levels: number):
  * Renders only when the image, settings or panel size change.
  */
 export function DitherBackground() {
+  const light = useSettings((s) => resolveTheme(s.settings.theme).scheme === 'light');
   const { enabled, imageKey, levels, cell } = useSettings((s) => s.settings.background);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [loaded, setLoaded] = useState<{ key: string; bitmap: ImageBitmap | null } | null>(null);
@@ -87,5 +89,11 @@ export function DitherBackground() {
 
   if (!active) return null;
   // A lost WebGL canvas can't switch to 2D, so the CPU path gets a fresh element.
-  return <canvas key={mode} ref={canvasRef} className={styles.bg} aria-hidden="true" />;
+  return (
+    <>
+      <canvas key={mode} ref={canvasRef} className={styles.bg} aria-hidden="true" />
+      {/* Light themes: the image shows through a wash of the theme background, so dark text stays readable. */}
+      {light && <div className={styles.wash} data-wash="" aria-hidden="true" />}
+    </>
+  );
 }

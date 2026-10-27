@@ -7,3 +7,13 @@
   z-index: -1;
   pointer-events: none;
 }
+
+.wash {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(transparent, var(--bg) 88%),
+    color-mix(in oklch, var(--bg) 55%, transparent);
+}

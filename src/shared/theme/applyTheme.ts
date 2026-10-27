@@ -1,4 +1,4 @@
-import type { ResolvedTheme } from './themes';
+import { chromeInk, onAccent, type ResolvedTheme } from './themes';
 
 /**
  * Turns off every transition while `fn` changes colors, so a theme switch
@@ -13,12 +13,25 @@ export function withTransitionsSuppressed(fn: () => void, root: HTMLElement = do
   });
 }
 
-/** Writes the theme to `data-theme` and the `--c-*` CSS variables on `root`. */
+/**
+ * Writes the theme's five colours, the text colours that sit on accent and chrome, and the scheme.
+ * Every other token is derived from these in tokens.css.
+ */
 export function applyTheme(theme: ResolvedTheme, root: HTMLElement = document.documentElement): void {
+  const { bg, surface, ink, accent, chrome } = theme.colours;
+  const vars: Record<string, string> = {
+    '--bg': bg,
+    '--surface-base': surface,
+    '--ink': ink,
+    '--accent': accent,
+    '--on-accent': onAccent(accent),
+    '--chrome': chrome,
+    '--chrome-ink': chromeInk(chrome),
+  };
   withTransitionsSuppressed(() => {
     root.dataset.theme = theme.id;
-    root.style.setProperty('--c-bg', theme.colours.chrome);
-    root.style.setProperty('--c-ink', theme.scheme === 'light' ? '#111114' : '#f1f1f4');
-    root.style.setProperty('--c-accent', theme.colours.accent);
+    root.dataset.scheme = theme.scheme;
+    root.style.colorScheme = theme.scheme;
+    for (const [k, v] of Object.entries(vars)) root.style.setProperty(k, v);
   }, root);
 }

@@ -96,3 +96,13 @@ it('switches to the CPU path after the GL context is lost', async () => {
   await waitFor(() => expect(spy).toHaveBeenCalled());
   expect(container.querySelector('canvas')).not.toBeNull();
 });
+
+it('shows a light wash over the image in light themes only', async () => {
+  useSettings.getState().update({ background: { enabled: true, imageKey: 'background' } });
+  const { container } = await renderBackground();
+  await waitFor(() => expect(container.querySelector('canvas')).not.toBeNull());
+  expect(container.querySelector('[data-wash]')).toBeNull();
+  useSettings.getState().setTheme({ current: 'github-light', overrides: {}, custom: [] });
+  await waitFor(() => expect(container.querySelector('[data-wash]')).not.toBeNull());
+  useSettings.getState().setTheme({ current: 'tomo-dark', overrides: {}, custom: [] });
+});
