@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import type { Title } from '../../shared/model/types';
 import { useSettings } from '../../shared/settings/store';
+import * as api from '../server/api';
 import { ServerError } from '../server/client';
 import { pickContinueChapter } from './continueReading';
 import { LibraryPage } from './LibraryPage';
@@ -42,8 +43,15 @@ function showLibrary(state: Partial<ReturnType<typeof useLibrary.getState>>) {
   );
 }
 
+vi.mock('../server/api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../server/api')>()),
+  getLibrarySortInfo: vi.fn(),
+}));
+
 beforeEach(() => {
   useSettings.getState().reset();
+  useLibrary.setState({ sortInfo: null, sortInfoState: 'idle' });
+  vi.mocked(api.getLibrarySortInfo).mockReset();
 });
 
 it('explains an unreachable server and offers a retry', async () => {
@@ -88,6 +96,71 @@ it('shows a grid when vertical scrolling is chosen', () => {
   showLibrary({ titles: [title(1), title(2), title(3)] });
   expect(screen.getByRole('list', { name: 'Library' }).querySelectorAll('li')).toHaveLength(3);
   expect(screen.queryByRole('group', { name: /Library shelf/ })).toBeNull();
+});
+
+describe('sorting', () => {
+  const gridNames = () =>
+    within(screen.getByRole('list', { name: 'Library' }))
+      .getAllByRole('button')
+      .map((b) => b.getAttribute('aria-label'));
+  beforeEach(() => act(() => useSettings.getState().update({ library: { scroll: 'vertical' } })));
+  const titles = [title(1, { unread: 0, chapterCount: 50 }), title(2, { unread: 7, chapterCount: 9 }), title(3, { unread: 2, chapterCount: 30 })];
+
+  it('sorts by chapters left from the sort sheet and remembers it', async () => {
+    showLibrary({ titles });
+    const button = screen.getByRole('button', { name: 'Sort library: Title, A–Z' });
+    await userEvent.click(button);
+    const sheet = screen.getByRole('dialog', { name: 'Sort library' });
+    await userEvent.click(within(sheet).getByRole('radio', { name: 'Chapters left' }));
+    expect(gridNames()).toEqual(['Title 2', 'Title 3', 'Title 1']);
+    await userEvent.click(within(sheet).getByRole('radio', { name: 'Fewest' }));
+    expect(gridNames()).toEqual(['Title 3', 'Title 2', 'Title 1']);
+    expect(useSettings.getState().settings.library).toMatchObject({ sortBy: 'unread', sortDescending: false });
+    expect(screen.getByRole('button', { name: 'Sort library: Chapters left, Fewest' })).toBeInTheDocument();
+  });
+
+  it('fetches dates from the server for the date sorts', async () => {
+    vi.mocked(api.getLibrarySortInfo).mockResolvedValue(
+      new Map([
+        [1, { addedAt: 1, lastReadAt: 300, latestAt: 1 }],
+        [2, { addedAt: 1, lastReadAt: 100, latestAt: 1 }],
+        [3, { addedAt: 1, lastReadAt: 200, latestAt: 1 }],
+      ]),
+    );
+    act(() => useSettings.getState().update({ library: { sortBy: 'lastRead', sortDescending: true } }));
+    showLibrary({ titles });
+    await vi.waitFor(() => expect(gridNames()).toEqual(['Title 1', 'Title 3', 'Title 2']));
+    expect(api.getLibrarySortInfo).toHaveBeenCalledTimes(1);
+  });
+
+  it('says when the server is too old to sort by dates, and keeps title order', async () => {
+    vi.mocked(api.getLibrarySortInfo).mockRejectedValue(new ServerError('version', 'Cannot query field "lastReadChapter"'));
+    act(() => useSettings.getState().update({ library: { sortBy: 'latest', sortDescending: true } }));
+    showLibrary({ titles });
+    await userEvent.click(await screen.findByRole('button', { name: /^Sort library/ }));
+    expect(await screen.findByText("Your Suwayomi version can't sort by this. Showing titles A–Z.")).toBeInTheDocument();
+    expect(gridNames()).toEqual(['Title 1', 'Title 2', 'Title 3']);
+  });
+});
+
+describe('grid options', () => {
+  beforeEach(() => act(() => useSettings.getState().update({ library: { scroll: 'vertical' } })));
+
+  it('hides titles and chapters left under the books when turned off', () => {
+    act(() => useSettings.getState().update({ library: { gridTitles: false, gridProgress: false } }));
+    showLibrary({ titles: [title(1, { unread: 4 })] });
+    const grid = screen.getByRole('list', { name: 'Library' });
+    // The book itself still shows the name (spine, coverless placeholder); the caption under it is gone.
+    expect(within(grid).getAllByText('Title 1').every((el) => el.closest('[data-tile]'))).toBe(true);
+    expect(within(grid).queryByText('4 left')).toBeNull();
+    expect(within(grid).getByRole('button', { name: 'Title 1' })).toBeInTheDocument();
+  });
+
+  it('sizes the grid', () => {
+    act(() => useSettings.getState().update({ library: { gridSize: 'l' } }));
+    showLibrary({ titles: [title(1)] });
+    expect(screen.getByRole('list', { name: 'Library' })).toHaveAttribute('data-size', 'l');
+  });
 });
 
 describe('TitleInfo', () => {

@@ -2,13 +2,17 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Title } from '../../shared/model/types';
 import { useSettings } from '../../shared/settings/store';
+import { IconSort } from '../../shared/ui/icons';
 import { openBook } from '../reader/opening';
 import { CategoryBar, type CategoryFilter } from './CategoryBar';
+import barStyles from './CategoryBar.module.css';
 import { loadChapters, pickContinueChapter } from './continueReading';
 import { LibraryGrid } from './LibraryGrid';
 import styles from './LibraryPage.module.css';
 import { useLibrary } from './libraryStore';
+import { needsInfo, SORTS, sortTitles } from './librarySort';
 import { Shelf } from './shelf/Shelf';
+import { SortSheet } from './SortSheet';
 import { TitleInfo } from './TitleInfo';
 
 function Message({ title, children }: { title: string; children?: React.ReactNode }) {
@@ -21,7 +25,9 @@ function Message({ title, children }: { title: string; children?: React.ReactNod
 }
 
 export function LibraryPage() {
-  const { status, titles, categories, error, load, refresh } = useLibrary();
+  const { status, titles, categories, error, load, refresh, sortInfo, sortInfoState, loadSortInfo } = useLibrary();
+  const update = useSettings((s) => s.update);
+  const [sorting, setSorting] = useState(false);
   const library = useSettings((s) => s.settings.library);
   const serverUrl = useSettings((s) => s.settings.server.url);
   const navigate = useNavigate();
@@ -42,13 +48,20 @@ export function LibraryPage() {
     return map;
   }, [titles]);
 
-  const shown = useMemo(
-    () =>
-      filter === 'all'
-        ? titles
-        : titles.filter((t) => (t.categoryIds.length ? t.categoryIds.includes(filter) : filter === 0)),
-    [titles, filter],
-  );
+  const { sortBy, sortDescending } = library;
+  const wantsInfo = needsInfo(sortBy);
+  useEffect(() => {
+    if (wantsInfo && status === 'ready' && sortInfoState === 'idle') void loadSortInfo();
+  }, [wantsInfo, status, sortInfoState, loadSortInfo]);
+
+  const shown = useMemo(() => {
+    const inCategory =
+      filter === 'all' ? titles : titles.filter((t) => (t.categoryIds.length ? t.categoryIds.includes(filter) : filter === 0));
+    return sortTitles(inCategory, sortBy, sortDescending, sortInfo);
+  }, [titles, filter, sortBy, sortDescending, sortInfo]);
+
+  const sort = SORTS.find((s) => s.value === sortBy) ?? SORTS[0]!;
+  const sortLabel = `${sort.label}, ${sort.directions[sortDescending ? 0 : 1]}`;
 
   const continueReading = async (title: Title, coverEl?: HTMLElement | null) => {
     const cover = coverEl ?? document.querySelector<HTMLElement>(`[data-title-id="${title.id}"] [data-cover]`);
@@ -111,14 +124,38 @@ export function LibraryPage() {
           setFilter(f);
           setCenter(0);
         }}
+        action={
+          <button type="button" className={barStyles.action} aria-label={`Sort library: ${sortLabel}`} onClick={() => setSorting(true)}>
+            <IconSort />
+          </button>
+        }
+      />
+      <SortSheet
+        open={sorting}
+        sortBy={sortBy}
+        descending={sortDescending}
+        unsupported={sortInfoState === 'unsupported'}
+        onChange={(by, descending) => {
+          update({ library: { sortBy: by, sortDescending: descending } });
+          setCenter(0);
+        }}
+        onClose={() => setSorting(false)}
       />
       {vertical ? (
-        <LibraryGrid titles={shown} display={library.display} lite={lite} onOpen={(t, el) => void continueReading(t, el)} />
+        <LibraryGrid
+          titles={shown}
+          display={library.display}
+          lite={lite}
+          size={library.gridSize}
+          showTitles={library.gridTitles}
+          showProgress={library.gridProgress}
+          onOpen={(t, el) => void continueReading(t, el)}
+        />
       ) : (
         <>
           <div className={styles.shelfWrap}>
             <Shelf
-              key={String(filter)}
+              key={`${filter}-${sortBy}-${sortDescending}`}
               titles={shown}
               display={library.display}
               lite={lite}

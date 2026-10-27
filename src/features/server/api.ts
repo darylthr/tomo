@@ -1,4 +1,4 @@
-import type { BrowseMode, BrowsePage, Category, Chapter, FeedEntry, Source, SourceFilter, Title } from '../../shared/model/types';
+import type { BrowseMode, BrowsePage, Category, Chapter, FeedEntry, SortInfo, Source, SourceFilter, Title } from '../../shared/model/types';
 import { gql } from './client';
 import { resolveUrl } from './config';
 import {
@@ -44,6 +44,28 @@ const newestFirst = (a: Chapter, b: Chapter) => b.order - a.order;
 export async function getChapters(titleId: number): Promise<Chapter[]> {
   const data = await gql<{ chapters: { nodes: RawChapter[] } }>(op.CHAPTERS, { mangaId: titleId });
   return data.chapters.nodes.map(toChapter).sort(newestFirst);
+}
+
+type RawSortInfo = {
+  id: number;
+  inLibraryAt: string;
+  lastReadChapter: { lastReadAt: string } | null;
+  latestFetchedChapter: { fetchedAt: string } | null;
+};
+
+/** Dates for sorting the library: when each title was added, last read, and got its newest chapter. */
+export async function getLibrarySortInfo(): Promise<SortInfo> {
+  const data = await gql<{ mangas: { nodes: RawSortInfo[] } }>(op.LIBRARY_SORT);
+  return new Map(
+    data.mangas.nodes.map((n) => [
+      n.id,
+      {
+        addedAt: epochMs(n.inLibraryAt),
+        lastReadAt: n.lastReadChapter ? epochMs(n.lastReadChapter.lastReadAt) : 0,
+        latestAt: n.latestFetchedChapter ? epochMs(n.latestFetchedChapter.fetchedAt) : 0,
+      },
+    ]),
+  );
 }
 
 /** Asks Suwayomi to fetch the chapter list from the source (first open, or refresh). */

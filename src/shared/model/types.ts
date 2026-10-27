@@ -48,6 +48,9 @@ export type FeedEntry = {
   at: number;
 };
 
+/** Dates the library query doesn't carry (ms; 0 when unknown), fetched only for the sorts that need them. */
+export type SortInfo = Map<number, { addedAt: number; lastReadAt: number; latestAt: number }>;
+
 export type Category = { id: number; name: string; order: number };
 
 /** A Suwayomi source: an installed extension's source, or the Local source ("Home server"). */

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { Category, Title } from '../../shared/model/types';
-import { getLibrary } from '../server/api';
+import type { Category, SortInfo, Title } from '../../shared/model/types';
+import { getLibrary, getLibrarySortInfo } from '../server/api';
 import { ServerError } from '../server/client';
 
 type Status = 'idle' | 'loading' | 'ready' | 'error';
@@ -15,6 +15,11 @@ type LibraryState = {
   /** Always refetches from the server; an older request still running is ignored. */
   refresh: () => Promise<void>;
   patchTitle: (id: number, patch: Partial<Title>) => void;
+  /** Dates for the date sorts; fetched on demand, refetched after a refresh. */
+  sortInfo: SortInfo | null;
+  /** unsupported: the server is too old to have these fields. error: try again on the next refresh. */
+  sortInfoState: 'idle' | 'loading' | 'ready' | 'unsupported' | 'error';
+  loadSortInfo: () => Promise<void>;
 };
 
 let inflight: Promise<void> | null = null;
@@ -27,7 +32,9 @@ export const useLibrary = create<LibraryState>()((set, get) => {
     const request = (async () => {
       try {
         const { titles, categories } = await getLibrary();
-        if (gen === generation) set({ status: 'ready', titles, categories, error: null });
+        // New titles or reads change the dates too; the shelf asks again if it needs them.
+        if (gen === generation)
+          set((s) => ({ status: 'ready', titles, categories, error: null, sortInfoState: s.sortInfoState === 'unsupported' ? 'unsupported' : 'idle' }));
       } catch (e) {
         if (gen === generation)
           set({ status: 'error', error: e instanceof ServerError ? e : new ServerError('server', String(e)) });
@@ -47,5 +54,16 @@ export const useLibrary = create<LibraryState>()((set, get) => {
     load: () => (get().status === 'ready' ? Promise.resolve() : (inflight ?? fetchLibrary())),
     refresh: () => fetchLibrary(),
     patchTitle: (id, patch) => set((s) => ({ titles: s.titles.map((t) => (t.id === id ? { ...t, ...patch } : t)) })),
+    sortInfo: null,
+    sortInfoState: 'idle',
+    loadSortInfo: async () => {
+      if (get().sortInfoState === 'loading') return;
+      set({ sortInfoState: 'loading' });
+      try {
+        set({ sortInfo: await getLibrarySortInfo(), sortInfoState: 'ready' });
+      } catch (e) {
+        set({ sortInfoState: e instanceof ServerError && e.kind === 'version' ? 'unsupported' : 'error' });
+      }
+    },
   };
 });

@@ -52,6 +52,28 @@ export function LibrarySettings() {
             ]}
           />
         </Row>
+        {library.scroll === 'vertical' && (
+          <>
+            <Row label="Grid size">
+              <Segmented
+                label="Grid size"
+                value={library.gridSize}
+                onChange={(gridSize) => lib({ gridSize })}
+                options={[
+                  { value: 's', label: 'Small' },
+                  { value: 'm', label: 'Medium' },
+                  { value: 'l', label: 'Large' },
+                ]}
+              />
+            </Row>
+            <Row label="Show titles under books">
+              <Switch label="Show titles under books" checked={library.gridTitles} onChange={(gridTitles) => lib({ gridTitles })} />
+            </Row>
+            <Row label="Show chapters left">
+              <Switch label="Show chapters left" checked={library.gridProgress} onChange={(gridProgress) => lib({ gridProgress })} />
+            </Row>
+          </>
+        )}
         <Row label="Fade the shelf sides">
           <Switch label="Fade the shelf sides" checked={library.fadeSides} onChange={(fadeSides) => lib({ fadeSides })} />
         </Row>

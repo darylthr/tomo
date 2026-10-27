@@ -1,5 +1,8 @@
 .bar {
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
   z-index: 5;
   margin: 0 auto;
   width: max-content;
@@ -18,6 +21,8 @@
 
 .tabs {
   position: relative;
+  flex: 1;
+  min-width: 0;
   display: flex;
   gap: 2px;
   height: 100%;
@@ -105,5 +110,37 @@
   .tab[aria-selected='false']:hover {
     background: oklch(1 0 0 / 0.08);
     color: var(--ink);
+  }
+}
+
+/* the sort button at the end of the bar */
+.action {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: oklch(1 0 0 / 0.08);
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    scale 150ms ease-out,
+    background-color 150ms ease-out;
+}
+
+.action svg {
+  width: 18px;
+  height: 18px;
+}
+
+.action:active {
+  scale: 0.96;
+}
+
+@media (hover: hover) {
+  .action:hover {
+    background: oklch(1 0 0 / 0.14);
   }
 }

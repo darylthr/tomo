@@ -30,6 +30,12 @@ const librarySchema = z.object({
   styledLogos: z.boolean().catch(true),
   detail: z.enum(['full', 'lite']).catch('full'),
   mirrorRtl: z.boolean().catch(false),
+  sortBy: z.enum(['title', 'unread', 'chapters', 'lastRead', 'latest', 'added']).catch('title'),
+  sortDescending: z.boolean().catch(false),
+  /** Vertical grid only: book width Small / Medium / Large. */
+  gridSize: z.enum(['s', 'm', 'l']).catch('m'),
+  gridTitles: z.boolean().catch(true),
+  gridProgress: z.boolean().catch(true),
 });
 
 const serverSchema = z.object({

@@ -15,6 +15,11 @@ describe('parseSettings', () => {
       styledLogos: true,
       detail: 'full',
       mirrorRtl: false,
+      sortBy: 'title',
+      sortDescending: false,
+      gridSize: 'm',
+      gridTitles: true,
+      gridProgress: true,
     });
   });
 

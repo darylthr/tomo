@@ -78,6 +78,16 @@ describe('Library', () => {
     expect(screen.getByTestId('location')).toHaveTextContent('/settings/categories');
   });
 
+  it('shows grid options only with vertical scrolling', async () => {
+    show();
+    expect(screen.queryByRole('radiogroup', { name: 'Grid size' })).toBeNull();
+    await userEvent.click(screen.getByRole('radio', { name: 'Vertical' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'Large' }));
+    await userEvent.click(screen.getByRole('switch', { name: 'Show titles under books' }));
+    await userEvent.click(screen.getByRole('switch', { name: 'Show chapters left' }));
+    expect(useSettings.getState().settings.library).toMatchObject({ gridSize: 'l', gridTitles: false, gridProgress: false });
+  });
+
   it('goes back to Settings', async () => {
     show();
     await userEvent.click(screen.getByRole('button', { name: 'Back' }));

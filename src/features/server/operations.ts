@@ -47,6 +47,16 @@ export const LIBRARY = `
   }
 `;
 
+// Separate from LIBRARY: these fields are newer than some supported servers, and an unknown
+// field fails the whole query. Only asked for when the shelf is sorted by one of these dates.
+export const LIBRARY_SORT = `
+  query LIBRARY_SORT {
+    mangas(condition: { inLibrary: true }) {
+      nodes { id inLibraryAt lastReadChapter { lastReadAt } latestFetchedChapter { fetchedAt } }
+    }
+  }
+`;
+
 export const TITLE = `
   ${TITLE_FIELDS}
   query TITLE($id: Int!) { manga(id: $id) { ...TITLE_FIELDS } }

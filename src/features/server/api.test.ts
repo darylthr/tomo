@@ -21,6 +21,7 @@ import {
   isLibraryUpdateRunning,
   startLibraryUpdate,
   getLibrary,
+  getLibrarySortInfo,
   getMaxSourcesInParallel,
   getPages,
   getSourceFilters,
@@ -309,4 +310,22 @@ describe('categories', () => {
     await setTitleCategories(3, [0, 5, 7]);
     expect(calls[0]!.variables).toEqual({ id: 3, patch: { clearCategories: true, addToCategories: [5, 7] } });
   });
+});
+
+it('reads the dates the library can be sorted by, in milliseconds', async () => {
+  serve({
+    LIBRARY_SORT: {
+      data: {
+        mangas: {
+          nodes: [
+            { id: 1, inLibraryAt: '1792600000', lastReadChapter: { lastReadAt: '1792700000' }, latestFetchedChapter: { fetchedAt: '1792800000' } },
+            { id: 2, inLibraryAt: '1792600000', lastReadChapter: null, latestFetchedChapter: null },
+          ],
+        },
+      },
+    },
+  });
+  const info = await getLibrarySortInfo();
+  expect(info.get(1)).toEqual({ addedAt: 1792600000000, lastReadAt: 1792700000000, latestAt: 1792800000000 });
+  expect(info.get(2)).toEqual({ addedAt: 1792600000000, lastReadAt: 0, latestAt: 0 });
 });

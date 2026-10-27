@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { Category } from '../../shared/model/types';
 import { useSlidingPill } from '../../shared/ui/useSlidingPill';
 import styles from './CategoryBar.module.css';
@@ -10,10 +10,12 @@ type Props = {
   counts: Map<CategoryFilter, number>;
   value: CategoryFilter;
   onChange: (value: CategoryFilter) => void;
+  /** A control after the tabs, inside the bar (the sort button). */
+  action?: ReactNode;
 };
 
 /** Floating category tabs with a sliding white pill (spec §6.1). */
-export function CategoryBar({ categories, counts, value, onChange }: Props) {
+export function CategoryBar({ categories, counts, value, onChange, action }: Props) {
   const tabsRef = useRef<HTMLDivElement>(null);
   const pillRef = useRef<HTMLSpanElement>(null);
   const [overflow, setOverflow] = useState({ more: false, scrolled: false });
@@ -58,6 +60,7 @@ export function CategoryBar({ categories, counts, value, onChange }: Props) {
           </button>
         ))}
       </div>
+      {action}
     </nav>
   );
 }

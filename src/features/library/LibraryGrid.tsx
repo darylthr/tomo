@@ -7,11 +7,14 @@ type Props = {
   titles: Title[];
   display: 'books' | 'covers';
   lite: boolean;
+  size: 's' | 'm' | 'l';
+  showTitles: boolean;
+  showProgress: boolean;
   onOpen: (title: Title, coverEl: HTMLElement) => void;
 };
 
 /** Vertical scrolling: a grid of small turned books, or of flat covers (spec §6.4). */
-export function LibraryGrid({ titles, display, lite, onOpen }: Props) {
+export function LibraryGrid({ titles, display, lite, size, showTitles, showProgress, onOpen }: Props) {
   const gridRef = useRef<HTMLUListElement>(null);
 
   // 3D faces need pixel sizes (translateZ can't take percentages): measure one tile.
@@ -30,11 +33,11 @@ export function LibraryGrid({ titles, display, lite, onOpen }: Props) {
     const observer = new ResizeObserver(measure);
     observer.observe(grid);
     return () => observer.disconnect();
-  }, [display, titles.length]);
+  }, [display, titles.length, size]);
 
   return (
     <div className={styles.scroller}>
-      <ul ref={gridRef} className={styles.grid} aria-label="Library">
+      <ul ref={gridRef} className={styles.grid} aria-label="Library" data-size={size}>
         {titles.map((t) => (
           <li key={t.id} className={styles.item}>
             <button
@@ -50,8 +53,8 @@ export function LibraryGrid({ titles, display, lite, onOpen }: Props) {
                 <Book title={t} lite={lite} flat={display === 'covers'} fit="fill" />
                 {display === 'covers' && t.unread > 0 && <span className={styles.badge}>{t.unread}</span>}
               </span>
-              <span className={styles.name}>{t.title}</span>
-              <span className={styles.sub}>{t.unread ? `${t.unread} left` : 'Caught up'}</span>
+              {showTitles && <span className={styles.name}>{t.title}</span>}
+              {showProgress && <span className={styles.sub}>{t.unread ? `${t.unread} left` : 'Caught up'}</span>}
             </button>
           </li>
         ))}
