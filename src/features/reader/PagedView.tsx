@@ -4,6 +4,7 @@ import { tapAction } from './tapZones';
 import { useCrop } from './useCrop';
 import { useLongPress } from './useLongPress';
 import { useZoom } from './useZoom';
+import { fitContent } from './zoomMath';
 import { useSettings } from '../../shared/settings/store';
 import styles from './ReaderPage.module.css';
 import { useReader } from './readerStore';
@@ -14,6 +15,7 @@ const DOUBLE_TAP_PX = 24;
 const CHROME_DELAY_MS = 250;
 const FLICK_PX_PER_MS = 0.3;
 const TURN_MS = 250;
+const PAN_PX = 10;
 
 function isTyping(target: EventTarget | null) {
   const el = target as HTMLElement | null;
@@ -22,7 +24,7 @@ function isTyping(target: EventTarget | null) {
 
 /** One page at a time: Manga (right to left), Comic (left to right) or Vertical paged. */
 export function PagedView() {
-  const { pages, index, view, mode, next, prev, toggleChrome, openPageActions, bookmarkedPages, chromeVisible } = useReader();
+  const { pages, index, view, layout, mode, next, prev, toggleChrome, openPageActions, bookmarkedPages, chromeVisible } = useReader();
   const press = useLongPress(openPageActions, () => useReader.getState().view[0] ?? 0);
   const fit = useSettings((s) => s.settings.reader.fit);
   const animated = useSettings((s) => s.settings.reader.pageTransitions);
@@ -30,6 +32,7 @@ export function PagedView() {
   const tapZones = useSettings((s) => s.settings.reader.tapZones);
   const start = useRef<{ x: number; y: number; t: number } | null>(null);
   const swiped = useRef(false);
+  const zoomPress = useRef<{ x: number; y: number } | null>(null);
   const vertical = mode === 'vertical';
   const surfaceRef = useRef<HTMLDivElement>(null);
   const layerRef = useRef<HTMLDivElement>(null);
@@ -47,15 +50,16 @@ export function PagedView() {
   // A relayout (sizes known, spreads on) isn't a turn: only a new first page within the chapter is.
   const [drag, setDrag] = useState(0);
   const [turn, setTurn] = useState<{ from: number[]; dir: 1 | -1; offset: number } | null>(null);
-  const [onScreen, setOnScreen] = useState({ pages, view });
-  if (onScreen.view !== view || onScreen.pages !== pages) {
-    const turned = onScreen.pages === pages && onScreen.view[0] !== view[0];
+  const [onScreen, setOnScreen] = useState({ pages, view, layout });
+  if (onScreen.view !== view || onScreen.pages !== pages || onScreen.layout !== layout) {
+    // A new layout (sizes arrived, spreads on) moves the view without a turn.
+    const turned = onScreen.pages === pages && onScreen.layout === layout && onScreen.view[0] !== view[0];
     if (turned && animated && !prefersReducedMotion()) {
       const forward = (view[0] ?? 0) > (onScreen.view[0] ?? 0);
       const dir = (mode === 'rtl' ? -1 : 1) * (forward ? 1 : -1);
       setTurn({ from: onScreen.view, dir: dir as 1 | -1, offset: drag });
     } else if (!turned) setTurn(null);
-    setOnScreen({ pages, view });
+    setOnScreen({ pages, view, layout });
   }
   useEffect(() => {
     if (!turn) return;
@@ -135,8 +139,10 @@ export function PagedView() {
     zoom.handlers.onPointerDown(e);
     if (zoom.zoomed || zoom.isGesturing()) {
       start.current = null;
+      zoomPress.current = { x: e.clientX, y: e.clientY };
       return;
     }
+    zoomPress.current = null;
     // Touch swipes are not followed by a click, so a new press starts fresh.
     swiped.current = false;
     start.current = { x: e.clientX, y: e.clientY, t: e.timeStamp };
@@ -153,6 +159,10 @@ export function PagedView() {
   };
   const onPointerUp = (e: React.PointerEvent) => {
     press.onPointerUp();
+    // A pan on a zoomed page (or its edge turn) is followed by a click with a mouse: it isn't a tap.
+    const zp = zoomPress.current;
+    if (zp && Math.hypot(e.clientX - zp.x, e.clientY - zp.y) > PAN_PX) swiped.current = true;
+    zoomPress.current = null;
     // Let go: a turn picks up from the dragged offset (still in state this render), else the page settles back.
     queueMicrotask(() => follow(0));
     zoom.handlers.onPointerUp(e);
@@ -249,18 +259,10 @@ function PageImage({ src, page, total, crop }: { src: string; page: number; tota
   );
 }
 
-/** The surface's box and the page's on-screen size at 1×, for clamping a pan to the page's edges. */
+/** The surface's box and the pages' on-screen size at 1× (both pages of a spread), for clamping a pan. */
 function measurePage(surface: HTMLElement | null, layer: HTMLElement | null, fit: string) {
   const r = surface?.getBoundingClientRect();
   const box = { w: r?.width || 1, h: r?.height || 1 };
-  const img = layer?.querySelector('img');
-  if (!img?.naturalWidth || !img.naturalHeight) return { box, content: box };
-  const ratio = img.naturalWidth / img.naturalHeight;
-  if (fit === 'width') {
-    const w = img.clientWidth || box.w;
-    return { box, content: { w, h: w / ratio } };
-  }
-  if (fit === 'height') return { box, content: { w: box.h * ratio, h: box.h } };
-  const w = Math.min(box.w, box.h * ratio);
-  return { box, content: { w, h: w / ratio } };
+  const imgs = [...(layer?.querySelectorAll('img') ?? [])].filter((img) => img.naturalWidth && img.naturalHeight);
+  return { box, content: fitContent(box, imgs.map((img) => img.naturalWidth / img.naturalHeight), fit) };
 }

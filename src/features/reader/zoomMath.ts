@@ -32,3 +32,23 @@ export function overscroll(z: Zoom, wanted: { x: number; y: number }, box: Size,
   const lim = limits(z.scale, box, content);
   return { x: wanted.x - clamp(wanted.x, lim.x) || 0, y: wanted.y - clamp(wanted.y, lim.y) || 0 };
 }
+
+/**
+ * The pages' on-screen size at 1×, side by side in a spread (width/height ratios, one per page).
+ * Matches the CSS: Screen fits each page into its share of the box; Width caps pages at
+ * 1000px (500px each in a spread); Height fills the box's height.
+ */
+export function fitContent(box: Size, ratios: number[], fit: string): Size {
+  const n = ratios.length;
+  if (n === 0) return box;
+  const sizes = ratios.map((r) => {
+    if (fit === 'height') return { w: box.h * r, h: box.h };
+    if (fit === 'width') {
+      const w = Math.min(box.w / n, n > 1 ? 500 : 1000);
+      return { w, h: w / r };
+    }
+    const w = Math.min(box.w / n, box.h * r);
+    return { w, h: w / r };
+  });
+  return { w: sizes.reduce((sum, s) => sum + s.w, 0), h: Math.max(...sizes.map((s) => s.h)) };
+}

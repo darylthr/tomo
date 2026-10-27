@@ -5,7 +5,8 @@ import { deleteMangaMeta, getMangaMeta, setMangaMeta } from '../server/api';
 export const BOOKMARKS_KEY = 'tomo.bookmarks';
 export const NOTE_MAX = 140;
 
-const bookmarkSchema = z.object({
+// Loose: fields another client added ride along untouched.
+const bookmarkSchema = z.looseObject({
   id: z.string().min(1),
   chapterId: z.number().int(),
   page: z.number().int().min(0),
@@ -22,8 +23,9 @@ export class BookmarksUnreadable extends Error {
   }
 }
 
-export function parseBookmarks(value: string | undefined): PageBookmark[] | 'unreadable' {
-  if (value === undefined) return [];
+/** The readable bookmarks, plus the raw entries that aren't, which writes put back as they were. */
+function parseStored(value: string | undefined): { list: PageBookmark[]; other: unknown[] } | 'unreadable' {
+  if (value === undefined) return { list: [], other: [] };
   let raw: unknown;
   try {
     raw = JSON.parse(value);
@@ -31,26 +33,41 @@ export function parseBookmarks(value: string | undefined): PageBookmark[] | 'unr
     return 'unreadable';
   }
   if (!Array.isArray(raw)) return 'unreadable';
-  return raw.flatMap((b) => {
+  const list: PageBookmark[] = [];
+  const other: unknown[] = [];
+  for (const b of raw) {
     const parsed = bookmarkSchema.safeParse(b);
-    return parsed.success ? [parsed.data] : [];
-  });
+    if (parsed.success) list.push(parsed.data);
+    else other.push(b);
+  }
+  return { list, other };
+}
+
+export function parseBookmarks(value: string | undefined): PageBookmark[] | 'unreadable' {
+  const stored = parseStored(value);
+  return stored === 'unreadable' ? stored : stored.list;
+}
+
+async function readStored(titleId: number) {
+  const stored = parseStored((await getMangaMeta(titleId))[BOOKMARKS_KEY]);
+  if (stored === 'unreadable') throw new BookmarksUnreadable();
+  return stored;
 }
 
 export async function readBookmarks(titleId: number): Promise<PageBookmark[]> {
-  const list = parseBookmarks((await getMangaMeta(titleId))[BOOKMARKS_KEY]);
-  if (list === 'unreadable') throw new BookmarksUnreadable();
-  return list;
+  return (await readStored(titleId)).list;
 }
 
 /**
  * Changes the bookmarks against what the server holds right now, so two devices adding bookmarks
- * minutes apart keep both. An empty list removes the key.
+ * minutes apart keep both. Nothing left at all removes the key.
  */
 export async function updateBookmarks(titleId: number, change: (list: PageBookmark[]) => PageBookmark[]): Promise<PageBookmark[]> {
-  const next = change(await readBookmarks(titleId));
-  if (next.length === 0) await deleteMangaMeta(titleId, BOOKMARKS_KEY);
-  else await setMangaMeta(titleId, BOOKMARKS_KEY, JSON.stringify(next));
+  const { list, other } = await readStored(titleId);
+  const next = change(list);
+  const stored = [...next, ...other];
+  if (stored.length === 0) await deleteMangaMeta(titleId, BOOKMARKS_KEY);
+  else await setMangaMeta(titleId, BOOKMARKS_KEY, JSON.stringify(stored));
   return next;
 }
 

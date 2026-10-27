@@ -56,7 +56,18 @@ it('keeps one page at a time on a narrow screen', async () => {
   expect(screen.queryByRole('img', { name: 'Page 2 of 24' })).toBeNull();
 });
 
+/** Images that report a portrait size as soon as they get a source. */
+class SizedImage {
+  naturalWidth = 800;
+  naturalHeight = 1200;
+  onload: (() => void) | null = null;
+  set src(_: string) {
+    queueMicrotask(() => this.onload?.());
+  }
+}
+
 it('pairs pages on a wide screen, then saves the last page of a spread and marks read', async () => {
+  vi.stubGlobal('Image', SizedImage);
   vi.useFakeTimers({ shouldAdvanceTime: true });
   // A laptop window: landscape and wide enough for Auto spreads.
   Object.defineProperties(window, { innerWidth: { configurable: true, value: 1280 }, innerHeight: { configurable: true, value: 800 } });
@@ -68,6 +79,20 @@ it('pairs pages on a wide screen, then saves the last page of a spread and marks
   expect(useReader.getState().view).toEqual([22, 23]);
   await act(async () => vi.advanceTimersByTime(1000));
   expect(api.setProgress).toHaveBeenCalledWith(11, { lastPage: 23, read: true });
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
+
+it("doesn't pair pages, or mark the chapter read, before their sizes are known", async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  Object.defineProperties(window, { innerWidth: { configurable: true, value: 1280 }, innerHeight: { configurable: true, value: 800 } });
+  useSettings.getState().update({ reader: { coverAlone: false } });
+  vi.mocked(api.getChapter).mockResolvedValue(chapter(11, 2, { lastPage: 22 }));
+  open('/read/11');
+  await screen.findByRole('img', { name: 'Page 23 of 24' });
+  await act(async () => vi.advanceTimersByTime(1500));
+  expect(useReader.getState().view).toEqual([22]);
+  expect(api.setProgress).not.toHaveBeenCalledWith(11, expect.objectContaining({ read: true }));
   vi.useRealTimers();
 });
 

@@ -42,3 +42,14 @@ it('deletes the key when the last bookmark goes', async () => {
   expect(api.deleteMangaMeta).toHaveBeenCalledWith(1, 'tomo.bookmarks');
   expect(api.setMangaMeta).not.toHaveBeenCalled();
 });
+
+it("keeps entries and fields it doesn't understand when it writes", async () => {
+  const odd = { id: 'x', chapterId: 'eleven' };
+  vi.mocked(api.getMangaMeta).mockResolvedValue({ 'tomo.bookmarks': JSON.stringify([{ ...mark('a'), colour: 'red' }, odd]) });
+  const list = await updateBookmarks(1, (l) => l.filter((b) => b.id !== 'a'));
+  expect(list).toEqual([]);
+  expect(api.setMangaMeta).toHaveBeenCalledWith(1, 'tomo.bookmarks', JSON.stringify([odd]));
+  vi.mocked(api.setMangaMeta).mockClear();
+  await updateBookmarks(1, (l) => [...l, mark('b', 5)]);
+  expect(api.setMangaMeta).toHaveBeenCalledWith(1, 'tomo.bookmarks', JSON.stringify([{ ...mark('a'), colour: 'red' }, mark('b', 5), odd]));
+});

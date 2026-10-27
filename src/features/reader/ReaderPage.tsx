@@ -303,10 +303,17 @@ function useSpreadLayout(titleId: number | null) {
   const on = titleId !== null && wantsSpreads(reader.spreads, viewport, mode);
   const coverAlone = (titleId !== null ? reader.coverAloneByTitle[String(titleId)] : undefined) ?? reader.coverAlone;
   const sizes = usePageSizes(pages, index, on);
-  const key = on ? JSON.stringify(layoutFor(pages.length, sizes, coverAlone)) : `singles:${pages.length}`;
+  // Pair only once the pages around this one have known sizes: guessed pairs could show a wide
+  // scan split, or put the last page on screen (and mark the chapter read) too early.
+  // Latched per chapter, so turning into pages still loading never flips back to singles.
+  const [pairedFor, setPairedFor] = useState<string[] | null>(null);
+  const around = [index - 1, index, index + 1, index + 2].filter((i) => i >= 0 && i < pages.length);
+  if (on && pairedFor !== pages && around.every((i) => sizes[i])) setPairedFor(pages);
+  const paired = on && pairedFor === pages;
+  const key = paired ? JSON.stringify(layoutFor(pages.length, sizes, coverAlone)) : `singles:${pages.length}`;
   useEffect(() => {
     if (titleId === null) return;
-    const layout: number[][] = on ? JSON.parse(key) : pages.map((_, i) => [i]);
+    const layout: number[][] = paired ? JSON.parse(key) : pages.map((_, i) => [i]);
     if (JSON.stringify(layout) !== JSON.stringify(useReader.getState().layout)) useReader.getState().setLayout(layout);
     // `key` captures the layout; pages only matter through it.
     // eslint-disable-next-line react-hooks/exhaustive-deps

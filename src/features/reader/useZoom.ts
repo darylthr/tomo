@@ -129,6 +129,8 @@ export function useZoom({ ref, max, doubleTap, measure, onEdgeTurn, resetKey }: 
   const onPointerMove = (e: PointerEvent) => {
     const prev = pointers.current.get(e.pointerId);
     if (!prev) return;
+    // A mouse let go outside the window sends no pointerup; its next move has no button held.
+    if (e.pointerType === 'mouse' && e.buttons === 0) return onPointerUp(e);
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     const pts = [...pointers.current.values()];
     if (pinch.current && pts.length >= 2) {

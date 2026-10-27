@@ -14,10 +14,13 @@ export function prefetchChapter(chapterId: number): void {
     });
 }
 
-/** The prefetched page list for this chapter (once), or undefined to fetch it now. */
+/**
+ * The prefetched page list for this chapter (once), or undefined to fetch it now. A prefetch
+ * that fails after being taken falls back to a fresh fetch, so opening the chapter still works.
+ */
 export function takePrefetched(chapterId: number): Promise<string[]> | undefined {
   if (entry?.chapterId !== chapterId) return undefined;
   const { pages } = entry;
   entry = null;
-  return pages;
+  return pages.catch(() => getPages(chapterId));
 }

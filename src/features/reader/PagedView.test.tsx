@@ -141,6 +141,38 @@ describe('zoom', () => {
     expect(layer().style.transform).toContain('scale(1)');
   });
 
+  it('ends a mouse pan let go outside the window', () => {
+    const surface = show('ltr');
+    doubleTap(surface);
+    const mouse = { pointerId: 1, pointerType: 'mouse', clientY: 500 };
+    fireEvent.pointerDown(surface, { ...mouse, clientX: 600, buttons: 1 });
+    fireEvent.pointerMove(surface, { ...mouse, clientX: 500, buttons: 1 });
+    const held = layer().style.transform;
+    // Released off-screen: no pointerup, and the next move comes back with no button held.
+    fireEvent.pointerMove(surface, { ...mouse, clientX: 300, buttons: 0 });
+    expect(layer().style.transform).toBe(held);
+  });
+
+  it("a mouse pan's click neither toggles the controls nor undoes an edge turn", () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const surface = show('ltr');
+    doubleTap(surface);
+    act(() => vi.advanceTimersByTime(300));
+    const before = useReader.getState().chromeVisible;
+    // A mouse drag ends with a click where the button was let go.
+    drag(surface, 600, 400);
+    fireEvent.click(surface, { clientX: 400, clientY: 500 });
+    act(() => vi.advanceTimersByTime(300));
+    expect(useReader.getState().chromeVisible).toBe(before);
+    // From -200px, a further 800px pushes 250px past the 750px edge: the page turns, and the
+    // trailing click (in the left third, "previous" in Comic) doesn't turn it back.
+    drag(surface, 900, 100);
+    expect(index()).toBe(1);
+    fireEvent.click(surface, { clientX: 100, clientY: 500 });
+    expect(index()).toBe(1);
+    vi.useRealTimers();
+  });
+
   it('side taps do not turn the page while zoomed', () => {
     const surface = show('ltr');
     doubleTap(surface);
@@ -237,6 +269,13 @@ describe('page turns', () => {
     show('rtl', 1);
     act(() => useReader.getState().next());
     expect(document.querySelector<HTMLElement>('[data-entering]')?.style.getPropertyValue('--dir')).toBe('-1');
+  });
+
+  it('does not slide when the pages regroup into spreads', () => {
+    show('rtl', 4);
+    act(() => useReader.getState().setLayout([[0], [1, 2], [3, 4]]));
+    expect(useReader.getState().view).toEqual([3, 4]);
+    expect(document.querySelector('[data-leaving]')).toBeNull();
   });
 
   it('turns instantly when page turns are off', () => {
