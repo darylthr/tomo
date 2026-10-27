@@ -14,3 +14,47 @@
   color: var(--danger);
   font-size: 13.5px;
 }
+
+.wide {
+  width: 100%;
+  height: 44px;
+}
+
+.noteForm {
+  display: flex;
+  gap: 8px;
+}
+
+.field {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--hover);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+}
+
+.field:focus-visible {
+  outline: none;
+  border-color: color-mix(in oklch, var(--ink) 40%, transparent);
+}
+
+.noteLink {
+  justify-self: start;
+  max-width: 100%;
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}

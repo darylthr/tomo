@@ -243,3 +243,16 @@ export async function getGlobalMetas(): Promise<{ key: string; value: string }[]
 export async function setGlobalMeta(key: string, value: string, keepalive = false): Promise<void> {
   await gql(op.SET_GLOBAL_META, { key, value }, { keepalive });
 }
+
+export async function getMangaMeta(id: number): Promise<Record<string, string>> {
+  const data = await gql<{ manga: { meta: { key: string; value: string }[] } }>(op.MANGA_META, { id });
+  return Object.fromEntries(data.manga.meta.map((m) => [m.key, m.value]));
+}
+
+export async function setMangaMeta(id: number, key: string, value: string): Promise<void> {
+  await gql(op.SET_MANGA_META, { id, key, value });
+}
+
+export async function deleteMangaMeta(id: number, key: string): Promise<void> {
+  await gql(op.DELETE_MANGA_META, { id, key });
+}

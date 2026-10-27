@@ -18,7 +18,7 @@ function isTyping(target: EventTarget | null) {
 
 /** One page at a time: Manga (right to left), Comic (left to right) or Vertical paged. */
 export function PagedView() {
-  const { pages, index, view, mode, next, prev, toggleChrome, openPageActions } = useReader();
+  const { pages, index, view, mode, next, prev, toggleChrome, openPageActions, bookmarkedPages, chromeVisible } = useReader();
   const press = useLongPress(openPageActions, () => useReader.getState().view[0] ?? 0);
   const fit = useSettings((s) => s.settings.reader.fit);
   const start = useRef<{ x: number; y: number; t: number } | null>(null);
@@ -175,6 +175,9 @@ export function PagedView() {
                 decoding="async"
               />
             ) : null,
+          )}
+          {chromeVisible && shown.some((i) => bookmarkedPages.includes(i)) && (
+            <span className={styles.pageRibbon} role="img" aria-label="Bookmarked page" />
           )}
         </div>
       </div>

@@ -16,6 +16,9 @@ vi.mock('../server/api', () => ({
   setInLibrary: vi.fn(async () => {}),
   setTitleCategories: vi.fn(async () => {}),
   setChapterBookmark: vi.fn(async () => {}),
+  getMangaMeta: vi.fn(async () => ({})),
+  setMangaMeta: vi.fn(async () => {}),
+  deleteMangaMeta: vi.fn(async () => {}),
   createCategory: vi.fn(async (name: string) => ({ id: 9, name, order: 4 })),
   getLibrary: vi.fn(async () => ({ titles: [], categories: CATEGORIES })),
 }));
@@ -78,6 +81,7 @@ beforeEach(() => {
   useChapterViews.setState({ views: {} });
   useLibrary.setState({ status: 'ready', titles: [], categories: [] });
   vi.mocked(api.setInLibrary).mockClear();
+  vi.mocked(api.getMangaMeta).mockResolvedValue({});
   vi.mocked(api.setTitleCategories).mockClear();
   vi.mocked(api.getTitle).mockResolvedValue(title);
   vi.mocked(api.getChapters).mockResolvedValue(three);
@@ -270,5 +274,41 @@ describe('chapter bookmarks', () => {
     expect(api.setChapterBookmark).toHaveBeenCalledWith(12, true);
     const rows = within(screen.getByRole('list', { name: 'Chapters' })).getAllByRole('listitem');
     expect(within(rows[0]!).getByLabelText('Bookmarked')).toBeInTheDocument();
+  });
+});
+
+describe('page bookmarks', () => {
+  const marks = [
+    { id: 'a', chapterId: 11, page: 3, note: 'the reveal', createdAt: 2 },
+    { id: 'b', chapterId: 12, page: 0, note: '', createdAt: 1 },
+  ];
+
+  it('lists page bookmarks and opens one at its page', async () => {
+    vi.mocked(api.getMangaMeta).mockResolvedValue({ 'tomo.bookmarks': JSON.stringify(marks) });
+    const router = createMemoryRouter(
+      [
+        { path: '/title/:id', element: <TitlePage /> },
+        { path: '/read/:chapterId', element: <p>reader</p> },
+      ],
+      { initialEntries: ['/title/1'] },
+    );
+    render(<RouterProvider router={router} />);
+    const section = await screen.findByRole('region', { name: 'Bookmarks' });
+    const rows = within(section).getAllByRole('link');
+    expect(rows.map((r) => r.textContent)).toEqual(['Chapter 2 · Page 4the reveal', 'Chapter 3 · Page 1']);
+    await userEvent.click(rows[0]!);
+    expect(router.state.location.pathname + router.state.location.search).toBe('/read/11?page=3');
+  });
+
+  it('shows nothing when the title has no page bookmarks', async () => {
+    open();
+    await screen.findByText('Chapter 3');
+    expect(screen.queryByRole('region', { name: 'Bookmarks' })).toBeNull();
+  });
+
+  it("says when the title's bookmarks can't be read", async () => {
+    vi.mocked(api.getMangaMeta).mockResolvedValue({ 'tomo.bookmarks': '{oops' });
+    open();
+    expect(await screen.findByText("Couldn't read this title's bookmarks")).toBeInTheDocument();
   });
 });

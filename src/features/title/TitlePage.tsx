@@ -13,6 +13,7 @@ import { useLongPress } from '../reader/useLongPress';
 import { TitleName } from '../../shared/ui/TitleName';
 import { prefersReducedMotion } from '../../shared/ui/useReducedMotion';
 import { arrangeChapters, isDefaultView } from './chapterList';
+import { BookmarksSection } from './BookmarksSection';
 import { CategorySheet } from './CategorySheet';
 import { ChapterViewPanel } from './ChapterViewPanel';
 import { useChapterView, useChapterViews } from './chapterViewStore';
@@ -235,6 +236,7 @@ export function TitlePage() {
           </ul>
         )}
 
+        <BookmarksSection titleId={title.id} chapters={chapters} />
         <div className={styles.listHead}>
           <h2 className={styles.heading}>
             {shown.length < chapters.length && `${shown.length} of `}

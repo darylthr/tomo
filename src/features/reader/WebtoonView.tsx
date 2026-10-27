@@ -17,6 +17,8 @@ type Props = { nextChapter: (() => void) | null };
 export function WebtoonView({ nextChapter }: Props) {
   const pages = useReader((s) => s.pages);
   const index = useReader((s) => s.index);
+  const bookmarkedPages = useReader((s) => s.bookmarkedPages);
+  const chromeVisible = useReader((s) => s.chromeVisible);
   const scroller = useRef<HTMLDivElement>(null);
   const [near, setNear] = useState<Set<number>>(() => new Set([index - 1, index, index + 1, index + 2]));
   const [ratios, setRatios] = useState<Record<number, number>>({});
@@ -115,6 +117,7 @@ export function WebtoonView({ nextChapter }: Props) {
       <div className={styles.webtoonColumn} style={{ '--zoom': zoom.scale } as CSSProperties} data-webtoon-column="">
       {pages.map((src, i) => (
         <div key={src} data-page={i} className={styles.strip} style={{ aspectRatio: ratios[i] ?? 0.7 }}>
+          {chromeVisible && bookmarkedPages.includes(i) && <span className={styles.pageRibbon} role="img" aria-label="Bookmarked page" />}
           {near.has(i) && (
             <img
               src={src}

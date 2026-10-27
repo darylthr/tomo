@@ -1,0 +1,148 @@
+.section {
+  margin-top: 18px;
+}
+
+.heading {
+  margin: 0 4px 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  border-radius: 22px;
+  background: var(--surface);
+  box-shadow: var(--glass-ring);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.row + .row {
+  border-top: 1px solid var(--line);
+}
+
+.open {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 18px;
+  color: var(--ink);
+  text-decoration: none;
+  transition: background-color 150ms ease-out;
+}
+
+.open:active {
+  background: var(--hover);
+}
+
+@media (hover: hover) {
+  .open:hover {
+    background: var(--hover);
+  }
+}
+
+.name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note {
+  font-size: 13px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.more {
+  width: 44px;
+  height: 44px;
+  margin-right: 4px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--faint);
+  cursor: pointer;
+  transition:
+    scale 150ms ease-out,
+    color 150ms ease-out;
+}
+
+.more svg {
+  width: 18px;
+  height: 18px;
+}
+
+.more:active {
+  scale: 0.96;
+}
+
+@media (hover: hover) {
+  .more:hover {
+    color: var(--ink);
+  }
+}
+
+.problem {
+  margin: 8px 4px 0;
+  color: var(--danger);
+  font-size: 13.5px;
+}
+
+.form {
+  display: grid;
+  gap: 10px;
+}
+
+.fieldLabel {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.field {
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--hover);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+}
+
+.field:focus-visible {
+  outline: none;
+  border-color: color-mix(in oklch, var(--ink) 40%, transparent);
+}
+
+.remove {
+  padding: 8px 0;
+  border: 0;
+  background: none;
+  color: var(--danger);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: scale 150ms ease-out;
+}
+
+.remove:active {
+  scale: 0.96;
+}

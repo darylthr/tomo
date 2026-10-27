@@ -10,6 +10,8 @@ type ReaderState = {
   layout: number[][];
   /** The pages on screen now: the layout entry holding `index`. */
   view: number[];
+  /** This chapter's bookmarked pages (shown as a ribbon while the controls are up). */
+  bookmarkedPages: number[];
   /** The page whose actions sheet (save, bookmark) is open. */
   pageActions: number | null;
   openPageActions: (page: number) => void;
@@ -51,6 +53,7 @@ export const useReader = create<ReaderState>()((set, get) => {
     layout: [],
     view: [0],
     pageActions: null,
+    bookmarkedPages: [],
     openPageActions: (page) => set({ pageActions: page }),
     closePageActions: () => set({ pageActions: null }),
     mode: 'rtl',

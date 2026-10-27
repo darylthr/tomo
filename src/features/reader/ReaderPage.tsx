@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import type { Chapter, ReaderMode, Title } from '../../shared/model/types';
 import { useSettings } from '../../shared/settings/store';
 import { useUi, type OpeningFrom } from '../../shared/ui/uiStore';
@@ -14,6 +14,8 @@ import { startReadingClock } from '../insights/readingTime';
 import { useUpdates } from '../updates/updatesStore';
 import { createProgressSync, savesSettled, startPage } from './progress';
 import { PageActions } from './PageActions';
+import { PageBookmark } from './PageBookmark';
+import { usePageBookmarks } from './usePageBookmarks';
 import { ReaderChrome } from './ReaderChrome';
 import styles from './ReaderPage.module.css';
 import { useReader } from './readerStore';
@@ -35,6 +37,9 @@ function neighbours(chapters: Chapter[], current: Chapter) {
 
 export function ReaderPage() {
   const chapterId = Number(useParams().chapterId);
+  // ?page=<n> (0-based, from a page bookmark) opens there instead of the saved position.
+  const [search] = useSearchParams();
+  const askedPage = search.get('page');
   const navigate = useNavigate();
   const reader = useSettings((s) => s.settings.reader);
   const update = useSettings((s) => s.update);
@@ -69,7 +74,8 @@ export function ReaderPage() {
       if (cancelled) return;
       const settings = useSettings.getState().settings.reader;
       const chosen = settings.modes[String(title.id)] ?? preferredMode(title) ?? settings.defaultMode;
-      const start = startPage(chapter, pages.length);
+      const asked = askedPage !== null && /^\d+$/.test(askedPage) ? Number(askedPage) : null;
+      const start = asked !== null ? Math.min(asked, Math.max(0, pages.length - 1)) : startPage(chapter, pages.length);
       useReader.getState().open(chapter, pages, start, chosen);
       const sync = createProgressSync(
         chapter.id,
@@ -102,9 +108,16 @@ export function ReaderPage() {
       cancelled = true;
       stopSync();
     };
-  }, [chapterId]);
+  }, [chapterId, askedPage]);
 
   useSpreadLayout(load.state === 'ready' ? load.title.id : null);
+  const bookmarks = usePageBookmarks(load.state === 'ready' ? load.title.id : null);
+  const readyChapterId = load.state === 'ready' ? load.chapter.id : null;
+  const marked = bookmarks.list.filter((b) => b.chapterId === readyChapterId).map((b) => b.page);
+  const markedKey = marked.join(',');
+  useEffect(() => {
+    useReader.setState({ bookmarkedPages: markedKey ? markedKey.split(',').map(Number) : [] });
+  }, [markedKey]);
 
   const back = useCallback(() => (window.history.length > 1 ? navigate(-1) : navigate('/')), [navigate]);
   const ready = load.state === 'ready' ? load : null;
@@ -163,7 +176,28 @@ export function ReaderPage() {
         />
       )}
 
-      {ready && <PageActions titleName={ready.title.title} />}
+      {ready && (
+        <PageActions
+          titleName={ready.title.title}
+          bookmark={
+            bookmarks.status === 'unreadable'
+              ? undefined
+              : (page) => {
+                  const existing = bookmarks.list.find((b) => b.chapterId === ready.chapter.id && b.page === page);
+                  return (
+                    <PageBookmark
+                      key={`${ready.chapter.id}:${page}`}
+                      bookmark={existing}
+                      onAdd={() => bookmarks.add(ready.chapter.id, page)}
+                      onRemove={bookmarks.remove}
+                      onNote={bookmarks.setNote}
+                      error={bookmarks.error}
+                    />
+                  );
+                }
+          }
+        />
+      )}
 
       {caughtUp && (
         <div className={styles.message} role="status">

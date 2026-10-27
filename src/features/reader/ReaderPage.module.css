@@ -152,6 +152,7 @@
 }
 
 .strip {
+  position: relative;
   width: 100%;
   background: var(--surface-2);
   content-visibility: auto;
@@ -522,4 +523,26 @@
 .topActions {
   display: flex;
   gap: 8px;
+}
+
+/* A ribbon on a bookmarked page, in its top corner, while the controls show. */
+.pageRibbon {
+  position: absolute;
+  top: calc(var(--top-h) + 12px);
+  right: 16px;
+  z-index: 1;
+  width: 18px;
+  height: 26px;
+  background: var(--accent);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);
+  pointer-events: none;
+}
+
+.strip .pageRibbon {
+  top: 12px;
+}
+
+.spread,
+.single {
+  position: relative;
 }

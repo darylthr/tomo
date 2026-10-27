@@ -31,7 +31,10 @@ import {
   deleteCategory,
   moveCategory,
   renameCategory,
+  deleteMangaMeta,
+  getMangaMeta,
   setChapterBookmark,
+  setMangaMeta,
   setGlobalMeta,
   setInLibrary,
   setTitleCategories,
@@ -347,4 +350,12 @@ it('bookmarks a chapter', async () => {
   await setChapterBookmark(11, true);
   expect(calls[0]!.variables).toEqual({ id: 11, patch: { isBookmarked: true } });
   expect(calls[0]!.query).toMatch(/UPDATE_CHAPTER/);
+});
+
+it("reads, writes and deletes a title's meta", async () => {
+  serve({ MANGA_META: { data: { manga: { meta: [{ key: 'tomo.bookmarks', value: '[]' }, { key: 'other', value: 'x' }] } } } });
+  await expect(getMangaMeta(3)).resolves.toEqual({ 'tomo.bookmarks': '[]', other: 'x' });
+  await setMangaMeta(3, 'tomo.bookmarks', '[1]');
+  await deleteMangaMeta(3, 'tomo.bookmarks');
+  expect(calls.map((c) => c.variables)).toEqual([{ id: 3 }, { id: 3, key: 'tomo.bookmarks', value: '[1]' }, { id: 3, key: 'tomo.bookmarks' }]);
 });

@@ -211,3 +211,11 @@ describe('long press', () => {
     expect(useReader.getState().pageActions).toBe(2);
   });
 });
+
+it('marks a bookmarked page while the controls show', () => {
+  show('rtl', 1);
+  act(() => useReader.setState({ bookmarkedPages: [1], chromeVisible: true }));
+  expect(screen.getByLabelText('Bookmarked page')).toBeInTheDocument();
+  act(() => useReader.setState({ chromeVisible: false }));
+  expect(screen.queryByLabelText('Bookmarked page')).toBeNull();
+});

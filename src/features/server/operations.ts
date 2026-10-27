@@ -225,3 +225,16 @@ export const GLOBAL_METAS = `query GLOBAL_METAS { metas { nodes { key value } } 
 export const SET_GLOBAL_META = `
   mutation SET_GLOBAL_META($key: String!, $value: String!) { setGlobalMeta(input: { meta: { key: $key, value: $value } }) { meta { key } } }
 `;
+
+// A title's meta, read fresh (page bookmarks are read-modify-write).
+export const MANGA_META = `query MANGA_META($id: Int!) { manga(id: $id) { meta { key value } } }`;
+
+export const SET_MANGA_META = `
+  mutation SET_MANGA_META($id: Int!, $key: String!, $value: String!) {
+    setMangaMeta(input: { meta: { mangaId: $id, key: $key, value: $value } }) { meta { key } }
+  }
+`;
+
+export const DELETE_MANGA_META = `
+  mutation DELETE_MANGA_META($id: Int!, $key: String!) { deleteMangaMeta(input: { mangaId: $id, key: $key }) { meta { key } } }
+`;
