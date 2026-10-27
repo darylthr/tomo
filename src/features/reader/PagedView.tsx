@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
+import { useLongPress } from './useLongPress';
 import { useZoom } from './useZoom';
 import { useSettings } from '../../shared/settings/store';
 import styles from './ReaderPage.module.css';
@@ -17,7 +18,8 @@ function isTyping(target: EventTarget | null) {
 
 /** One page at a time: Manga (right to left), Comic (left to right) or Vertical paged. */
 export function PagedView() {
-  const { pages, index, view, mode, next, prev, toggleChrome } = useReader();
+  const { pages, index, view, mode, next, prev, toggleChrome, openPageActions } = useReader();
+  const press = useLongPress(openPageActions, () => useReader.getState().view[0] ?? 0);
   const fit = useSettings((s) => s.settings.reader.fit);
   const start = useRef<{ x: number; y: number; t: number } | null>(null);
   const swiped = useRef(false);
@@ -73,6 +75,7 @@ export function PagedView() {
   }, [pages, index]);
 
   const onClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (press.consumeClick()) return;
     if (swiped.current) {
       swiped.current = false;
       return;
@@ -102,6 +105,7 @@ export function PagedView() {
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
+    press.onPointerDown(e);
     zoom.handlers.onPointerDown(e);
     if (zoom.zoomed || zoom.isGesturing()) {
       start.current = null;
@@ -112,7 +116,14 @@ export function PagedView() {
     start.current = { x: e.clientX, y: e.clientY, t: e.timeStamp };
   };
   const onPointerUp = (e: React.PointerEvent) => {
+    press.onPointerUp();
     zoom.handlers.onPointerUp(e);
+    if (press.consumeClick()) {
+      // The long press already acted; it isn't also a swipe or a tap.
+      start.current = null;
+      swiped.current = true;
+      return;
+    }
     const s = start.current;
     start.current = null;
     if (!s) return;
@@ -138,8 +149,13 @@ export function PagedView() {
       onClick={onClick}
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}
-      onPointerMove={zoom.handlers.onPointerMove}
+      onPointerMove={(e) => {
+        press.onPointerMove(e);
+        zoom.handlers.onPointerMove(e);
+      }}
+      onContextMenu={press.onContextMenu}
       onPointerCancel={(e) => {
+        press.onPointerCancel();
         zoom.handlers.onPointerCancel(e);
         start.current = null;
       }}

@@ -181,3 +181,33 @@ describe('spreads', () => {
     expect(screen.getAllByRole('img').map((i) => i.getAttribute('alt'))).toEqual(['Page 4 of 5', 'Page 5 of 5']);
   });
 });
+
+describe('long press', () => {
+  it('long-pressing a page opens its actions and does not turn the page', () => {
+    vi.useFakeTimers();
+    const surface = show('ltr', 1);
+    fireEvent.pointerDown(surface, { pointerId: 1, clientX: 900, clientY: 500 });
+    act(() => vi.advanceTimersByTime(500));
+    fireEvent.pointerUp(surface, { pointerId: 1, clientX: 900, clientY: 500 });
+    fireEvent.click(surface, { clientX: 900, clientY: 500 });
+    expect(useReader.getState().pageActions).toBe(1);
+    expect(index()).toBe(1);
+    vi.useRealTimers();
+  });
+
+  it('a press that moves is a swipe, not a long press', () => {
+    vi.useFakeTimers();
+    const surface = show('ltr', 1);
+    fireEvent.pointerDown(surface, { pointerId: 1, clientX: 900, clientY: 500 });
+    fireEvent.pointerMove(surface, { pointerId: 1, clientX: 880, clientY: 500 });
+    act(() => vi.advanceTimersByTime(600));
+    expect(useReader.getState().pageActions).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it('right-click opens the actions on the laptop', () => {
+    const surface = show('ltr', 2);
+    fireEvent.contextMenu(surface.querySelector('img')!);
+    expect(useReader.getState().pageActions).toBe(2);
+  });
+});

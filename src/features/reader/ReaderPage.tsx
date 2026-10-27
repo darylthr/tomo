@@ -13,6 +13,7 @@ import { PagedView } from './PagedView';
 import { startReadingClock } from '../insights/readingTime';
 import { useUpdates } from '../updates/updatesStore';
 import { createProgressSync, savesSettled, startPage } from './progress';
+import { PageActions } from './PageActions';
 import { ReaderChrome } from './ReaderChrome';
 import styles from './ReaderPage.module.css';
 import { useReader } from './readerStore';
@@ -154,6 +155,8 @@ export function ReaderPage() {
           onModeChange={changeMode}
         />
       )}
+
+      {ready && <PageActions titleName={ready.title.title} />}
 
       {caughtUp && (
         <div className={styles.message} role="status">

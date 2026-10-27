@@ -10,6 +10,10 @@ type ReaderState = {
   layout: number[][];
   /** The pages on screen now: the layout entry holding `index`. */
   view: number[];
+  /** The page whose actions sheet (save, bookmark) is open. */
+  pageActions: number | null;
+  openPageActions: (page: number) => void;
+  closePageActions: () => void;
   /** Regroups the pages (spreads on or off, sizes known), keeping the current page on screen. */
   setLayout: (layout: number[][]) => void;
   mode: ReaderMode;
@@ -46,6 +50,9 @@ export const useReader = create<ReaderState>()((set, get) => {
     index: 0,
     layout: [],
     view: [0],
+    pageActions: null,
+    openPageActions: (page) => set({ pageActions: page }),
+    closePageActions: () => set({ pageActions: null }),
     mode: 'rtl',
     chromeVisible: true,
     turned: false,
@@ -59,6 +66,7 @@ export const useReader = create<ReaderState>()((set, get) => {
         index,
         layout: singles(pages.length),
         view: [index],
+        pageActions: null,
         mode,
         chromeVisible: true,
         turned: false,

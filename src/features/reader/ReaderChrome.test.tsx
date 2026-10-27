@@ -127,3 +127,10 @@ describe('spread options', () => {
     expect(screen.queryByRole('radiogroup', { name: 'Double pages' })).toBeNull();
   });
 });
+
+it('opens the page actions from the reading options', async () => {
+  show();
+  await userEvent.click(screen.getByRole('button', { name: 'Reading options' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Save page' }));
+  expect(useReader.getState().pageActions).toBe(2);
+});

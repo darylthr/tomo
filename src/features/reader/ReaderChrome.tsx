@@ -42,7 +42,7 @@ const percent = (v: number) => `${Math.round(v * 100)}%`;
  * chapter buttons around a page slider (one line per page) at the bottom.
  */
 export function ReaderChrome({ titleId, titleName, chapterName, onBack, onPrevChapter, onNextChapter, onModeChange }: Props) {
-  const { index, view, layout, pages, mode, chromeVisible, goTo } = useReader();
+  const { index, view, layout, pages, mode, chromeVisible, goTo, openPageActions } = useReader();
   const viewport = useViewport();
   // Double pages only matter where they could show; the cover options only while they do.
   const canSpread = wantsSpreads('auto', viewport, mode);
@@ -140,6 +140,19 @@ export function ReaderChrome({ titleId, titleName, chapterName, onBack, onPrevCh
             onChange={(alone) => update({ reader: { coverAloneByTitle: { ...reader.coverAloneByTitle, [String(titleId)]: alone } } })}
           />
         )}
+        <div className={styles.optionRow}>
+          <span className={styles.optionLabel}>This page</span>
+          <button
+            type="button"
+            className={styles.optionButton}
+            onClick={() => {
+              setOptions(false);
+              openPageActions(view[0] ?? index);
+            }}
+          >
+            Save page
+          </button>
+        </div>
         <div className={styles.optionRow}>
           <span className={styles.optionLabel}>
             Brightness <b>{percent(reader.brightness)}</b>

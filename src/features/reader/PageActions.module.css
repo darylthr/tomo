@@ -1,0 +1,16 @@
+.row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.actions {
+  display: grid;
+  gap: 8px;
+}
+
+.error {
+  margin: 10px 0 0;
+  color: var(--danger);
+  font-size: 13.5px;
+}

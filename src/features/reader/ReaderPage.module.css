@@ -51,6 +51,8 @@
   display: block;
   user-select: none;
   -webkit-user-drag: none;
+  /* long-press opens Tomo's page actions, not the browser's image menu */
+  -webkit-touch-callout: none;
 }
 
 /* The row is the screen's height, so a page's 100% height resolves against it rather than the page itself. */
@@ -157,6 +159,7 @@
 
 .strip img {
   display: block;
+  -webkit-touch-callout: none;
   width: 100%;
   height: 100%;
   object-fit: cover;

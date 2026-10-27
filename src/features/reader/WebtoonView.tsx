@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent, type PointerEvent } from 'react';
 import styles from './ReaderPage.module.css';
+import { useLongPress } from './useLongPress';
 import { useReader } from './readerStore';
 
 const NEAR = '300% 0px'; // mount images within about three screens of the viewport
@@ -21,6 +22,7 @@ export function WebtoonView({ nextChapter }: Props) {
   const [ratios, setRatios] = useState<Record<number, number>>({});
   const reported = useRef(index);
   const zoom = useStripZoom(scroller, pages);
+  const press = useLongPress((p) => useReader.getState().openPageActions(p), () => useReader.getState().index);
 
   // Track which pages are near the viewport.
   useEffect(() => {
@@ -88,11 +90,27 @@ export function WebtoonView({ nextChapter }: Props) {
       className={styles.webtoon}
       data-reader-surface=""
       onScroll={onScroll}
-      onClick={zoom.onClick}
-      onPointerDown={zoom.onPointerDown}
-      onPointerMove={zoom.onPointerMove}
-      onPointerUp={zoom.onPointerUp}
-      onPointerCancel={zoom.onPointerUp}
+      onClick={(e) => {
+        if (!press.consumeClick()) zoom.onClick(e);
+      }}
+      onPointerDown={(e) => {
+        press.onPointerDown(e);
+        zoom.onPointerDown(e);
+      }}
+      onPointerMove={(e) => {
+        // In webtoon a press that moves more than 10px is a scroll, not a long press.
+        press.onPointerMove(e);
+        zoom.onPointerMove(e);
+      }}
+      onPointerUp={(e) => {
+        press.onPointerUp();
+        zoom.onPointerUp(e);
+      }}
+      onPointerCancel={(e) => {
+        press.onPointerCancel();
+        zoom.onPointerUp(e);
+      }}
+      onContextMenu={press.onContextMenu}
     >
       <div className={styles.webtoonColumn} style={{ '--zoom': zoom.scale } as CSSProperties} data-webtoon-column="">
       {pages.map((src, i) => (
