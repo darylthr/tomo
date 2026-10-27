@@ -19,6 +19,76 @@
   touch-action: none;
 }
 
+/* Page-turn layers overlap in the surface's single cell; each sizes like the surface did. */
+.turnLayer {
+  grid-area: 1 / 1;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 100%;
+}
+
+.fit-screen .turnLayer,
+.fit-height .turnLayer {
+  height: 100%;
+  min-height: 0;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+}
+
+/* Letting go without a turn: the page settles back. */
+.settle {
+  transition: translate 250ms var(--ease);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .turnLayer[data-entering][data-axis='x'] {
+    animation: turnInX 250ms var(--ease) both;
+  }
+  .turnLayer[data-entering][data-axis='y'] {
+    animation: turnInY 250ms var(--ease) both;
+  }
+  .turnLayer[data-leaving][data-axis='x'] {
+    animation: turnOutX 250ms var(--ease) both;
+  }
+  .turnLayer[data-leaving][data-axis='y'] {
+    animation: turnOutY 250ms var(--ease) both;
+  }
+}
+
+.turnLayer[data-leaving] {
+  pointer-events: none;
+}
+
+@keyframes turnInX {
+  from {
+    translate: calc(var(--dir) * 100%) 0;
+  }
+}
+
+@keyframes turnInY {
+  from {
+    translate: 0 calc(var(--dir) * 100%);
+  }
+}
+
+@keyframes turnOutX {
+  from {
+    translate: var(--from) 0;
+  }
+  to {
+    translate: calc(var(--dir) * -100%) 0;
+  }
+}
+
+@keyframes turnOutY {
+  from {
+    translate: 0 var(--from);
+  }
+  to {
+    translate: 0 calc(var(--dir) * -100%);
+  }
+}
+
 /* The page's zoom transform; it fills the surface so a 1× page sits exactly as before. */
 .zoomLayer {
   display: grid;

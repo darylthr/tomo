@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { Chapter, ReaderMode } from '../../shared/model/types';
+import { useSettings } from '../../shared/settings/store';
 import { PagedView } from './PagedView';
 import { useReader } from './readerStore';
 
@@ -218,4 +219,39 @@ it('marks a bookmarked page while the controls show', () => {
   expect(screen.getByLabelText('Bookmarked page')).toBeInTheDocument();
   act(() => useReader.setState({ chromeVisible: false }));
   expect(screen.queryByLabelText('Bookmarked page')).toBeNull();
+});
+
+describe('page turns', () => {
+  it('slides to the next page when page turns are animated', () => {
+    show('ltr', 1);
+    act(() => useReader.getState().next());
+    const leaving = document.querySelector<HTMLElement>('[data-leaving]');
+    const entering = document.querySelector<HTMLElement>('[data-entering]');
+    expect(leaving?.querySelector('img')?.getAttribute('alt')).toBe('Page 2 of 5');
+    expect(entering?.querySelector('img')?.getAttribute('alt')).toBe('Page 3 of 5');
+    // Comic: the next page comes in from the right.
+    expect(entering?.style.getPropertyValue('--dir')).toBe('1');
+  });
+
+  it('slides the other way in Manga', () => {
+    show('rtl', 1);
+    act(() => useReader.getState().next());
+    expect(document.querySelector<HTMLElement>('[data-entering]')?.style.getPropertyValue('--dir')).toBe('-1');
+  });
+
+  it('turns instantly when page turns are off', () => {
+    act(() => useSettings.getState().update({ reader: { pageTransitions: false } }));
+    show('ltr', 1);
+    act(() => useReader.getState().next());
+    expect(document.querySelector('[data-leaving]')).toBeNull();
+    expect(screen.getByRole('img', { name: 'Page 3 of 5' })).toBeInTheDocument();
+    act(() => useSettings.getState().update({ reader: { pageTransitions: true } }));
+  });
+
+  it('the page follows a swipe until it is let go', () => {
+    const surface = show('ltr', 1);
+    fireEvent.pointerDown(surface, { pointerId: 1, clientX: 600, clientY: 500 });
+    fireEvent.pointerMove(surface, { pointerId: 1, clientX: 540, clientY: 505 });
+    expect(document.querySelector<HTMLElement>('[data-turn-layer]')!.style.translate).toBe('-60px 0px');
+  });
 });
