@@ -35,8 +35,8 @@ export function SettingsPage() {
       icon: <IconBook />,
     },
     {
-      to: 'customization',
-      name: 'Customization',
+      to: 'appearance',
+      name: 'Appearance',
       summary: `${THEMES[theme.mode]} · ${background.enabled && background.imageKey ? 'Dithered background' : 'No background image'}`,
       icon: <IconPalette />,
     },

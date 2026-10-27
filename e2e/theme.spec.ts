@@ -20,7 +20,7 @@ async function contrastOf(page: Page, selector: string, backgroundSelector: stri
 
 async function chooseTheme(page: Page, mode: 'Light' | 'Custom') {
   await page.getByRole('tab', { name: 'Settings' }).click();
-  await page.getByRole('link', { name: /^Customization/ }).click();
+  await page.getByRole('link', { name: /^Appearance/ }).click();
   await page.getByRole('radio', { name: mode }).click();
 }
 

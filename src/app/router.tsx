@@ -5,7 +5,7 @@ import { LibraryPage } from '../features/library/LibraryPage';
 import { ReaderPage } from '../features/reader/ReaderPage';
 import { SearchPage } from '../features/search/SearchPage';
 import { SourcePage } from '../features/search/SourcePage';
-import { CustomizationSettings } from '../features/settings/CustomizationSettings';
+import { AppearanceSettings } from '../features/settings/AppearanceSettings';
 import { LibrarySettings } from '../features/settings/LibrarySettings';
 import { ReaderSettings } from '../features/settings/ReaderSettings';
 import { ServerSettings } from '../features/settings/ServerSettings';
@@ -27,7 +27,7 @@ export const routes: RouteObject[] = [
       { path: 'settings/server', element: <ServerSettings /> },
       { path: 'settings/library', element: <LibrarySettings /> },
       { path: 'settings/reader', element: <ReaderSettings /> },
-      { path: 'settings/customization', element: <CustomizationSettings /> },
+      { path: 'settings/appearance', element: <AppearanceSettings /> },
       { path: 'settings/categories', element: <CategoriesPage /> },
       { path: 'title/:id', element: <TitlePage /> },
       { path: '*', element: <LibraryPage /> },

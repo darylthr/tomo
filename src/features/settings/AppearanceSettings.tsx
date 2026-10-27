@@ -19,8 +19,8 @@ const GRAIN = [
   { value: '4', label: 'Coarse' },
 ];
 
-/** Settings → Customization: the theme and the dithered background. */
-export function CustomizationSettings() {
+/** Settings → Appearance: the theme and the dithered background. */
+export function AppearanceSettings() {
   const { theme, background } = useSettings((s) => s.settings);
   const update = useSettings((s) => s.update);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -43,7 +43,7 @@ export function CustomizationSettings() {
   };
 
   return (
-    <SettingsSubpage title="Customization">
+    <SettingsSubpage title="Appearance">
       <Card label="Theme" heading>
         <Row label="Mode">
           <Segmented<ThemeMode>

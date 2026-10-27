@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { renderWithRouter } from '../../app/testRouter';
 import { useSettings } from '../../shared/settings/store';
 import { useLibrary } from '../library/libraryStore';
-import { CustomizationSettings } from './CustomizationSettings';
+import { AppearanceSettings } from './AppearanceSettings';
 import { LibrarySettings } from './LibrarySettings';
 import { ReaderSettings } from './ReaderSettings';
 import { SettingsPage } from './SettingsPage';
@@ -36,7 +36,7 @@ describe('the Settings tab', () => {
       'ServerSame address as Tomo',
       'LibraryBooks · 1 category',
       'ReaderManga · Fit screen',
-      'CustomizationDark · No background image',
+      'AppearanceDark · No background image',
     ]);
   });
 
@@ -94,8 +94,8 @@ describe('Reader', () => {
   });
 });
 
-describe('Customization', () => {
-  const show = () => renderWithRouter(<CustomizationSettings />, '/settings/customization');
+describe('Appearance', () => {
+  const show = () => renderWithRouter(<AppearanceSettings />, '/settings/appearance');
 
   it('holds the theme and the background', () => {
     show();
