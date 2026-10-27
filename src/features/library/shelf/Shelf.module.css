@@ -66,6 +66,6 @@
   width: calc(var(--w) * 1.5);
   height: 24px;
   margin-left: calc(var(--w) * -0.75);
-  background: radial-gradient(closest-side, oklch(0 0 0 / 0.75), transparent);
+  background: radial-gradient(closest-side, var(--floor-shadow), transparent);
   pointer-events: none;
 }

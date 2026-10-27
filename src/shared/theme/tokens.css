@@ -41,6 +41,11 @@
   --danger: #ffb4b4;
   --warning: #ffc879;
   --on-danger: #3a0d0d;
+
+  /* Keeps text over the background image readable: dark halo in dark themes, light in light ones. */
+  --text-glow: oklch(0 0 0 / 0.5);
+  /* the shadow the books stand on */
+  --floor-shadow: oklch(0 0 0 / 0.75);
 }
 
 @media (min-width: 760px) {
@@ -57,6 +62,8 @@
   --danger: #cf222e;
   --warning: #9a6700;
   --on-danger: #ffffff;
+  --text-glow: oklch(1 0 0 / 0.7);
+  --floor-shadow: oklch(0 0 0 / 0.22);
 }
 
 /* better-ui: no press scaling under reduced motion; color and opacity cues remain */

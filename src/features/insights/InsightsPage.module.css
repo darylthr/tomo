@@ -117,21 +117,22 @@
   border-radius: 3px;
 }
 
-/* One hue, dim to bright: none, then the accent at rising strength. */
+/* One hue, faint to strong: the accent mixed from the card colour up to the text colour,
+   so the ramp runs the right way in dark and light themes. */
 [data-level='0'] {
   background: color-mix(in oklch, var(--ink) 7%, transparent);
 }
 [data-level='1'] {
-  background: color-mix(in oklch, var(--accent) 35%, oklch(0.2 0.01 280));
+  background: color-mix(in oklch, var(--accent) 35%, var(--surface-base));
 }
 [data-level='2'] {
-  background: color-mix(in oklch, var(--accent) 60%, oklch(0.2 0.01 280));
+  background: color-mix(in oklch, var(--accent) 65%, var(--surface-base));
 }
 [data-level='3'] {
   background: var(--accent);
 }
 [data-level='4'] {
-  background: color-mix(in oklch, var(--accent) 55%, white);
+  background: color-mix(in oklch, var(--accent) 60%, var(--ink));
 }
 
 .day {
@@ -206,11 +207,11 @@
   width: 100%;
   min-height: 2px;
   border-radius: 4px 4px 0 0;
-  background: color-mix(in oklch, var(--accent) 75%, oklch(0.2 0.01 280));
+  background: color-mix(in oklch, var(--accent) 80%, var(--surface-base));
 }
 
 .barNow {
-  background: color-mix(in oklch, var(--accent) 55%, white);
+  background: color-mix(in oklch, var(--accent) 60%, var(--ink));
 }
 
 .barLabel {

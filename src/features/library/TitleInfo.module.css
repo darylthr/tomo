@@ -27,7 +27,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-shadow: 0 2px 14px oklch(0 0 0 / 0.6);
+  text-shadow: 0 2px 14px var(--text-glow);
 }
 
 /* full width so a logo has room (a shrink-to-fit heading would size it to nothing) */
