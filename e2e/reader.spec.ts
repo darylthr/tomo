@@ -14,6 +14,8 @@ test('continues the centered book at its saved page', async ({ page }) => {
 });
 
 test('turning a page saves the position to the server', async ({ page }) => {
+  // One page at a time, whatever the window (spreads have their own test).
+  await seedSettings(page, { reader: { spreads: 'off' } });
   const mock = await mockSuwayomi(page);
   await page.goto('/read/11');
   await expect(pageImage(page, 4)).toBeVisible();

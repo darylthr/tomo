@@ -162,3 +162,22 @@ describe('zoom', () => {
     expect(layer().style.transform).toContain('scale(1)');
   });
 });
+
+describe('spreads', () => {
+  it('shows the earlier page on the right in Manga mode', () => {
+    useReader.getState().open(chapter, ['p0', 'p1', 'p2', 'p3', 'p4'], 0, 'rtl');
+    useReader.getState().setLayout([[0], [1, 2], [3, 4]]);
+    useReader.getState().goTo(3);
+    render(<PagedView />);
+    const names = screen.getAllByRole('img').map((i) => i.getAttribute('alt'));
+    expect(names).toEqual(['Page 5 of 5', 'Page 4 of 5']);
+  });
+
+  it('shows the earlier page on the left in Comic mode', () => {
+    useReader.getState().open(chapter, ['p0', 'p1', 'p2', 'p3', 'p4'], 0, 'ltr');
+    useReader.getState().setLayout([[0], [1, 2], [3, 4]]);
+    useReader.getState().goTo(3);
+    render(<PagedView />);
+    expect(screen.getAllByRole('img').map((i) => i.getAttribute('alt'))).toEqual(['Page 4 of 5', 'Page 5 of 5']);
+  });
+});

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Chapter } from '../../shared/model/types';
 import { useSettings } from '../../shared/settings/store';
@@ -91,4 +91,39 @@ it('Escape closes the options before it leaves the reader', async () => {
   expect(leave).not.toHaveBeenCalled();
   expect(onBack).not.toHaveBeenCalled();
   window.removeEventListener('keydown', leave);
+});
+
+it('shows "4–5 / 8" for a spread', () => {
+  show();
+  act(() => {
+    useReader.getState().setLayout([[0], [1, 2], [3, 4], [5, 6], [7]]);
+    useReader.getState().goTo(3);
+  });
+  expect(screen.getByText('4–5 / 8')).toBeInTheDocument();
+});
+
+describe('spread options', () => {
+  beforeEach(() => {
+    Object.defineProperties(window, { innerWidth: { configurable: true, value: 1280 }, innerHeight: { configurable: true, value: 800 } });
+  });
+
+  it('offers double pages, and for this title the cover and a page shift while spreads show', async () => {
+    show({ titleId: 7 });
+    await userEvent.click(screen.getByRole('button', { name: 'Reading options' }));
+    expect(screen.queryByRole('switch', { name: 'First page is a cover' })).toBeNull();
+    act(() => useReader.getState().setLayout([[0], [1, 2], [3, 4], [5, 6], [7]]));
+    await userEvent.click(screen.getByRole('radio', { name: 'Off' }));
+    expect(useSettings.getState().settings.reader.spreads).toBe('off');
+    await userEvent.click(screen.getByRole('switch', { name: 'First page is a cover' }));
+    expect(useSettings.getState().settings.reader.coverAloneByTitle).toEqual({ 7: false });
+    await userEvent.click(screen.getByRole('button', { name: 'Shift pages' }));
+    expect(useSettings.getState().settings.reader.coverAloneByTitle).toEqual({ 7: true });
+  });
+
+  it('hides double pages on a phone', async () => {
+    Object.defineProperties(window, { innerWidth: { configurable: true, value: 390 }, innerHeight: { configurable: true, value: 844 } });
+    show({ titleId: 7 });
+    await userEvent.click(screen.getByRole('button', { name: 'Reading options' }));
+    expect(screen.queryByRole('radiogroup', { name: 'Double pages' })).toBeNull();
+  });
 });

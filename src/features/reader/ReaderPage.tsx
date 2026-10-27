@@ -17,6 +17,9 @@ import { ReaderChrome } from './ReaderChrome';
 import styles from './ReaderPage.module.css';
 import { useReader } from './readerStore';
 import { WebtoonView } from './WebtoonView';
+import { layoutFor, wantsSpreads } from './spreads';
+import { usePageSizes } from './usePageSizes';
+import { useViewport } from './useViewport';
 
 type Loaded = { title: Title; chapter: Chapter; chapters: Chapter[] };
 type Load = { state: 'loading' } | { state: 'error'; message: string } | ({ state: 'ready' } & Loaded);
@@ -79,8 +82,9 @@ export function ReaderPage() {
       );
       // A chapter that opens on its last page (one-pagers, or resumed at the end) is finished already.
       if (start === pages.length - 1) sync.pageChanged(start);
+      // In a spread the last page on screen is the one read up to.
       const unsubscribe = useReader.subscribe((s, prev) => {
-        if (s.index !== prev.index && s.chapter?.id === chapter.id) sync.pageChanged(s.index);
+        if (s.view !== prev.view && s.chapter?.id === chapter.id) sync.pageChanged(Math.max(...s.view));
       });
       stopSync = () => {
         unsubscribe();
@@ -96,6 +100,8 @@ export function ReaderPage() {
       stopSync();
     };
   }, [chapterId]);
+
+  useSpreadLayout(load.state === 'ready' ? load.title.id : null);
 
   const back = useCallback(() => (window.history.length > 1 ? navigate(-1) : navigate('/')), [navigate]);
   const ready = load.state === 'ready' ? load : null;
@@ -139,6 +145,7 @@ export function ReaderPage() {
 
       {ready && (
         <ReaderChrome
+          titleId={ready.title.id}
           titleName={ready.title.title}
           chapterName={ready.chapter.name || `Chapter ${ready.chapter.number}`}
           onBack={back}
@@ -194,4 +201,22 @@ function Opening({ from, pageSrc, onDone }: { from: OpeningFrom; pageSrc: string
       </div>
     </div>
   );
+}
+
+/** Pairs pages into spreads when the screen and settings want them, and keeps the store's layout in step. */
+function useSpreadLayout(titleId: number | null) {
+  const { pages, mode, index } = useReader();
+  const reader = useSettings((s) => s.settings.reader);
+  const viewport = useViewport();
+  const on = titleId !== null && wantsSpreads(reader.spreads, viewport, mode);
+  const coverAlone = (titleId !== null ? reader.coverAloneByTitle[String(titleId)] : undefined) ?? reader.coverAlone;
+  const sizes = usePageSizes(pages, index, on);
+  const key = on ? JSON.stringify(layoutFor(pages.length, sizes, coverAlone)) : `singles:${pages.length}`;
+  useEffect(() => {
+    if (titleId === null) return;
+    const layout: number[][] = on ? JSON.parse(key) : pages.map((_, i) => [i]);
+    if (JSON.stringify(layout) !== JSON.stringify(useReader.getState().layout)) useReader.getState().setLayout(layout);
+    // `key` captures the layout; pages only matter through it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, titleId]);
 }

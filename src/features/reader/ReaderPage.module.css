@@ -66,6 +66,43 @@
   object-fit: contain;
 }
 
+/* One page: the wrapper steps aside so the image is the layer's grid item, as before spreads. */
+.single {
+  display: contents;
+}
+
+/* Two pages side by side with no gap, fitted as one unit. */
+.spread {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.fit-screen .spread .page {
+  width: auto;
+  height: auto;
+  max-width: 50%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.fit-width .spread .page {
+  width: min(50%, 500px);
+  height: auto;
+}
+
+.fit-height .spread {
+  width: max-content;
+}
+
+.fit-height .spread .page {
+  width: auto;
+  height: 100%;
+}
+
 .fit-width {
   /* tall pages scroll natively; pinch still belongs to Tomo */
   touch-action: pan-y;
@@ -444,4 +481,36 @@
 .coverIn {
   background: linear-gradient(90deg, #e6e0d3, #f3efe7 20%);
   transform: rotateY(180deg);
+}
+
+.coverOptions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.optionButton {
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--press);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    scale 150ms ease-out,
+    background-color 150ms ease-out;
+}
+
+.optionButton:active {
+  scale: 0.96;
+}
+
+@media (hover: hover) {
+  .optionButton:hover {
+    background: var(--surface-2);
+  }
 }

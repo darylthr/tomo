@@ -4,11 +4,16 @@ import type { ReaderSettings } from '../../shared/settings/schema';
 import { useSettings } from '../../shared/settings/store';
 import { IconSettings } from '../../shared/ui/icons';
 import { Segmented } from '../../shared/ui/Segmented';
+import { Switch } from '../../shared/ui/Switch';
 import { TickSlider } from '../../shared/ui/TickSlider';
 import styles from './ReaderPage.module.css';
 import { useReader } from './readerStore';
+import { wantsSpreads } from './spreads';
+import { useViewport } from './useViewport';
 
 type Props = {
+  /** For per-title options (the cover in spreads). */
+  titleId?: number;
   titleName: string;
   chapterName: string;
   onBack: () => void;
@@ -36,8 +41,12 @@ const percent = (v: number) => `${Math.round(v * 100)}%`;
  * Reader controls: back, the centred title and chapter, and reading options on top;
  * chapter buttons around a page slider (one line per page) at the bottom.
  */
-export function ReaderChrome({ titleName, chapterName, onBack, onPrevChapter, onNextChapter, onModeChange }: Props) {
-  const { index, pages, mode, chromeVisible, goTo } = useReader();
+export function ReaderChrome({ titleId, titleName, chapterName, onBack, onPrevChapter, onNextChapter, onModeChange }: Props) {
+  const { index, view, layout, pages, mode, chromeVisible, goTo } = useReader();
+  const viewport = useViewport();
+  // Double pages only matter where they could show; the cover options only while they do.
+  const canSpread = wantsSpreads('auto', viewport, mode);
+  const spreadsShowing = layout.some((e) => e.length > 1);
   const reader = useSettings((s) => s.settings.reader);
   const update = useSettings((s) => s.update);
   const [optionsWanted, setOptions] = useState(false);
@@ -110,6 +119,27 @@ export function ReaderChrome({ titleName, chapterName, onBack, onPrevChapter, on
             <Segmented label="Fit pages to" value={reader.fit} onChange={(fit) => update({ reader: { fit } })} options={FITS} />
           </div>
         )}
+        {canSpread && (
+          <div className={styles.optionRow}>
+            <span className={styles.optionLabel}>Double pages</span>
+            <Segmented
+              label="Double pages"
+              value={reader.spreads}
+              onChange={(spreads) => update({ reader: { spreads } })}
+              options={[
+                { value: 'auto', label: 'Auto' },
+                { value: 'on', label: 'On' },
+                { value: 'off', label: 'Off' },
+              ]}
+            />
+          </div>
+        )}
+        {spreadsShowing && titleId !== undefined && (
+          <CoverOptions
+            value={reader.coverAloneByTitle[String(titleId)] ?? reader.coverAlone}
+            onChange={(alone) => update({ reader: { coverAloneByTitle: { ...reader.coverAloneByTitle, [String(titleId)]: alone } } })}
+          />
+        )}
         <div className={styles.optionRow}>
           <span className={styles.optionLabel}>
             Brightness <b>{percent(reader.brightness)}</b>
@@ -164,7 +194,7 @@ export function ReaderChrome({ titleName, chapterName, onBack, onPrevChapter, on
             onChange={(v) => goTo(v - 1)}
           />
           <span className={styles.counter}>
-            {index + 1} / {pages.length}
+            {view.length > 1 ? `${view[0]! + 1}–${view[view.length - 1]! + 1}` : index + 1} / {pages.length}
           </span>
           <button
             type="button"
@@ -179,6 +209,21 @@ export function ReaderChrome({ titleName, chapterName, onBack, onPrevChapter, on
           </button>
         </div>
       </footer>
+    </div>
+  );
+}
+
+/** For this title: whether page 1 stands alone, and a one-tap shift when pairs come out off by one. */
+function CoverOptions({ value, onChange }: { value: boolean; onChange: (alone: boolean) => void }) {
+  return (
+    <div className={styles.optionRow}>
+      <span className={styles.optionLabel}>First page is a cover</span>
+      <span className={styles.coverOptions}>
+        <button type="button" className={styles.optionButton} onClick={() => onChange(!value)}>
+          Shift pages
+        </button>
+        <Switch label="First page is a cover" checked={value} onChange={onChange} />
+      </span>
     </div>
   );
 }

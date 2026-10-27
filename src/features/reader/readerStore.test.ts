@@ -49,3 +49,46 @@ it('hides the controls after the first page turn', () => {
   useReader.getState().next();
   expect(useReader.getState().chromeVisible).toBe(false);
 });
+
+describe('spreads', () => {
+  const pages = ['p0', 'p1', 'p2', 'p3', 'p4'];
+  const state = () => useReader.getState();
+
+  it('shows one page at a time until a layout is set', () => {
+    state().open(chapter, pages, 2, 'rtl');
+    expect(state().view).toEqual([2]);
+  });
+
+  it('turns a spread at a time and snaps goTo to the spread', () => {
+    state().open(chapter, pages, 0, 'rtl');
+    state().setLayout([[0], [1, 2], [3, 4]]);
+    state().next();
+    expect(state().view).toEqual([1, 2]);
+    expect(state().index).toBe(1);
+    state().next();
+    expect(state().view).toEqual([3, 4]);
+    state().prev();
+    expect(state().view).toEqual([1, 2]);
+    state().goTo(4);
+    expect(state().view).toEqual([3, 4]);
+    expect(state().index).toBe(3);
+  });
+
+  it('keeps the current page on screen when sizes change the pairing', () => {
+    state().open(chapter, pages, 0, 'rtl');
+    state().setLayout([[0], [1, 2], [3, 4]]);
+    state().goTo(3);
+    state().setLayout([[0], [1], [2, 3], [4]]);
+    expect(state().view).toEqual([2, 3]);
+  });
+
+  it('calls the chapter end from the last spread', () => {
+    const end = vi.fn();
+    state().open(chapter, pages, 0, 'rtl');
+    useReader.setState({ onChapterEnd: end });
+    state().setLayout([[0], [1, 2], [3, 4]]);
+    state().goTo(3);
+    state().next();
+    expect(end).toHaveBeenCalled();
+  });
+});

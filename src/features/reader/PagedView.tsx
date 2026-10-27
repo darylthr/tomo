@@ -17,7 +17,7 @@ function isTyping(target: EventTarget | null) {
 
 /** One page at a time: Manga (right to left), Comic (left to right) or Vertical paged. */
 export function PagedView() {
-  const { pages, index, mode, next, prev, toggleChrome } = useReader();
+  const { pages, index, view, mode, next, prev, toggleChrome } = useReader();
   const fit = useSettings((s) => s.settings.reader.fit);
   const start = useRef<{ x: number; y: number; t: number } | null>(null);
   const swiped = useRef(false);
@@ -129,7 +129,8 @@ export function PagedView() {
     else prev();
   };
 
-  const src = pages[index];
+  // Reading order on screen: in Manga the earlier page of a spread sits on the right.
+  const shown = mode === 'rtl' ? [...view].reverse() : view;
   return (
     <div
       className={`${styles.paged} ${vertical ? styles.pagedVertical : ''} ${styles[`fit-${fit}`]}`}
@@ -145,16 +146,21 @@ export function PagedView() {
       ref={surfaceRef}
     >
       <div ref={layerRef} className={styles.zoomLayer} style={zoom.style} data-zoom-layer="">
-        {src && (
-          <img
-            key={src}
-            className={styles.page}
-            src={src}
-            alt={`Page ${index + 1} of ${pages.length}`}
-            draggable={false}
-            decoding="async"
-          />
-        )}
+        <div className={view.length > 1 ? styles.spread : styles.single}>
+          {shown.map((i) =>
+            pages[i] ? (
+              <img
+                key={pages[i]}
+                className={styles.page}
+                src={pages[i]}
+                alt={`Page ${i + 1} of ${pages.length}`}
+                data-page={i}
+                draggable={false}
+                decoding="async"
+              />
+            ) : null,
+          )}
+        </div>
       </div>
     </div>
   );
