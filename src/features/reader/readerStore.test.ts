@@ -24,10 +24,11 @@ it('keeps the page inside the chapter', () => {
   expect(useReader.getState().index).toBe(0);
 });
 
-it('asks for the next chapter when turning past the last page', () => {
+it('asks for the next chapter when turning on past the end card', () => {
   const onChapterEnd = vi.fn();
   useReader.setState({ onChapterEnd });
   useReader.getState().goTo(2);
+  useReader.getState().next();
   useReader.getState().next();
   expect(onChapterEnd).toHaveBeenCalledTimes(1);
   expect(useReader.getState().index).toBe(2);
@@ -82,13 +83,46 @@ describe('spreads', () => {
     expect(state().view).toEqual([2, 3]);
   });
 
-  it('calls the chapter end from the last spread', () => {
+  it('reaches the end card from the last spread', () => {
     const end = vi.fn();
     state().open(chapter, pages, 0, 'rtl');
     useReader.setState({ onChapterEnd: end });
     state().setLayout([[0], [1, 2], [3, 4]]);
     state().goTo(3);
     state().next();
+    expect(state().atEnd).toBe(true);
+    state().next();
     expect(end).toHaveBeenCalled();
+  });
+});
+
+describe('end of chapter', () => {
+  const state = () => useReader.getState();
+
+  it('shows the end card past the last page, then goes on', () => {
+    const end = vi.fn();
+    state().open(chapter, ['a', 'b', 'c'], 2, 'rtl');
+    useReader.setState({ onChapterEnd: end });
+    state().next();
+    expect(state().atEnd).toBe(true);
+    expect(end).not.toHaveBeenCalled();
+    expect(state().index).toBe(2);
+    state().next();
+    expect(end).toHaveBeenCalledTimes(1);
+  });
+
+  it('back from the end card returns to the last page', () => {
+    state().open(chapter, ['a', 'b', 'c'], 2, 'rtl');
+    state().next();
+    state().prev();
+    expect(state().atEnd).toBe(false);
+    expect(state().index).toBe(2);
+  });
+
+  it('a new chapter starts without the card', () => {
+    state().open(chapter, ['a', 'b', 'c'], 2, 'rtl');
+    state().next();
+    state().open(chapter, ['a', 'b'], 0, 'rtl');
+    expect(state().atEnd).toBe(false);
   });
 });

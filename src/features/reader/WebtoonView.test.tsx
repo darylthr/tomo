@@ -28,9 +28,9 @@ beforeAll(() => {
 });
 afterAll(() => vi.unstubAllGlobals());
 
-function show(nextChapter: (() => void) | null = null) {
+function show(end?: React.ReactNode) {
   useReader.getState().open(chapter, ['p0', 'p1', 'p2', 'p3', 'p4', 'p5'], 0, 'webtoon');
-  const { container } = render(<WebtoonView nextChapter={nextChapter} />);
+  const { container } = render(<WebtoonView end={end} />);
   return container.firstElementChild as HTMLElement;
 }
 
@@ -45,11 +45,9 @@ it('counts the last page as read once the strip is scrolled to the end', () => {
   expect(useReader.getState().index).toBe(5);
 });
 
-it('finishes the chapter before Next chapter moves on', () => {
-  const next = vi.fn(() => expect(useReader.getState().index).toBe(5));
-  show(next);
-  fireEvent.click(screen.getByRole('button', { name: 'Next chapter' }));
-  expect(next).toHaveBeenCalledTimes(1);
+it('ends the strip with what it is given', () => {
+  show(<button type="button">Next chapter</button>);
+  expect(screen.getByRole('button', { name: 'Next chapter' })).toBeInTheDocument();
 });
 
 describe('zoom', () => {

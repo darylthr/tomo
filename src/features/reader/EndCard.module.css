@@ -1,0 +1,89 @@
+.card {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 6px;
+  padding: 24px;
+  background: var(--bg);
+  color: var(--ink);
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .card {
+    animation: cardIn 300ms var(--ease) both;
+  }
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+    translate: 0 12px;
+  }
+}
+
+.finished {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.next {
+  margin: 4px 0 0;
+  max-width: 28ch;
+  font-size: 22px;
+  font-weight: 700;
+  text-wrap: balance;
+}
+
+.note {
+  margin: 0;
+  color: var(--warning);
+  font-size: 13.5px;
+}
+
+.actions {
+  display: grid;
+  gap: 8px;
+  width: min(320px, 100%);
+  margin-top: 16px;
+}
+
+.primary,
+.secondary {
+  height: 48px;
+  border: 0;
+  border-radius: 16px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: scale 150ms ease-out;
+}
+
+.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.secondary {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.primary:active,
+.secondary:active {
+  scale: 0.96;
+}
+
+.inline {
+  position: static;
+  background: none;
+  animation: none;
+}

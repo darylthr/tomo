@@ -10,6 +10,8 @@ type ReaderState = {
   layout: number[][];
   /** The pages on screen now: the layout entry holding `index`. */
   view: number[];
+  /** Past the last page: the end-of-chapter card shows (it isn't a page). */
+  atEnd: boolean;
   /** This chapter's bookmarked pages (shown as a ribbon while the controls are up). */
   bookmarkedPages: number[];
   /** The page whose actions sheet (save, bookmark) is open. */
@@ -53,6 +55,7 @@ export const useReader = create<ReaderState>()((set, get) => {
     layout: [],
     view: [0],
     pageActions: null,
+    atEnd: false,
     bookmarkedPages: [],
     openPageActions: (page) => set({ pageActions: page }),
     closePageActions: () => set({ pageActions: null }),
@@ -70,6 +73,7 @@ export const useReader = create<ReaderState>()((set, get) => {
         layout: singles(pages.length),
         view: [index],
         pageActions: null,
+        atEnd: false,
         mode,
         chromeVisible: true,
         turned: false,
@@ -83,11 +87,14 @@ export const useReader = create<ReaderState>()((set, get) => {
     next: () => {
       const s = get();
       const e = entryOf(s.layout, s.index);
-      if (e >= s.layout.length - 1) s.onChapterEnd?.();
+      // Past the last page the end card shows first; going on from it opens what's next.
+      if (s.atEnd) s.onChapterEnd?.();
+      else if (e >= s.layout.length - 1) set({ atEnd: true });
       else turnTo(s.layout[e + 1]![0]!);
     },
     prev: () => {
       const s = get();
+      if (s.atEnd) return set({ atEnd: false });
       const e = entryOf(s.layout, s.index);
       if (e <= 0) s.onChapterStart?.();
       else turnTo(s.layout[e - 1]![0]!);

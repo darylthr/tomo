@@ -11,10 +11,11 @@ const DOUBLE_TAP_MS = 300;
 const DOUBLE_TAP_PX = 24;
 const CHROME_DELAY_MS = 250;
 
-type Props = { nextChapter: (() => void) | null };
+/** `end` is what the strip ends with: the end-of-chapter card. */
+type Props = { end?: React.ReactNode };
 
 /** Webtoon mode: one continuous vertical strip; only pages near the viewport keep their image. */
-export function WebtoonView({ nextChapter }: Props) {
+export function WebtoonView({ end }: Props) {
   const pages = useReader((s) => s.pages);
   const index = useReader((s) => s.index);
   const bookmarkedPages = useReader((s) => s.bookmarkedPages);
@@ -133,24 +134,8 @@ export function WebtoonView({ nextChapter }: Props) {
         </div>
       ))}
       </div>
-      <div className={styles.stripEnd}>
-        {nextChapter ? (
-          <button
-            type="button"
-            className={styles.endButton}
-            onClick={(e) => {
-              e.stopPropagation();
-              // Finishing the strip marks it read before moving on.
-              reported.current = pages.length - 1;
-              useReader.getState().goTo(pages.length - 1);
-              nextChapter();
-            }}
-          >
-            Next chapter
-          </button>
-        ) : (
-          <p>You're all caught up.</p>
-        )}
+      <div className={styles.stripEnd} onClick={(e) => e.stopPropagation()}>
+        {end}
       </div>
     </div>
   );

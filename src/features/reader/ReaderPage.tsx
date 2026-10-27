@@ -13,6 +13,8 @@ import { PagedView } from './PagedView';
 import { startReadingClock } from '../insights/readingTime';
 import { useUpdates } from '../updates/updatesStore';
 import { createProgressSync, savesSettled, startPage } from './progress';
+import { EndCard } from './EndCard';
+import { prefetchChapter, takePrefetched } from './nextChapterCache';
 import { PageActions } from './PageActions';
 import { PageBookmark } from './PageBookmark';
 import { usePageBookmarks } from './usePageBookmarks';
@@ -44,8 +46,8 @@ export function ReaderPage() {
   const reader = useSettings((s) => s.settings.reader);
   const update = useSettings((s) => s.update);
   const mode = useReader((s) => s.mode);
+  const atEnd = useReader((s) => s.atEnd);
   const [load, setLoad] = useState<Load>({ state: 'loading' });
-  const [caughtUp, setCaughtUp] = useState(false);
   // The chapter bookmark as toggled here; the loaded chapter's value until then.
   const [bookmark, setBookmark] = useState<{ chapterId: number; on: boolean } | null>(null);
   const [opening, setOpening] = useState<OpeningFrom | null>(() => useUi.getState().openingFrom);
@@ -70,7 +72,7 @@ export function ReaderPage() {
     let stopSync = () => {};
     (async () => {
       const chapter = await getChapter(chapterId);
-      const [title, chapters, pages] = await Promise.all([getTitle(chapter.titleId), loadChapters(chapter.titleId), getPages(chapterId)]);
+      const [title, chapters, pages] = await Promise.all([getTitle(chapter.titleId), loadChapters(chapter.titleId), takePrefetched(chapterId) ?? getPages(chapterId)]);
       if (cancelled) return;
       const settings = useSettings.getState().settings.reader;
       const chosen = settings.modes[String(title.id)] ?? preferredMode(title) ?? settings.defaultMode;
@@ -99,7 +101,6 @@ export function ReaderPage() {
         unsubscribe();
         sync.dispose();
       };
-      setCaughtUp(false);
       setLoad({ state: 'ready', title, chapter, chapters });
     })().catch((e) => {
       if (!cancelled) setLoad({ state: 'error', message: e instanceof ServerError ? e.message : "Couldn't open this chapter" });
@@ -124,9 +125,17 @@ export function ReaderPage() {
   const near = ready ? neighbours(ready.chapters, ready.chapter) : { prev: null, next: null };
   const goChapter = useCallback((c: Chapter) => navigate(`/read/${c.id}`, { replace: true }), [navigate]);
 
+  // Near the end, fetch the next chapter's pages so it opens at once.
+  const nearEnd = useReader((s) => s.pages.length > 0 && (s.mode === 'webtoon' ? s.index >= s.pages.length * 0.8 : s.index >= s.pages.length - 3));
+  const nextId = near.next?.id;
+  useEffect(() => {
+    if (nearEnd && nextId !== undefined) prefetchChapter(nextId);
+  }, [nearEnd, nextId]);
+
   useEffect(() => {
     useReader.setState({
-      onChapterEnd: () => (near.next ? goChapter(near.next) : setCaughtUp(true)),
+      // Forward from the end card: on to the next chapter (with none, the card stays).
+      onChapterEnd: () => near.next && goChapter(near.next),
       onChapterStart: near.prev ? () => goChapter(near.prev!) : null,
     });
   }, [near.next, near.prev, goChapter]);
@@ -154,7 +163,36 @@ export function ReaderPage() {
           </button>
         </div>
       )}
-      {ready && (mode === 'webtoon' ? <WebtoonView nextChapter={near.next ? () => goChapter(near.next!) : null} /> : <PagedView />)}
+      {ready &&
+        (mode === 'webtoon' ? (
+          <WebtoonView
+            end={
+              <EndCard
+                inline
+                current={ready.chapter}
+                next={near.next}
+                onNext={() => {
+                  // Finishing the strip marks it read before moving on.
+                  useReader.getState().goTo(useReader.getState().pages.length - 1);
+                  goChapter(near.next!);
+                }}
+                onBack={() => {}}
+                onLibrary={back}
+              />
+            }
+          />
+        ) : (
+          <PagedView />
+        ))}
+      {ready && atEnd && mode !== 'webtoon' && (
+        <EndCard
+          current={ready.chapter}
+          next={near.next}
+          onNext={() => goChapter(near.next!)}
+          onBack={() => useReader.getState().prev()}
+          onLibrary={back}
+        />
+      )}
 
       <div className={styles.dim} style={{ opacity: 1 - reader.brightness }} aria-hidden="true" />
       <div className={styles.warm} style={{ opacity: 0.35 * reader.warm }} aria-hidden="true" />
@@ -197,15 +235,6 @@ export function ReaderPage() {
                 }
           }
         />
-      )}
-
-      {caughtUp && (
-        <div className={styles.message} role="status">
-          <p>You're all caught up.</p>
-          <button type="button" className={styles.endButton} onClick={back}>
-            Back to library
-          </button>
-        </div>
       )}
 
       {opening && <Opening from={opening} pageSrc={firstPage} onDone={() => setOpening(null)} />}

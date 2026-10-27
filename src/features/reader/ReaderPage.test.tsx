@@ -1,4 +1,5 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import type { Chapter, Title } from '../../shared/model/types';
 import { useSettings } from '../../shared/settings/store';
@@ -83,4 +84,29 @@ it('opens at ?page= inside the chapter, over the saved position', async () => {
   vi.mocked(api.getPages).mockResolvedValue(pages(8));
   open('/read/11?page=2');
   expect(await screen.findByRole('img', { name: 'Page 3 of 8' })).toBeInTheDocument();
+});
+
+it('finishes a webtoon before its end card moves on to the next chapter', async () => {
+  vi.stubGlobal('IntersectionObserver', class { observe() {} disconnect() {} });
+  useSettings.getState().update({ reader: { defaultMode: 'webtoon' } });
+  vi.mocked(api.getChapters).mockResolvedValue([chapter(11, 2), chapter(12, 3)]);
+  vi.mocked(api.getPages).mockResolvedValue(pages(6));
+  open('/read/11');
+  const card = await screen.findByRole('status');
+  await userEvent.click(within(card).getByRole('button', { name: 'Next chapter' }));
+  await vi.waitFor(() => expect(api.setProgress).toHaveBeenCalledWith(11, { lastPage: 5, read: true }));
+  vi.unstubAllGlobals();
+});
+
+it('shows the end card past the last page and goes on from it', async () => {
+  useSettings.getState().update({ reader: { spreads: 'off' } });
+  vi.mocked(api.getChapters).mockResolvedValue([chapter(11, 2), chapter(12, 3, { name: 'Last Stop' })]);
+  vi.mocked(api.getPages).mockResolvedValue(pages(3));
+  vi.mocked(api.getChapter).mockResolvedValue(chapter(11, 2, { lastPage: 2 }));
+  open('/read/11');
+  await screen.findByRole('img', { name: 'Page 3 of 3' });
+  act(() => useReader.getState().next());
+  expect(screen.getByText('Next · Ch. 3: Last Stop')).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Back to last page' }));
+  expect(screen.queryByText('Next · Ch. 3: Last Stop')).toBeNull();
 });
