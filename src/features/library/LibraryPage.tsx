@@ -66,8 +66,11 @@ export function LibraryPage() {
     return info;
   }, [serverSortInfo, novelRows]);
 
-  const fallback: CategoryFilter = categories.some((c) => c.id === library.defaultCategory) ? library.defaultCategory! : 'all';
-  const filter: CategoryFilter = chosen !== null && (chosen === 'all' || categories.some((c) => c.id === chosen)) ? chosen : fallback;
+  // The tabs in the bar's order. With no categories there is only All, whatever the setting says.
+  const showAll = library.showAllTab || categories.length === 0;
+  const tabs: CategoryFilter[] = [...(showAll ? (['all'] as const) : []), ...categories.map((c) => c.id)];
+  const fallback: CategoryFilter = categories.some((c) => c.id === library.defaultCategory) ? library.defaultCategory! : tabs[0]!;
+  const filter: CategoryFilter = chosen !== null && tabs.includes(chosen) ? chosen : fallback;
   const selectFilter = (f: CategoryFilter) => {
     setChosen(f);
     libraryView.filter = f;
@@ -75,7 +78,6 @@ export function LibraryPage() {
     setCenter(0);
   };
   // Sliding the grid sideways moves between the tabs, in the bar's order.
-  const tabs: CategoryFilter[] = ['all', ...categories.map((c) => c.id)];
   const slideTab = (step: 1 | -1) => {
     const to = tabs[tabs.indexOf(filter) + step];
     if (to !== undefined) selectFilter(to);
@@ -220,6 +222,7 @@ export function LibraryPage() {
         categories={categories}
         counts={counts}
         value={filter}
+        showAll={showAll}
         onChange={selectFilter}
         action={
           <>
@@ -270,7 +273,6 @@ export function LibraryPage() {
           lite={lite}
           size={library.gridSize}
           showTitles={library.gridTitles}
-          showProgress={library.gridProgress}
           onOpen={openFromGrid}
           focusId={libraryView.titleId}
           filterKey={String(filter)}

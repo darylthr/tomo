@@ -86,13 +86,6 @@
   overflow: hidden;
 }
 
-.sub {
-  font-size: 11px;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-  margin-top: -2px;
-}
-
 .grid[data-size='s'] {
   grid-template-columns: repeat(auto-fill, minmax(min(21%, 84px), 1fr));
 }

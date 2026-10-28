@@ -147,14 +147,21 @@ describe('sorting', () => {
 describe('grid options', () => {
   beforeEach(() => act(() => useSettings.getState().update({ library: { scroll: 'vertical' } })));
 
-  it('hides titles and chapters left under the books when turned off', () => {
-    act(() => useSettings.getState().update({ library: { gridTitles: false, gridProgress: false } }));
+  it('hides the titles under the books when turned off', () => {
+    act(() => useSettings.getState().update({ library: { gridTitles: false } }));
     showLibrary({ titles: [title(1, { unread: 4 })] });
     const grid = screen.getByRole('list', { name: 'Library' });
     // The book itself still shows the name (spine, coverless placeholder); the caption under it is gone.
     expect(within(grid).getAllByText('Title 1').every((el) => el.closest('[data-tile]'))).toBe(true);
-    expect(within(grid).queryByText('4 left')).toBeNull();
     expect(within(grid).getByRole('button', { name: 'Title 1' })).toBeInTheDocument();
+  });
+
+  it('shows the chapters left once, as a badge on the book, with no caption under it', () => {
+    showLibrary({ titles: [title(1, { unread: 4 })] });
+    const grid = screen.getByRole('list', { name: 'Library' });
+    expect(within(grid).getByText('4')).toBeInTheDocument();
+    expect(within(grid).queryByText('4 left')).toBeNull();
+    expect(within(grid).queryByText('Caught up')).toBeNull();
   });
 
   it('sizes the grid', () => {
@@ -353,6 +360,27 @@ describe('choosing several titles', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('the All tab', () => {
+  const categories = [
+    { id: 1, name: 'Reading', order: 1 },
+    { id: 2, name: 'Paused', order: 2 },
+  ];
+  const titles = [title(1, { categoryIds: [1] }), title(2, { categoryIds: [2] })];
+
+  it('can be left out of the bar, opening on the first category', () => {
+    useSettings.getState().update({ library: { showAllTab: false } });
+    showLibrary({ titles, categories });
+    expect(screen.queryByRole('tab', { name: /All/ })).toBeNull();
+    expect(screen.getByRole('tab', { name: /Reading/ })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('is still there when there are no categories', () => {
+    useSettings.getState().update({ library: { showAllTab: false } });
+    showLibrary({ titles, categories: [] });
+    expect(screen.getByRole('tab', { name: /All/ })).toBeInTheDocument();
   });
 });
 

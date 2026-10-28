@@ -19,8 +19,8 @@ describe('parseSettings', () => {
       sortDescending: false,
       gridSize: 'm',
       gridTitles: true,
-      gridProgress: true,
       defaultCategory: null,
+      showAllTab: true,
     });
   });
 

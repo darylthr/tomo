@@ -9,20 +9,22 @@ type Props = {
   categories: Category[];
   counts: Map<CategoryFilter, number>;
   value: CategoryFilter;
+  /** False leaves the All tab out of the bar. */
+  showAll?: boolean;
   onChange: (value: CategoryFilter) => void;
   /** A control after the tabs, inside the bar (the sort button). */
   action?: ReactNode;
 };
 
 /** Floating category tabs with a sliding white pill (spec §6.1). */
-export function CategoryBar({ categories, counts, value, onChange, action }: Props) {
+export function CategoryBar({ categories, counts, value, showAll = true, onChange, action }: Props) {
   const tabsRef = useRef<HTMLDivElement>(null);
   const pillRef = useRef<HTMLSpanElement>(null);
   const [overflow, setOverflow] = useState({ more: false, scrolled: false });
   useSlidingPill(tabsRef, pillRef, String(value));
 
   const items: { key: CategoryFilter; name: string }[] = [
-    { key: 'all', name: 'All' },
+    ...(showAll ? [{ key: 'all' as CategoryFilter, name: 'All' }] : []),
     ...categories.map((c) => ({ key: c.id, name: c.name })),
   ];
 

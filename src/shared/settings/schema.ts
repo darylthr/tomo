@@ -78,9 +78,10 @@ const librarySchema = z.object({
   /** Vertical grid only: book width Small / Medium / Large. */
   gridSize: z.enum(['s', 'm', 'l']).catch('m'),
   gridTitles: z.boolean().catch(true),
-  gridProgress: z.boolean().catch(true),
   /** The category the shelf opens on; null opens All, which stays in the bar either way. */
   defaultCategory: z.number().int().nullable().catch(null),
+  /** Whether the bar has an All tab. With no categories it is always there. */
+  showAllTab: z.boolean().catch(true),
 });
 
 const serverSchema = z.object({

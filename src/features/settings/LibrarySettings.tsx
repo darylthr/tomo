@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import type { LibrarySettings as LibraryPrefs } from '../../shared/settings/schema';
 import { useSettings } from '../../shared/settings/store';
@@ -14,6 +15,9 @@ export function LibrarySettings() {
   const categoryCount = useLibrary((s) => (s.status === 'ready' ? s.categories.filter((c) => c.id > 0).length : null));
   const library = useSettings((s) => s.settings.library);
   const update = useSettings((s) => s.update);
+  const allCategories = useLibrary((s) => s.categories);
+  const categories = useMemo(() => allCategories.filter((c) => c.id > 0).sort((a, b) => a.order - b.order), [allCategories]);
+  const hasAll = library.showAllTab || categories.length === 0;
   const lib = (patch: Partial<LibraryPrefs>) => update({ library: patch });
 
   return (
@@ -36,6 +40,28 @@ export function LibrarySettings() {
             <IconChevron className={styles.chevron} />
           </span>
         </Link>
+        {categories.length > 0 && (
+          <>
+            <Row label="Show the All tab">
+              <Switch label="Show the All tab" checked={library.showAllTab} onChange={(showAllTab) => lib({ showAllTab })} />
+            </Row>
+            <Row label="Default category">
+              <select
+                className={styles.select}
+                aria-label="Default category"
+                value={categories.some((c) => c.id === library.defaultCategory) ? library.defaultCategory! : hasAll ? 'all' : categories[0]!.id}
+                onChange={(e) => lib({ defaultCategory: e.target.value === 'all' ? null : Number(e.target.value) })}
+              >
+                {hasAll && <option value="all">All</option>}
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </Row>
+          </>
+        )}
         <Row label="Show titles as">
           <Segmented
             label="Show titles as"
@@ -74,9 +100,6 @@ export function LibrarySettings() {
             </Row>
             <Row label="Show titles under books">
               <Switch label="Show titles under books" checked={library.gridTitles} onChange={(gridTitles) => lib({ gridTitles })} />
-            </Row>
-            <Row label="Show chapters left">
-              <Switch label="Show chapters left" checked={library.gridProgress} onChange={(gridProgress) => lib({ gridProgress })} />
             </Row>
           </>
         )}

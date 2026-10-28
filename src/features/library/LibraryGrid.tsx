@@ -14,7 +14,6 @@ type Props = {
   lite: boolean;
   size: 's' | 'm' | 'l';
   showTitles: boolean;
-  showProgress: boolean;
   onOpen: (title: Title, coverEl: HTMLElement) => void;
   /** The title to bring into view when the grid appears (the one just left). */
   focusId: number | null;
@@ -29,7 +28,7 @@ type Props = {
 };
 
 /** Vertical scrolling: a grid of small turned books, or of flat covers (spec §6.4). */
-export function LibraryGrid({ titles, display, lite, size, showTitles, showProgress, onOpen, focusId, filterKey, onSlide, selecting, selected, onSelect }: Props) {
+export function LibraryGrid({ titles, display, lite, size, showTitles, onOpen, focusId, filterKey, onSlide, selecting, selected, onSelect }: Props) {
   const gridRef = useRef<HTMLUListElement>(null);
   const slide = useRef<{ x: number; y: number; t: number } | null>(null);
   const swiped = useRef(false);
@@ -117,7 +116,6 @@ export function LibraryGrid({ titles, display, lite, size, showTitles, showProgr
               display={display}
               lite={lite}
               showTitles={showTitles}
-              showProgress={showProgress}
               selecting={selecting}
               selected={selected.has(t.id)}
               onOpen={onOpen}
@@ -130,12 +128,12 @@ export function LibraryGrid({ titles, display, lite, size, showTitles, showProgr
   );
 }
 
-type TileProps = Pick<Props, 'display' | 'lite' | 'showTitles' | 'showProgress' | 'selecting' | 'onOpen' | 'onSelect'> & {
+type TileProps = Pick<Props, 'display' | 'lite' | 'showTitles' | 'selecting' | 'onOpen' | 'onSelect'> & {
   title: Title;
   selected: boolean;
 };
 
-function Tile({ title: t, display, lite, showTitles, showProgress, selecting, selected, onOpen, onSelect }: TileProps) {
+function Tile({ title: t, display, lite, showTitles, selecting, selected, onOpen, onSelect }: TileProps) {
   const hold = useHold(() => onSelect(t));
   return (
     <button
@@ -158,7 +156,7 @@ function Tile({ title: t, display, lite, showTitles, showProgress, selecting, se
     >
       <span className={display === 'books' ? styles.book : styles.cover} data-tile="" style={{ '--dim': 0 } as CSSProperties}>
         <Book title={t} lite={lite} flat={display === 'covers'} fit="fill" />
-        {display === 'covers' && t.unread > 0 && t.kind !== 'novel' && !selecting && <span className={styles.badge}>{t.unread}</span>}
+        {t.unread > 0 && t.kind !== 'novel' && !selecting && <span className={styles.badge}>{t.unread}</span>}
         {selecting && (
           <span className={styles.check} aria-hidden="true">
             <IconCheck />
@@ -166,11 +164,6 @@ function Tile({ title: t, display, lite, showTitles, showProgress, selecting, se
         )}
       </span>
       {showTitles && <span className={styles.name}>{t.title}</span>}
-      {showProgress && (
-        <span className={styles.sub}>
-          {t.kind === 'novel' ? (t.unread ? `${t.unread}% left` : 'Finished') : t.unread ? `${t.unread} left` : 'Caught up'}
-        </span>
-      )}
     </button>
   );
 }
