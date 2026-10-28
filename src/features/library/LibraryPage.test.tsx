@@ -79,10 +79,7 @@ it('shows a hint for an empty library', () => {
 it('narrows the shelf to a category', async () => {
   showLibrary({
     titles: [title(1, { categoryIds: [1] }), title(2), title(3)],
-    categories: [
-      { id: 0, name: 'Default', order: 0 },
-      { id: 1, name: 'Reading', order: 1 },
-    ],
+    categories: [{ id: 1, name: 'Reading', order: 1 }],
   });
   const tabs = screen.getByRole('tablist', { name: 'Categories' });
   expect(within(tabs).getByRole('tab', { name: /All/ })).toHaveTextContent('3');
@@ -102,7 +99,8 @@ describe('sorting', () => {
   const gridNames = () =>
     within(screen.getByRole('list', { name: 'Library' }))
       .getAllByRole('button')
-      .map((b) => b.getAttribute('aria-label'));
+      .map((b) => b.getAttribute('aria-label'))
+      .filter((name) => !name?.startsWith('Details and chapters'));
   beforeEach(() => act(() => useSettings.getState().update({ library: { scroll: 'vertical' } })));
   const titles = [title(1, { unread: 0, chapterCount: 50 }), title(2, { unread: 7, chapterCount: 9 }), title(3, { unread: 2, chapterCount: 30 })];
 
@@ -233,5 +231,84 @@ describe('title logos', () => {
     fireEvent.error(screen.getByRole('img', { name: 'Blue Hour' }));
     expect(screen.queryByRole('img', { name: 'Blue Hour' })).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Blue Hour' })).toHaveTextContent('Blue Hour');
+  });
+});
+
+describe('choosing several titles', () => {
+  beforeEach(() => act(() => useSettings.getState().update({ library: { scroll: 'vertical' } })));
+  const three = [title(1), title(2), title(3)];
+
+  it('has only All and the categories made in Tomo (no Default tab)', () => {
+    showLibrary({ titles: [title(1, { categoryIds: [1] }), title(2)], categories: [{ id: 1, name: 'Reading', order: 1 }] });
+    const tabs = within(screen.getByRole('tablist', { name: 'Categories' })).getAllByRole('tab');
+    expect(tabs.map((t) => t.textContent)).toEqual(['All2', 'Reading1']);
+  });
+
+  it('opens a title page from the grid with its details button', async () => {
+    showLibrary({ titles: three });
+    await userEvent.click(screen.getByRole('button', { name: 'Details and chapters of Title 2' }));
+    // The memory router has no title route, so the library is gone.
+    expect(screen.queryByRole('list', { name: 'Library' })).toBeNull();
+  });
+
+  it('selects with the Select button, removes the chosen titles after a confirmation, then reloads', async () => {
+    const set = vi.spyOn(api, 'setInLibrary').mockResolvedValue();
+    const refresh = vi.fn(async () => {});
+    showLibrary({ titles: three, refresh });
+    await userEvent.click(screen.getByRole('button', { name: 'Select titles' }));
+    expect(screen.getByRole('status')).toHaveTextContent('Select titles');
+    await userEvent.click(screen.getByRole('button', { name: 'Title 1' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Title 3' }));
+    expect(screen.getByRole('status')).toHaveTextContent('2 selected');
+    expect(screen.getByRole('button', { name: 'Title 1' })).toHaveAttribute('aria-pressed', 'true');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Remove selected from library' }));
+    expect(set).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'Remove from library' }));
+    await vi.waitFor(() => expect(refresh).toHaveBeenCalled());
+    expect(set.mock.calls.map((c) => c[0]).sort()).toEqual([1, 3]);
+    expect(set.mock.calls.every((c) => c[1] === false)).toBe(true);
+    // Done: back to the normal bar.
+    expect(screen.queryByRole('navigation', { name: 'Selection' })).toBeNull();
+  });
+
+  it('selects all, clears, and cancels with Escape', async () => {
+    showLibrary({ titles: three });
+    await userEvent.click(screen.getByRole('button', { name: 'Select titles' }));
+    await userEvent.click(screen.getByRole('button', { name: 'All' }));
+    expect(screen.getByRole('status')).toHaveTextContent('3 selected');
+    await userEvent.click(screen.getByRole('button', { name: 'None' }));
+    expect(screen.getByRole('status')).toHaveTextContent('Select titles');
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('navigation', { name: 'Selection' })).toBeNull();
+  });
+
+  it('keeps titles that could not be removed selected and says so', async () => {
+    vi.spyOn(api, 'setInLibrary').mockImplementation(async (id) => {
+      if (id === 2) throw new ServerError('unreachable');
+    });
+    showLibrary({ titles: three, refresh: async () => {} });
+    await userEvent.click(screen.getByRole('button', { name: 'Select titles' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Title 1' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Title 2' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Remove selected from library' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Remove from library' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't remove 1 title");
+    expect(screen.getByRole('status')).toHaveTextContent('1 selected');
+  });
+
+  it('long-pressing a tile starts selecting it', async () => {
+    vi.useFakeTimers();
+    try {
+      showLibrary({ titles: three });
+      const tile = screen.getByRole('button', { name: 'Title 2' });
+      fireEvent.pointerDown(tile, { clientX: 5, clientY: 5 });
+      act(() => void vi.advanceTimersByTime(600));
+      fireEvent.pointerUp(tile);
+      fireEvent.click(tile);
+      expect(screen.getByRole('status')).toHaveTextContent('1 selected');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

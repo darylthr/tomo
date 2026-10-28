@@ -115,3 +115,22 @@
     opacity: 1;
   }
 }
+
+.removeError {
+  margin: 8px 16px 0;
+  font-size: 13px;
+  text-align: center;
+  color: var(--danger);
+}
+
+.removeNote {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.removeButton {
+  background: var(--danger);
+  color: var(--on-danger);
+}

@@ -23,7 +23,7 @@ export function CategoryBar({ categories, counts, value, onChange, action }: Pro
 
   const items: { key: CategoryFilter; name: string }[] = [
     { key: 'all', name: 'All' },
-    ...categories.filter((c) => (counts.get(c.id) ?? 0) > 0 || c.id !== 0).map((c) => ({ key: c.id, name: c.name })),
+    ...categories.map((c) => ({ key: c.id, name: c.name })),
   ];
 
   const measure = () => {

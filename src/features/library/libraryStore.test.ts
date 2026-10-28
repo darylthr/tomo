@@ -16,7 +16,7 @@ it('loads the server library', async () => {
   const s = useLibrary.getState();
   expect(s.status).toBe('ready');
   expect(s.titles).toHaveLength(3);
-  expect(s.categories).toHaveLength(3);
+  expect(s.categories).toHaveLength(2); // Suwayomi's built-in Default is left out
 });
 
 it('fetches once when asked to load twice at the same time', async () => {

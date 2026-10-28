@@ -1,0 +1,47 @@
+.count {
+  min-width: 96px;
+  padding: 0 10px;
+  font-size: 14px;
+  font-weight: 650;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.text {
+  flex: none;
+  height: 38px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    scale 150ms ease-out,
+    background-color 150ms ease-out;
+}
+
+.text:active {
+  scale: 0.96;
+}
+
+@media (hover: hover) {
+  .text:hover {
+    background: color-mix(in oklch, var(--ink) 10%, transparent);
+  }
+}
+
+.danger {
+  color: var(--danger);
+}
+
+.danger:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.danger:disabled:active {
+  scale: 1;
+}

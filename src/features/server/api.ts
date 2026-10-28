@@ -30,7 +30,8 @@ export async function getLibrary(): Promise<{ titles: Title[]; categories: Categ
   return {
     // Sorted here: the server's `order` argument only exists in newer Suwayomi versions.
     titles: data.mangas.nodes.map(toTitle).sort((a, b) => a.title.localeCompare(b.title)),
-    categories: data.categories.nodes.map(toCategory).sort((a, b) => a.order - b.order),
+    // Suwayomi's built-in "Default" (id 0) isn't shown: the shelf has All plus the categories made here.
+    categories: data.categories.nodes.filter((c) => c.id !== 0).map(toCategory).sort((a, b) => a.order - b.order),
   };
 }
 

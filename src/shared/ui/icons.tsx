@@ -184,6 +184,40 @@ export function IconSort(p: Omit<IconProps, "filled">) {
   );
 }
 
+export function IconSelect(p: Omit<IconProps, "filled">) {
+  return (
+    <Svg {...p}>
+      <rect x="4" y="4" width="16" height="16" rx="4.5" />
+      <path d="m8.5 12.2 2.4 2.4 4.6-5" />
+    </Svg>
+  );
+}
+
+export function IconCheck(p: Omit<IconProps, "filled">) {
+  return (
+    <Svg strokeWidth={2.4} {...p}>
+      <path d="m5.5 12.5 4.2 4.2 8.8-9.4" />
+    </Svg>
+  );
+}
+
+export function IconInfo(p: Omit<IconProps, "filled">) {
+  return (
+    <Svg {...p}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 11v5.2M12 7.8h.01" strokeWidth={2.2} />
+    </Svg>
+  );
+}
+
+export function IconTrash(p: Omit<IconProps, "filled">) {
+  return (
+    <Svg {...p}>
+      <path d="M5 7h14M10 7V5h4v2M7 7l.8 12h8.4L17 7M10.5 11v5M13.5 11v5" />
+    </Svg>
+  );
+}
+
 export function IconBookmark({ filled, ...p }: IconProps) {
   return (
     <Svg {...p}>

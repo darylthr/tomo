@@ -24,6 +24,7 @@
 }
 
 .item {
+  position: relative;
   content-visibility: auto;
   contain-intrinsic-size: 120px 220px;
 }
@@ -98,4 +99,80 @@
 
 .grid[data-size='l'] {
   grid-template-columns: repeat(auto-fill, minmax(min(46%, 170px), 1fr));
+}
+
+/* the way to a title's page from the grid, where a tap opens the reader */
+.details {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  z-index: 4;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: oklch(0 0 0 / 0.55);
+  color: #fff;
+  cursor: pointer;
+  transition: scale 150ms ease-out;
+}
+
+.details svg {
+  width: 16px;
+  height: 16px;
+}
+
+.details:active {
+  scale: 0.96;
+}
+
+@media (hover: hover) {
+  .details {
+    opacity: 0;
+    transition:
+      scale 150ms ease-out,
+      opacity 150ms ease-out;
+  }
+
+  .item:hover .details,
+  .details:focus-visible {
+    opacity: 1;
+  }
+}
+
+/* selecting: a ring on every cover, filled with a check on chosen ones */
+.check {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  z-index: 4;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  background: oklch(0 0 0 / 0.35);
+  color: transparent;
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out;
+}
+
+.check svg {
+  width: 14px;
+  height: 14px;
+}
+
+.tile[data-selected] .check {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.tile[data-selected] [data-cover] {
+  opacity: 0.6;
 }

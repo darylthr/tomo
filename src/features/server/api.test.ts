@@ -82,7 +82,7 @@ it('maps the library to titles and categories', async () => {
   });
   expect(titles[1]!.status).toBe('completed');
   expect(titles[2]).toMatchObject({ status: 'hiatus', coverUrl: null, author: '', description: '', initialized: false });
-  expect(categories.map((c) => c.name)).toEqual(['Default', 'Reading', 'Plan to read']);
+  expect(categories.map((c) => c.name)).toEqual(['Reading', 'Plan to read']);
 });
 
 it('returns chapters newest first with numeric dates', async () => {

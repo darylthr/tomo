@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Title } from '../../shared/model/types';
 import { useSettings } from '../../shared/settings/store';
-import { IconSort } from '../../shared/ui/icons';
+import { IconSelect, IconSort } from '../../shared/ui/icons';
+import { Sheet } from '../../shared/ui/Sheet';
+import sheetStyles from '../../shared/ui/Sheet.module.css';
+import { setInLibrary as setTitleInLibrary } from '../server/api';
 import { useUi } from '../../shared/ui/uiStore';
 import { novelRowId, novelToTitle, useNovels } from '../novels/novelsStore';
 import { openBook } from '../reader/opening';
@@ -14,6 +17,7 @@ import styles from './LibraryPage.module.css';
 import { useLibrary } from './libraryStore';
 import { needsInfo, SORTS, sortTitles } from './librarySort';
 import { Shelf } from './shelf/Shelf';
+import { SelectionBar } from './SelectionBar';
 import { SortSheet } from './SortSheet';
 import { TitleInfo } from './TitleInfo';
 
@@ -38,6 +42,11 @@ export function LibraryPage() {
   const openSettings = () => navigate('/settings');
   const [filter, setFilter] = useState<CategoryFilter>('all');
   const [center, setCenter] = useState(0);
+  const [selecting, setSelecting] = useState(false);
+  const [selected, setSelected] = useState<ReadonlySet<number>>(new Set());
+  const [confirming, setConfirming] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
 
   useEffect(() => {
     void load();
@@ -58,8 +67,7 @@ export function LibraryPage() {
   const counts = useMemo(() => {
     const map = new Map<CategoryFilter, number>([['all', titles.length]]);
     for (const t of titles) {
-      const ids = t.categoryIds.length ? t.categoryIds : [0];
-      for (const id of ids) map.set(id, (map.get(id) ?? 0) + 1);
+      for (const id of t.categoryIds) map.set(id, (map.get(id) ?? 0) + 1);
     }
     return map;
   }, [titles]);
@@ -72,7 +80,7 @@ export function LibraryPage() {
 
   const shown = useMemo(() => {
     const inCategory =
-      filter === 'all' ? titles : titles.filter((t) => (t.categoryIds.length ? t.categoryIds.includes(filter) : filter === 0));
+      filter === 'all' ? titles : titles.filter((t) => t.categoryIds.includes(filter));
     return sortTitles(inCategory, sortBy, sortDescending, sortInfo);
   }, [titles, filter, sortBy, sortDescending, sortInfo]);
 
@@ -94,6 +102,48 @@ export function LibraryPage() {
       navigate(`/title/${title.id}`);
     }
   };
+
+  const stopSelecting = () => {
+    setSelecting(false);
+    setSelected(new Set());
+    setConfirming(false);
+    setRemoveError(null);
+  };
+  const toggleSelected = (t: Title) => {
+    setSelecting(true);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(t.id)) next.add(t.id);
+      return next;
+    });
+  };
+  const toggleAll = () => setSelected(selected.size === shown.length ? new Set() : new Set(shown.map((t) => t.id)));
+
+  const removeSelected = async () => {
+    setRemoving(true);
+    setRemoveError(null);
+    const picked = titles.filter((t) => selected.has(t.id));
+    const results = await Promise.allSettled(
+      picked.map((t) => (t.kind === 'novel' ? useNovels.getState().setInLibrary(novelRowId(t.id), false) : setTitleInLibrary(t.id, false))),
+    );
+    // The shelf shows what the server says now, whatever happened to individual titles.
+    await refresh();
+    setRemoving(false);
+    const failed = picked.filter((_, i) => results[i]!.status === 'rejected');
+    if (!failed.length) return stopSelecting();
+    setSelected(new Set(failed.map((t) => t.id)));
+    setConfirming(false);
+    setRemoveError(`Couldn't remove ${failed.length} ${failed.length === 1 ? 'title' : 'titles'}. They're still selected.`);
+  };
+
+  useEffect(() => {
+    if (!selecting) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !confirming) stopSelecting();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selecting, confirming]);
 
   if (status === 'idle' || status === 'loading') {
     return (
@@ -131,12 +181,16 @@ export function LibraryPage() {
 
   if (!titles.length) return <Message title="Your library is empty. Add titles from Search." />;
 
-  const vertical = library.scroll === 'vertical';
+  // Choosing several titles happens on the grid, whichever way the shelf scrolls.
+  const vertical = library.scroll === 'vertical' || selecting;
   const lite = library.detail === 'lite';
   const current = shown[Math.min(center, shown.length - 1)];
 
   return (
     <div className={`${styles.page} ${vertical ? styles.vertical : ''}`}>
+      {selecting ? (
+        <SelectionBar count={selected.size} total={shown.length} onCancel={stopSelecting} onToggleAll={toggleAll} onRemove={() => setConfirming(true)} />
+      ) : (
       <CategoryBar
         categories={categories}
         counts={counts}
@@ -146,11 +200,38 @@ export function LibraryPage() {
           setCenter(0);
         }}
         action={
-          <button type="button" className={barStyles.action} aria-label={`Sort library: ${sortLabel}`} onClick={() => setSorting(true)}>
-            <IconSort />
-          </button>
+          <>
+            <button type="button" className={barStyles.action} aria-label="Select titles" onClick={() => setSelecting(true)}>
+              <IconSelect />
+            </button>
+            <button type="button" className={barStyles.action} aria-label={`Sort library: ${sortLabel}`} onClick={() => setSorting(true)}>
+              <IconSort />
+            </button>
+          </>
         }
       />
+      )}
+      {removeError && (
+        <p className={styles.removeError} role="alert">
+          {removeError}
+        </p>
+      )}
+      <Sheet
+        open={confirming}
+        label="Remove from library"
+        title={`Remove ${selected.size} ${selected.size === 1 ? 'title' : 'titles'}?`}
+        closeLabel="Keep them"
+        onClose={() => !removing && setConfirming(false)}
+        footer={
+          <button type="button" className={`${sheetStyles.apply} ${styles.removeButton}`} disabled={removing} onClick={() => void removeSelected()}>
+            {removing ? 'Removing…' : 'Remove from library'}
+          </button>
+        }
+      >
+        <p className={styles.removeNote}>
+          They leave your shelf and categories. Reading progress stays on the server, and you can add them again from Search.
+        </p>
+      </Sheet>
       <SortSheet
         open={sorting}
         sortBy={sortBy}
@@ -171,6 +252,10 @@ export function LibraryPage() {
           showTitles={library.gridTitles}
           showProgress={library.gridProgress}
           onOpen={(t, el) => void continueReading(t, el)}
+          onDetails={(t) => navigate(`/title/${t.id}`)}
+          selecting={selecting}
+          selected={selected}
+          onSelect={toggleSelected}
         />
       ) : (
         <>
