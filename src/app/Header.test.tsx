@@ -10,7 +10,7 @@ const user = () => userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
 it('shows the brand and the search button', () => {
   renderWithRouter(<Header />);
-  expect(screen.getByText('Tomo')).toBeInTheDocument();
+  expect(screen.getByRole('img', { name: 'Tomo' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Search all sources' })).toBeInTheDocument();
 });
 

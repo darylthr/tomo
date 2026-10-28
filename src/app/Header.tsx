@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { IconBook, IconClose, IconSearch } from '../shared/ui/icons';
+import { IconClose, IconSearch } from '../shared/ui/icons';
 import styles from './Header.module.css';
 
 const SEARCH_DEBOUNCE_MS = 280;
@@ -10,7 +10,7 @@ function isTyping(target: EventTarget | null): boolean {
   return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
 }
 
-/** Floating header: brand centered, search icon that expands into a field. Settings live in the navbar. */
+/** Floating header: logo centered, search icon that expands into a field. Settings live in the navbar. */
 export function Header() {
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
@@ -61,10 +61,7 @@ export function Header() {
 
   return (
     <header className={`${styles.header} ${open ? styles.open : ''}`} data-search-open={open}>
-      <div className={styles.brand}>
-        <IconBook />
-        <span>Tomo</span>
-      </div>
+      <div className={styles.brand} role="img" aria-label="Tomo" />
       <button
         ref={buttonRef}
         type="button"
