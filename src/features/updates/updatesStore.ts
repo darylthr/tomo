@@ -3,6 +3,7 @@ import type { FeedEntry } from '../../shared/model/types';
 import { useUi } from '../../shared/ui/uiStore';
 import { useLibrary } from '../library/libraryStore';
 import { collapseBatches, unreadCount } from './batches';
+import { useUpdatesSeen } from './updatesSeen';
 import { getLastUpdateTime, getUpdates, isLibraryUpdateRunning, startLibraryUpdate } from '../server/api';
 
 /** How far back Updates looks. */
@@ -105,7 +106,16 @@ export const useUpdates = create<UpdatesState>()((set, get) => {
   };
 });
 
+const refreshBadge = () =>
+  useUi.setState({ updatesBadge: unreadCount(collapseBatches(useUpdates.getState().entries), useUpdatesSeen.getState().titles) });
+
 useUpdates.subscribe((state, prev) => {
-  if (state.entries !== prev.entries)
-    useUi.setState({ updatesBadge: unreadCount(collapseBatches(state.entries)) });
+  if (state.entries !== prev.entries) refreshBadge();
 });
+useUpdatesSeen.subscribe(refreshBadge);
+
+/** Opening a title (its page or its reader) counts as seeing its updates: they leave the badge. */
+export function markTitleSeen(titleId: number) {
+  const times = useUpdates.getState().entries.filter((e) => e.title.id === titleId).map((e) => e.at);
+  if (times.length) useUpdatesSeen.getState().markSeen(titleId, Math.max(...times));
+}

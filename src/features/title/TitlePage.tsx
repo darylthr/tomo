@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { Chapter, Title, TitleStatus } from '../../shared/model/types';
+import { markTitleSeen, useUpdates } from '../updates/updatesStore';
 import { createCategory, fetchTitle, getTitle, setChapterBookmark, setInLibrary, setProgress, setTitleCategories } from '../server/api';
 import { ServerError } from '../server/client';
 import { loadChapters, pickContinueChapter } from '../library/continueReading';
@@ -63,6 +64,7 @@ export function TitlePage() {
       .then(([title, chapters]) => {
         if (cancelled) return;
         setLoad({ state: 'ready', title, chapters });
+        markTitleSeen(title.id);
         // Titles found while browsing have only a name and cover until Suwayomi asks the source.
         if (!title.initialized) {
           fetchTitle(id)
@@ -108,7 +110,11 @@ export function TitlePage() {
 
   const toggleRead = (c: Chapter) => {
     const read = !c.read;
-    void setProgress(c.id, { read });
+    void setProgress(c.id, { read })
+      .then(() => {
+        if (useUpdates.getState().status !== 'idle') void useUpdates.getState().load();
+      })
+      .catch(() => {});
     update((s) => ({ title: s.title, chapters: s.chapters.map((x) => (x.id === c.id ? { ...x, read } : x)) }));
     const unread = Math.max(0, title.unread + (read ? -1 : 1));
     useLibrary.getState().patchTitle(title.id, { unread });

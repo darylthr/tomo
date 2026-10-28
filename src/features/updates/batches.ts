@@ -34,7 +34,11 @@ export function collapseBatches(entries: FeedEntry[]): UpdateItem[] {
   return items;
 }
 
-/** The badge count: unread chapters, with a batch counting once. */
-export function unreadCount(items: UpdateItem[]): number {
-  return items.filter((i) => (i.kind === 'chapter' ? !i.entry.chapter.read : i.entries.some((e) => !e.chapter.read))).length;
+/**
+ * The badge count: unread chapters, with a batch counting once. Opening a title counts as seeing its
+ * updates: `seen` holds, per title, the newest update time already seen, and older chapters don't count.
+ */
+export function unreadCount(items: UpdateItem[], seen: Record<number, number> = {}): number {
+  const fresh = (e: FeedEntry) => !e.chapter.read && e.at > (seen[e.title.id] ?? 0);
+  return items.filter((i) => (i.kind === 'chapter' ? fresh(i.entry) : i.entries.some(fresh))).length;
 }

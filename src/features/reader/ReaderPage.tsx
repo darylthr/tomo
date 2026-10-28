@@ -11,7 +11,7 @@ import { playOpening } from './opening';
 import { preferredMode } from './mode';
 import { PagedView } from './PagedView';
 import { startReadingClock } from '../insights/readingTime';
-import { useUpdates } from '../updates/updatesStore';
+import { markTitleSeen, useUpdates } from '../updates/updatesStore';
 import { createProgressSync, savesSettled, startPage } from './progress';
 import { ChapterDrawer } from './ChapterDrawer';
 import { DirectionHint } from './DirectionHint';
@@ -82,6 +82,7 @@ export function ReaderPage() {
       const asked = askedPage !== null && /^\d+$/.test(askedPage) ? Number(askedPage) : null;
       const start = asked !== null ? Math.min(asked, Math.max(0, pages.length - 1)) : startPage(chapter, pages.length);
       useReader.getState().open(chapter, pages, start, chosen);
+      markTitleSeen(title.id);
       const sync = createProgressSync(
         chapter.id,
         pages.length,
