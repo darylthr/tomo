@@ -97,3 +97,48 @@ export async function seedSettings(page: Page, settings: Record<string, unknown>
     localStorage.setItem('tomo.settings', JSON.stringify({ state: { settings: s }, version: 1 }));
   }, settings);
 }
+
+export type DavFile = { path: string; body: Uint8Array };
+
+const escapeXml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+/**
+ * Serves a fake WebDAV share under /dav/ the way the home server's proxy does: it strips its own
+ * prefix, so hrefs have none. PROPFIND lists a folder one level deep; GET returns a file.
+ */
+export async function mockDav(page: Page, files: DavFile[]) {
+  const requests: { method: string; path: string }[] = [];
+  await page.route('**/dav/**', async (route) => {
+    const req = route.request();
+    const rel = decodeURIComponent(new URL(req.url()).pathname.replace(/^\/dav\/?/, ''));
+    requests.push({ method: req.method(), path: rel });
+    if (req.method() === 'GET') {
+      const file = files.find((f) => f.path === rel);
+      return file
+        ? route.fulfill({ status: 200, contentType: 'application/epub+zip', body: Buffer.from(file.body) })
+        : route.fulfill({ status: 404, body: 'not found' });
+    }
+    const dir = rel === '' || rel.endsWith('/') ? rel : `${rel}/`;
+    const inside = files.filter((f) => f.path.startsWith(dir) && f.path !== dir);
+    if (!inside.length && dir !== '') return route.fulfill({ status: 404, body: 'not found' });
+    const children = new Map<string, { folder: boolean; size: number }>();
+    for (const f of inside) {
+      const rest = f.path.slice(dir.length);
+      const slash = rest.indexOf('/');
+      if (slash < 0) children.set(rest, { folder: false, size: f.body.length });
+      else children.set(`${rest.slice(0, slash)}/`, { folder: true, size: 0 });
+    }
+    const href = (p: string) => `/${p.split('/').map(encodeURIComponent).join('/')}`;
+    const self = `<D:response><D:href>${href(dir)}</D:href><D:propstat><D:prop><D:resourcetype><D:collection/></D:resourcetype></D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat></D:response>`;
+    const rows = [...children].map(
+      ([name, c]) =>
+        `<D:response><D:href>${escapeXml(href(dir + name))}</D:href><D:propstat><D:prop>${c.folder ? '<D:resourcetype><D:collection/></D:resourcetype>' : `<D:resourcetype/><D:getcontentlength>${c.size}</D:getcontentlength>`}</D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat></D:response>`,
+    );
+    return route.fulfill({
+      status: 207,
+      contentType: 'application/xml; charset=utf-8',
+      body: `<?xml version="1.0" encoding="utf-8"?><D:multistatus xmlns:D="DAV:">${self}${rows.join('')}</D:multistatus>`,
+    });
+  });
+  return { requests };
+}
