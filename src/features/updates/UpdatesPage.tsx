@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type MouseEvent } from 'react';
+import { useEffect, useMemo, type MouseEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { FeedEntry } from '../../shared/model/types';
 import { dayLabel, groupByDay, relativeTime } from '../../shared/time/days';
@@ -7,6 +7,7 @@ import { IconCheck, IconRefresh } from '../../shared/ui/icons';
 import list from '../../shared/ui/List.module.css';
 import { chapterLabel, rowThumb, Thumb } from '../../shared/ui/ListRow';
 import { Page } from '../../shared/ui/Page';
+import { useUi } from '../../shared/ui/uiStore';
 import { openBook } from '../reader/opening';
 import { collapseBatches, type UpdateItem } from './batches';
 import styles from './UpdatesPage.module.css';
@@ -17,9 +18,7 @@ export function UpdatesPage() {
   const { status, entries, checking, load, check } = useUpdates();
   const navigate = useNavigate();
   const now = useNow();
-  const [marking, setMarking] = useState(false);
-  const [markFailed, setMarkFailed] = useState(0);
-  const hasUnread = entries.some((e) => !e.chapter.read);
+  const badge = useUi((s) => s.updatesBadge);
   const items = useMemo(() => collapseBatches(entries), [entries]);
 
   useEffect(() => {
@@ -27,12 +26,6 @@ export function UpdatesPage() {
   }, []);
 
   const refresh = () => check({ force: true });
-  const markAllRead = async () => {
-    setMarking(true);
-    setMarkFailed(0);
-    setMarkFailed(await useUpdates.getState().markAllRead());
-    setMarking(false);
-  };
 
   return (
     <Page
@@ -44,8 +37,8 @@ export function UpdatesPage() {
             type="button"
             className={list.refreshButton}
             aria-label="Mark all updates as read"
-            disabled={!hasUnread || marking}
-            onClick={() => void markAllRead()}
+            disabled={badge === 0}
+            onClick={() => useUpdates.getState().markAllRead()}
           >
             <IconCheck />
           </button>
@@ -64,11 +57,6 @@ export function UpdatesPage() {
         <div className={`${list.state} ${styles.checking}`} role="status">
           <span className={list.spinner} aria-hidden="true" />
           Checking sources for new chapters…
-        </div>
-      )}
-      {markFailed > 0 && (
-        <div className={`${list.state} ${list.stateError}`} role="alert">
-          Couldn't mark {markFailed} {markFailed === 1 ? 'chapter' : 'chapters'} as read.
         </div>
       )}
       {status === 'error' && entries.length === 0 ? (

@@ -5,7 +5,9 @@ import { renderWithRouter } from '../../app/testRouter';
 import type { FeedEntry } from '../../shared/model/types';
 import { UpdatesPage } from './UpdatesPage';
 import * as api from '../server/api';
+import { useUi } from '../../shared/ui/uiStore';
 import { useUpdates } from './updatesStore';
+import { useUpdatesSeen } from './updatesSeen';
 
 const NOW = new Date(2026, 9, 26, 12, 0).getTime();
 
@@ -115,21 +117,17 @@ it('shows a back catalogue fetched in one go as one row that opens the title', a
 });
 
 describe('marking all as read', () => {
-  it('marks every unread chapter read and then disables the button', async () => {
-    const spy = vi.spyOn(api, 'updateChapters').mockResolvedValue([12, 21]);
+  it('clears the badge without marking any chapter read, then disables the button', async () => {
+    const spy = vi.spyOn(api, 'updateChapters');
+    useUpdatesSeen.setState({ titles: {} });
+    useUpdates.setState({ entries: [...ENTRIES] });
     renderWithRouter(<UpdatesPage />, '/updates');
+    expect(useUi.getState().updatesBadge).toBeGreaterThan(0);
     await userEvent.click(screen.getByRole('button', { name: 'Mark all updates as read' }));
-    expect(spy).toHaveBeenCalledWith([12, 21], { read: true });
-    expect(useUpdates.getState().entries.every((e) => e.chapter.read)).toBe(true);
+    expect(useUi.getState().updatesBadge).toBe(0);
+    expect(spy).not.toHaveBeenCalled();
+    expect(useUpdates.getState().entries.some((e) => !e.chapter.read)).toBe(true);
     expect(await screen.findByRole('button', { name: 'Mark all updates as read' })).toBeDisabled();
-    spy.mockRestore();
-  });
-
-  it('says how many could not be marked', async () => {
-    const spy = vi.spyOn(api, 'updateChapters').mockResolvedValue([12]);
-    renderWithRouter(<UpdatesPage />, '/updates');
-    await userEvent.click(screen.getByRole('button', { name: 'Mark all updates as read' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't mark 1 chapter as read.");
     spy.mockRestore();
   });
 });
