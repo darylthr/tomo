@@ -66,6 +66,22 @@ export function sortEntries(entries: DavEntry[]): DavEntry[] {
 }
 
 export const isEpub = (name: string) => /\.epub$/i.test(name);
+export const isPdf = (name: string) => /\.pdf$/i.test(name);
+/** Files Tomo can read and upload. */
+export const isBook = (name: string) => isEpub(name) || isPdf(name);
+
+/** `name`, or `name (2).ext`, `name (3).ext`… when `taken` already holds it (compared ignoring case). */
+export function uniqueName(name: string, taken: string[]): string {
+  const lower = new Set(taken.map((t) => t.toLowerCase()));
+  if (!lower.has(name.toLowerCase())) return name;
+  const dot = name.lastIndexOf('.');
+  const stem = dot > 0 ? name.slice(0, dot) : name;
+  const ext = dot > 0 ? name.slice(dot) : '';
+  for (let n = 2; ; n++) {
+    const candidate = `${stem} (${n})${ext}`;
+    if (!lower.has(candidate.toLowerCase())) return candidate;
+  }
+}
 
 const encodePath = (path: string) => path.split('/').map(encodeURIComponent).join('/');
 
@@ -100,4 +116,25 @@ export async function fetchFile(path: string, signal?: AbortSignal): Promise<Arr
   const res = await request(davUrl(path), { method: 'GET', signal });
   if (!res.ok) throw new ServerError('server', `HTTP ${res.status}`);
   return res.arrayBuffer();
+}
+
+/** Uploads a file to the share with PUT, reporting how much has gone (0 to 1). */
+export function uploadFile(path: string, file: Blob, onProgress?: (fraction: number) => void, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', davUrl(path));
+    xhr.withCredentials = true;
+    xhr.upload.onprogress = (e) => e.lengthComputable && onProgress?.(e.loaded / e.total);
+    xhr.onerror = () => reject(new ServerError('unreachable'));
+    xhr.onabort = () => reject(new DOMException('Aborted', 'AbortError'));
+    xhr.onload = () => {
+      if (xhr.status === 401) reject(new ServerError('auth'));
+      else if (xhr.status === 403 || xhr.status === 405) reject(new ServerError('server', 'The share does not accept uploads. Allow writing on the server first.'));
+      else if (xhr.status === 413) reject(new ServerError('server', 'The server refused a file that large'));
+      else if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else reject(new ServerError('server', `HTTP ${xhr.status}`));
+    };
+    signal?.addEventListener('abort', () => xhr.abort(), { once: true });
+    xhr.send(file);
+  });
 }

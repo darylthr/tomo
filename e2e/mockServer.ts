@@ -105,18 +105,24 @@ const escapeXml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
 /**
  * Serves a fake WebDAV share under /dav/ the way the home server's proxy does: it strips its own
- * prefix, so hrefs have none. PROPFIND lists a folder one level deep; GET returns a file.
+ * prefix, so hrefs have none. PROPFIND lists a folder one level deep; GET returns a file; PUT adds one
+ * (or answers 405 when `readOnly`).
  */
-export async function mockDav(page: Page, files: DavFile[]) {
+export async function mockDav(page: Page, files: DavFile[], opts: { readOnly?: boolean } = {}) {
   const requests: { method: string; path: string }[] = [];
   await page.route('**/dav/**', async (route) => {
     const req = route.request();
     const rel = decodeURIComponent(new URL(req.url()).pathname.replace(/^\/dav\/?/, ''));
     requests.push({ method: req.method(), path: rel });
+    if (req.method() === 'PUT') {
+      if (opts.readOnly) return route.fulfill({ status: 405, body: 'read-only' });
+      files.push({ path: rel, body: new Uint8Array(req.postDataBuffer() ?? []) });
+      return route.fulfill({ status: 201, body: '' });
+    }
     if (req.method() === 'GET') {
       const file = files.find((f) => f.path === rel);
       return file
-        ? route.fulfill({ status: 200, contentType: 'application/epub+zip', body: Buffer.from(file.body) })
+        ? route.fulfill({ status: 200, contentType: rel.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'application/epub+zip', body: Buffer.from(file.body) })
         : route.fulfill({ status: 404, body: 'not found' });
     }
     const dir = rel === '' || rel.endsWith('/') ? rel : `${rel}/`;

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { makeEpub } from '../src/features/novels/testEpub';
+import { makePdf } from '../src/features/novels/testPdf';
 import { mockDav, mockSuwayomi, seedSettings } from './mockServer';
 
 const files = [
@@ -184,4 +185,55 @@ test('without a WebDAV address, the file browser points to Settings', async ({ p
   await expect(page.getByText('Add the WebDAV address of your novels in Settings first.')).toBeVisible();
   await page.getByRole('link', { name: 'Server settings' }).click();
   await expect(page.getByLabel('Novels (WebDAV)')).toBeVisible();
+});
+
+test('uploads books from the device to the share, renaming one that is already there', async ({ page }) => {
+  await page.goto('/search/files');
+  await expect(page.getByRole('list', { name: 'Books' })).toBeVisible();
+  await page.getByTestId('upload-input').setInputFiles([
+    { name: 'Dune.epub', mimeType: 'application/epub+zip', buffer: Buffer.from(makeEpub({ title: 'Second Dune' })) },
+    { name: 'Paper.pdf', mimeType: 'application/pdf', buffer: Buffer.from(makePdf(3, 'A Paper')) },
+    { name: 'readme.txt', mimeType: 'text/plain', buffer: Buffer.from('hi') },
+  ]);
+  await expect(page.getByText("2 files weren't").or(page.getByText("readme.txt isn't an EPUB or PDF"))).toBeVisible();
+  const books = page.getByRole('list', { name: 'Books' });
+  await expect(books.getByText('Dune (2)')).toBeVisible();
+  await expect(books.getByText('Paper', { exact: true })).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Uploads' }).getByText('Uploaded')).toHaveCount(2);
+});
+
+test('says when the share does not accept uploads, and offers a retry', async ({ page }) => {
+  await page.unroute('**/dav/**');
+  await mockDav(page, files, { readOnly: true });
+  await page.goto('/search/files');
+  await page.getByTestId('upload-input').setInputFiles({ name: 'New.epub', mimeType: 'application/epub+zip', buffer: Buffer.from(makeEpub()) });
+  await expect(page.getByRole('alert').filter({ hasText: 'does not accept uploads' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible();
+});
+
+test('reads a PDF: opens on page 1, turns pages, and comes back to where it stopped', async ({ page }) => {
+  files.push({ path: 'Paper.pdf', body: makePdf(4, 'A Paper') });
+  try {
+    await page.goto('/search/files');
+    await page.getByRole('button', { name: /^Add Paper to library/ }).click();
+    await expect(page.getByRole('button', { name: /^Remove A Paper from library/ })).toBeVisible();
+    await page.goto('/');
+    await page.getByRole('list', { name: 'Library' }).getByRole('button', { name: 'A Paper' }).click();
+    await expect(page).toHaveURL(/\/novel\/\d+$/);
+    await expect(page.getByRole('img', { name: 'Page 1 of 4' })).toBeVisible();
+
+    await page.keyboard.press('ArrowRight');
+    await expect(page.getByRole('img', { name: 'Page 2 of 4' })).toBeVisible();
+    await page.keyboard.press('End');
+    await expect(page.getByRole('img', { name: 'Page 4 of 4' })).toBeVisible();
+    await page.keyboard.press('ArrowLeft');
+    await expect(page.getByRole('img', { name: 'Page 3 of 4' })).toBeVisible();
+
+    // Leave and come back: it resumes on page 3.
+    await page.goBack();
+    await page.getByRole('list', { name: 'Library' }).getByRole('button', { name: 'A Paper' }).click();
+    await expect(page.getByRole('img', { name: 'Page 3 of 4' })).toBeVisible();
+  } finally {
+    files.pop();
+  }
 });

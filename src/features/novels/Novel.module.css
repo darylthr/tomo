@@ -10,3 +10,22 @@
   overflow-y: auto;
   overscroll-behavior: contain;
 }
+
+/* A PDF page sits centred; fitting the width lets it scroll down. */
+.pdfStage {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  display: grid;
+  place-items: center;
+  /* Browser pinch-zoom stays; a horizontal drag is a page turn, handled in script. */
+  touch-action: pan-x pan-y pinch-zoom;
+}
+
+.pdfPage {
+  display: block;
+  /* the page's own white, like paper; the dim and warmth overlays sit above */
+  background: #fff;
+  box-shadow: 0 2px 24px rgb(0 0 0 / 0.35);
+}

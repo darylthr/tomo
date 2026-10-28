@@ -1,0 +1,125 @@
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.item + .item {
+  border-top: 1px solid var(--line);
+}
+
+.name {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.name > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item[data-state='failed'] .name > :nth-child(2) {
+  color: var(--danger);
+  white-space: normal;
+}
+
+.bar {
+  display: block;
+  height: 3px;
+  margin-top: 4px;
+  border-radius: 2px;
+  background: color-mix(in oklch, var(--ink) 10%, transparent);
+  overflow: hidden;
+}
+
+.bar > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transform-origin: left;
+  transition: transform 150ms linear;
+}
+
+.ok {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: var(--accent);
+}
+
+.dismiss {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    scale 150ms ease-out,
+    background-color 150ms ease-out;
+}
+
+.dismiss svg {
+  width: 16px;
+  height: 16px;
+}
+
+.dismiss:active {
+  scale: 0.96;
+}
+
+@media (hover: hover) {
+  .dismiss:hover {
+    background: var(--hover);
+  }
+}
+
+.drop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background: color-mix(in oklch, var(--surface-base) 70%, transparent);
+  pointer-events: none;
+  animation: dropIn 150ms ease-out;
+}
+
+.dropCard {
+  display: grid;
+  gap: 4px;
+  padding: 28px 40px;
+  border: 2px dashed var(--accent);
+  border-radius: 20px;
+  text-align: center;
+  color: var(--ink);
+}
+
+.dropCard span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@keyframes dropIn {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drop {
+    animation: none;
+  }
+
+  .bar > span {
+    transition: none;
+  }
+}

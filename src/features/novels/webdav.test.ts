@@ -1,5 +1,5 @@
 import { useSettings } from '../../shared/settings/store';
-import { davUrl, fetchFile, isEpub, listFolder, parseListing, sortEntries } from './webdav';
+import { davUrl, fetchFile, isBook, isEpub, isPdf, listFolder, parseListing, sortEntries, uniqueName, uploadFile } from './webdav';
 
 const multistatus = (rows: string) => `<?xml version="1.0" encoding="utf-8"?><D:multistatus xmlns:D="DAV:">${rows}</D:multistatus>`;
 const dir = (href: string) =>
@@ -87,5 +87,84 @@ describe('requests', () => {
   it('downloads a file', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(new Uint8Array([1, 2, 3]))));
     expect(new Uint8Array(await fetchFile('a.epub'))).toEqual(new Uint8Array([1, 2, 3]));
+  });
+});
+
+describe('book names', () => {
+  it('knows EPUBs and PDFs by extension, in any case', () => {
+    expect(isPdf('Paper.PDF')).toBe(true);
+    expect(isBook('a.epub')).toBe(true);
+    expect(isBook('a.txt')).toBe(false);
+  });
+
+  it('keeps a free name and numbers a taken one', () => {
+    expect(uniqueName('Dune.epub', ['Other.epub'])).toBe('Dune.epub');
+    expect(uniqueName('Dune.epub', ['dune.epub'])).toBe('Dune (2).epub');
+    expect(uniqueName('Dune.epub', ['Dune.epub', 'Dune (2).epub'])).toBe('Dune (3).epub');
+  });
+});
+
+describe('uploadFile', () => {
+  class FakeXhr {
+    static last: FakeXhr;
+    status = 201;
+    method = '';
+    url = '';
+    withCredentials = false;
+    body: unknown;
+    upload: { onprogress?: (e: { lengthComputable: boolean; loaded: number; total: number }) => void } = {};
+    onload?: () => void;
+    onerror?: () => void;
+    onabort?: () => void;
+    constructor() {
+      FakeXhr.last = this;
+    }
+    open(method: string, url: string) {
+      this.method = method;
+      this.url = url;
+    }
+    send(body: unknown) {
+      this.body = body;
+    }
+    abort() {
+      this.onabort?.();
+    }
+  }
+  beforeEach(() => vi.stubGlobal('XMLHttpRequest', FakeXhr));
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('PUTs the file to its path on the share and reports progress', async () => {
+    const file = new Blob(['x']);
+    const progress: number[] = [];
+    const done = uploadFile('Light Novels/Dune.epub', file, (f) => progress.push(f));
+    const xhr = FakeXhr.last;
+    expect(xhr.method).toBe('PUT');
+    expect(xhr.url).toBe('/dav/Light%20Novels/Dune.epub');
+    expect(xhr.withCredentials).toBe(true);
+    expect(xhr.body).toBe(file);
+    xhr.upload.onprogress?.({ lengthComputable: true, loaded: 1, total: 4 });
+    xhr.onload?.();
+    await done;
+    expect(progress).toEqual([0.25]);
+  });
+
+  it('says so when the share is read-only, or the file is too large', async () => {
+    const run = async (status: number) => {
+      const p = uploadFile('a.epub', new Blob(['x']));
+      FakeXhr.last.status = status;
+      FakeXhr.last.onload?.();
+      return p.catch((e) => e);
+    };
+    expect((await run(405)).details).toMatch(/does not accept uploads/);
+    expect((await run(413)).details).toMatch(/too large|that large/);
+    expect((await run(500)).details).toBe('HTTP 500');
+    expect((await run(401)).kind).toBe('auth');
+  });
+
+  it('rejects with an abort error when cancelled', async () => {
+    const abort = new AbortController();
+    const p = uploadFile('a.epub', new Blob(['x']), undefined, abort.signal);
+    abort.abort();
+    await expect(p).rejects.toMatchObject({ name: 'AbortError' });
   });
 });

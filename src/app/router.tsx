@@ -41,5 +41,5 @@ export const routes: RouteObject[] = [
   },
   // The reader takes the whole screen, outside the app frame.
   { path: 'read/:chapterId', lazy: page(() => import('../features/reader/ReaderPage'), 'ReaderPage') },
-  { path: 'novel/:id', lazy: page(() => import('../features/novels/NovelReaderPage'), 'NovelReaderPage') },
+  { path: 'novel/:id', lazy: page(() => import('../features/novels/BookPage'), 'BookPage') },
 ];

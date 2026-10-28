@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import { db, type NovelRow } from '../../shared/db/db';
 import type { Title } from '../../shared/model/types';
 import { openEpub, type EpubBook } from './epub';
-import { fetchFile } from './webdav';
+import type { PdfBook } from './pdf';
+import { fetchFile, isPdf } from './webdav';
 
 /** Ids on the shelf: novels are the negative of their row id, so they never clash with Suwayomi's. */
 export const novelTitleId = (rowId: number) => -rowId;
@@ -69,6 +70,8 @@ type NovelsState = {
   ensure: (file: { path: string; size: number }) => Promise<NovelRow>;
   /** Takes the title, author and cover from a book that was just opened. */
   describe: (id: number, book: EpubBook, data?: ArrayBuffer) => Promise<NovelRow>;
+  /** The same for a PDF: its page count stands in for the chapters. */
+  describePdf: (id: number, book: PdfBook, data?: ArrayBuffer) => Promise<NovelRow>;
   /** Reads the book once for its title, author and cover (and keeps a copy when it's in the library). */
   hydrate: (id: number, signal?: AbortSignal) => Promise<NovelRow>;
   setInLibrary: (id: number, inLibrary: boolean) => Promise<void>;
@@ -151,10 +154,39 @@ export const useNovels = create<NovelsState>()((set, get) => {
       if (row.inLibrary && data) await db.blobs.put({ key: bookKey(id), bytes: data, type: 'application/epub+zip', updatedAt: Date.now() });
       return (await update(id, patch)) ?? row;
     },
+    describePdf: async (id, book, data) => {
+      const row = get().rows.find((r) => r.id === id) ?? (await db.novels.get(id));
+      if (!row) throw new Error('Unknown novel');
+      const patch: Partial<NovelRow> = { spineCount: book.pages };
+      if (book.title) patch.title = book.title;
+      if (book.author) patch.author = book.author;
+      if (!row.hasCover) {
+        // pdf.js is large, so it loads only when a PDF is read.
+        const { coverOf } = await import('./pdf');
+        const cover = await coverOf(book);
+        if (cover) {
+          await db.blobs.put({ key: coverKey(id), bytes: cover.bytes, type: cover.type, updatedAt: Date.now() });
+          patch.hasCover = true;
+          const url = URL.createObjectURL(new Blob([cover.bytes], { type: cover.type }));
+          set((s) => ({ covers: { ...s.covers, [id]: url } }));
+        }
+      }
+      if (row.inLibrary && data) await db.blobs.put({ key: bookKey(id), bytes: data, type: 'application/pdf', updatedAt: Date.now() });
+      return (await update(id, patch)) ?? row;
+    },
     hydrate: async (id, signal) => {
       const row = get().rows.find((r) => r.id === id) ?? (await db.novels.get(id));
       if (!row) throw new Error('Unknown novel');
       const data = await fetchFile(row.path, signal);
+      if (isPdf(row.path)) {
+        const { openPdf } = await import('./pdf');
+        const book = await openPdf(data);
+        try {
+          return await get().describePdf(id, book, data);
+        } finally {
+          void book.destroy();
+        }
+      }
       return get().describe(id, openEpub(data), data);
     },
     setInLibrary: async (id, inLibrary) => {
@@ -173,6 +205,6 @@ export async function loadBook(row: NovelRow, signal?: AbortSignal): Promise<Arr
   const stored = await db.blobs.get(bookKey(row.id));
   if (stored) return stored.bytes;
   const data = await fetchFile(row.path, signal);
-  if (row.inLibrary) await db.blobs.put({ key: bookKey(row.id), bytes: data, type: 'application/epub+zip', updatedAt: Date.now() });
+  if (row.inLibrary) await db.blobs.put({ key: bookKey(row.id), bytes: data, type: isPdf(row.path) ? 'application/pdf' : 'application/epub+zip', updatedAt: Date.now() });
   return data;
 }

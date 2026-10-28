@@ -142,6 +142,8 @@ const novelSchema = z.object({
   /** paged: pages turn sideways; scroll: one long column per chapter. */
   flow: z.enum(['paged', 'scroll']).catch('paged'),
   justify: z.boolean().catch(false),
+  /** How a PDF page fits: whole page on screen, or the screen's width (scrolling down). */
+  pdfFit: z.enum(['screen', 'width']).catch('screen'),
 });
 
 // Each section parses an empty object when missing or invalid, so one bad

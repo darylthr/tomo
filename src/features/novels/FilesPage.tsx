@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSettings } from '../../shared/settings/store';
 import { IconChevron, IconFolder } from '../../shared/ui/icons';
@@ -8,7 +8,9 @@ import { Page } from '../../shared/ui/Page';
 import search from '../search/Search.module.css';
 import { ServerError } from '../server/client';
 import { titleFromPath, useNovels } from './novelsStore';
-import { isEpub, listFolder, type DavEntry } from './webdav';
+import { DropZone, UploadButton, UploadList } from './UploadPanel';
+import { useUploads } from './uploads';
+import { isBook, isPdf, listFolder, type DavEntry } from './webdav';
 
 type Result = { key: string; entries?: DavEntry[]; error?: string };
 
@@ -16,7 +18,7 @@ const parentOf = (path: string) => path.replace(/[^/]+\/$/, '');
 
 const size = (bytes: number) => (bytes >= 1e6 ? `${(bytes / 1e6).toFixed(1)} MB` : bytes >= 1e3 ? `${Math.round(bytes / 1e3)} kB` : '');
 
-/** Browse the WebDAV share (`/search/files?path=Folder/`): folders, and the EPUBs to read or add to the library. */
+/** Browse the WebDAV share (`/search/files?path=Folder/`): folders, and the EPUBs and PDFs to read or add to the library. Books can be uploaded here. */
 export function FilesPage() {
   const [params] = useSearchParams();
   const path = params.get('path') ?? '';
@@ -43,6 +45,10 @@ export function FilesPage() {
       });
     return () => abort.abort();
   }, [key, path, webdavUrl]);
+
+  const entries = useMemo(() => listing?.entries ?? [], [listing]);
+  const names = useMemo(() => entries.map((e) => e.name), [entries]);
+  const uploads = useUploads(path, names, () => setAttempt((a) => a + 1));
 
   const back = () => (path ? navigate(`/search/files?path=${encodeURIComponent(parentOf(path))}`) : navigate('/search'));
   const title = path ? path.replace(/\/$/, '').split('/').pop()! : 'Home server files';
@@ -84,13 +90,14 @@ export function FilesPage() {
     );
   }
 
-  const entries = listing?.entries ?? [];
   const folders = entries.filter((e) => e.isDir);
-  const books = entries.filter((e) => !e.isDir && isEpub(e.name));
-  const others = entries.filter((e) => !e.isDir && !isEpub(e.name)).length;
+  const books = entries.filter((e) => !e.isDir && isBook(e.name));
+  const others = entries.filter((e) => !e.isDir && !isBook(e.name)).length;
 
   return (
-    <Page title={title} onBack={back}>
+    <Page title={title} onBack={back} action={<UploadButton onFiles={uploads.add} />}>
+      <DropZone folder={path ? title : 'the share'} onFiles={uploads.add} />
+      <UploadList items={uploads.items} rejected={uploads.rejected} onRetry={uploads.retry} onDismiss={uploads.dismiss} onClear={uploads.clearFinished} />
       {!listing && (
         <div className={list.group} aria-busy="true" aria-label="Loading">
           {[0, 1, 2].map((i) => (
@@ -106,7 +113,7 @@ export function FilesPage() {
           </button>
         </div>
       )}
-      {listing?.entries && !folders.length && !books.length && <div className={list.state}>No folders or EPUB books here.</div>}
+      {listing?.entries && !folders.length && !books.length && <div className={list.state}>No folders or books here. Upload an EPUB or PDF to start.</div>}
 
       {folders.length > 0 && (
         <ul className={list.group} aria-label="Folders">
@@ -145,7 +152,7 @@ export function FilesPage() {
                     <button type="button" className={list.feedMain} onClick={() => void open(b)}>
                       <span className={list.rowText}>
                         <span className={list.rowTitle}>{name}</span>
-                        <span className={list.rowSub}>{[row?.author, size(b.size)].filter(Boolean).join(' · ') || 'EPUB'}</span>
+                        <span className={list.rowSub}>{[row?.author, size(b.size)].filter(Boolean).join(' · ') || (isPdf(b.name) ? 'PDF' : 'EPUB')}</span>
                       </span>
                     </button>
                     <span className={list.feedActions}>
@@ -172,7 +179,7 @@ export function FilesPage() {
           {problem}
         </p>
       )}
-      {others > 0 && <p className={list.note}>{others === 1 ? '1 other file is' : `${others} other files are`} hidden. Only EPUB books can be read for now.</p>}
+      {others > 0 && <p className={list.note}>{others === 1 ? '1 other file is' : `${others} other files are`} hidden. Only EPUB and PDF books are shown.</p>}
     </Page>
   );
 }
