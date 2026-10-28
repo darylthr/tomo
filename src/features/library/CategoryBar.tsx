@@ -30,7 +30,11 @@ export function CategoryBar({ categories, counts, value, showAll = true, onChang
 
   const measure = () => {
     const el = tabsRef.current;
-    if (el) setOverflow({ more: el.scrollWidth > el.clientWidth + 1, scrolled: el.scrollLeft > 4 });
+    if (!el) return;
+    setOverflow({
+      more: el.scrollWidth - el.clientWidth - el.scrollLeft > 4,
+      scrolled: el.scrollLeft > 4,
+    });
   };
   useLayoutEffect(measure, [categories.length]);
 
@@ -45,7 +49,7 @@ export function CategoryBar({ categories, counts, value, showAll = true, onChang
     <nav className={styles.bar} aria-label="Category bar">
       <div
         ref={tabsRef}
-        className={`${styles.tabs} ${overflow.more ? styles.overflow : ''} ${overflow.scrolled ? styles.scrolled : ''}`}
+        className={`${styles.tabs} ${overflow.more ? styles.fadeEnd : ''} ${overflow.scrolled ? styles.fadeStart : ''}`}
         role="tablist"
         aria-label="Categories"
         onScroll={measure}
