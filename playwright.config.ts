@@ -4,7 +4,7 @@ export default defineConfig({
   testDir: 'e2e',
   fullyParallel: true,
   reporter: 'list',
-  use: { baseURL: 'http://localhost:4173' },
+  use: { baseURL: 'http://localhost:4173', serviceWorkers: 'block' },
   webServer: {
     command: 'pnpm build && pnpm preview --port 4173 --strictPort',
     port: 4173,

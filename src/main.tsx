@@ -17,3 +17,8 @@ void loadServerConfig().finally(() =>
   const idle = window.requestIdleCallback ?? ((fn: () => void) => setTimeout(fn, 1500));
   idle(prefetchPages);
 });
+
+// Production only: the dev server's modules aren't hashed, so caching them would show stale code.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => void navigator.serviceWorker.register('/sw.js').catch(() => {}));
+}
