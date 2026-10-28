@@ -24,7 +24,7 @@ describe('parseSettings', () => {
   });
 
   it('has server and reader defaults', () => {
-    expect(DEFAULTS.server).toEqual({ url: '', webUiUrl: '', authMode: 'none', configured: false });
+    expect(DEFAULTS.server).toEqual({ url: '', webUiUrl: '', webdavUrl: '', authMode: 'none', configured: false });
     expect(DEFAULTS.reader).toEqual({
       defaultMode: 'rtl',
       modes: {},

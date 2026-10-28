@@ -22,6 +22,8 @@ export type Title = {
   logoUrl: string | null;
   bannerUrl: string | null;
   readingMode: ReaderMode | null;
+  /** Set for a novel from the WebDAV share (negative id); everything else is from Suwayomi. */
+  kind?: 'novel';
 };
 
 export type Chapter = {

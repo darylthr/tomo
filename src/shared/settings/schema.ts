@@ -86,6 +86,8 @@ const serverSchema = z.object({
   url: z.string().trim().catch(''),
   /** Where Suwayomi's own web UI lives, for managing extensions. */
   webUiUrl: z.string().trim().catch(''),
+  /** The WebDAV share with the novels (EPUB, PDF), e.g. "/dav/"; empty means none. */
+  webdavUrl: z.string().trim().catch(''),
   authMode: z.enum(['none', 'basic_auth']).catch('none'),
   /** Set once the owner (or tomo.config.json) has chosen the server. */
   configured: z.boolean().catch(false),
@@ -127,6 +129,18 @@ const readerSchema = z.object({
     .catch({}),
 });
 
+const novelSchema = z.object({
+  font: z.enum(['serif', 'sans']).catch('serif'),
+  /** Text size in px. */
+  size: z.number().min(14).max(32).catch(19),
+  lineHeight: z.number().min(1.2).max(2.2).catch(1.65),
+  /** Space around the text in px. */
+  margin: z.number().min(8).max(72).catch(28),
+  /** paged: pages turn sideways; scroll: one long column per chapter. */
+  flow: z.enum(['paged', 'scroll']).catch('paged'),
+  justify: z.boolean().catch(false),
+});
+
 // Each section parses an empty object when missing or invalid, so one bad
 // field never resets its neighbours and a bad section never breaks boot.
 const section = <T extends z.ZodType>(schema: T) => schema.catch(() => schema.parse({}));
@@ -137,6 +151,7 @@ export const settingsSchema = z.object({
   library: section(librarySchema),
   server: section(serverSchema),
   reader: section(readerSchema),
+  novel: section(novelSchema),
 });
 
 export type Settings = z.infer<typeof settingsSchema>;
@@ -145,6 +160,7 @@ export type BackgroundSettings = Settings['background'];
 export type LibrarySettings = Settings['library'];
 export type ServerSettings = Settings['server'];
 export type ReaderSettings = Settings['reader'];
+export type NovelSettings = Settings['novel'];
 
 export type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? (T[K] extends unknown[] ? T[K] : DeepPartial<T[K]>) : T[K] };
 

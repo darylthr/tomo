@@ -4,6 +4,7 @@ import { useSettings } from '../../shared/settings/store';
 const configFile = z.object({
   suwayomiUrl: z.string().optional(),
   suwayomiWebUiUrl: z.string().optional(),
+  webdavUrl: z.string().optional(),
   authMode: z.enum(['none', 'basic_auth']).optional(),
 });
 
@@ -18,11 +19,12 @@ export async function loadServerConfig(fetchImpl: typeof fetch = fetch): Promise
     if (!res.ok) return;
     const parsed = configFile.safeParse(await res.json());
     if (!parsed.success) return;
-    const { suwayomiUrl, suwayomiWebUiUrl, authMode } = parsed.data;
+    const { suwayomiUrl, suwayomiWebUiUrl, webdavUrl, authMode } = parsed.data;
     useSettings.getState().update({
       server: {
         url: normalizeServerUrl(suwayomiUrl ?? '') ?? '',
         webUiUrl: suwayomiWebUiUrl ?? '',
+        webdavUrl: normalizeDavUrl(webdavUrl ?? '') ?? '',
         authMode: authMode ?? 'none',
         configured: true,
       },
@@ -57,4 +59,16 @@ export function resolveUrl(path: string, base: string = useSettings.getState().s
   const root = normalizeServerUrl(base) || '';
   if (!root) return path;
   return `${root}/${path.replace(/^\/+/, '')}`;
+}
+
+/**
+ * The WebDAV address with a trailing slash. A path on Tomo's own address ("/dav") stays a path;
+ * anything else is normalised like the server address. Empty stays empty (no share); null means invalid.
+ */
+export function normalizeDavUrl(input: string): string | null {
+  const raw = input.trim();
+  if (!raw) return '';
+  if (raw.startsWith('/') && !raw.startsWith('//')) return `${raw.replace(/\/+$/, '')}/`;
+  const url = normalizeServerUrl(raw);
+  return url ? `${url}/` : null;
 }

@@ -1,5 +1,5 @@
 import { useSettings } from '../../shared/settings/store';
-import { loadServerConfig, normalizeServerUrl, resolveUrl } from './config';
+import { loadServerConfig, normalizeDavUrl, normalizeServerUrl, resolveUrl } from './config';
 
 const json = (body: unknown, status = 200) =>
   vi.fn(async () => new Response(typeof body === 'string' ? body : JSON.stringify(body), { status }));
@@ -31,10 +31,11 @@ describe('resolveUrl', () => {
 
 describe('loadServerConfig', () => {
   it('prefills the server settings from tomo.config.json on first launch', async () => {
-    await loadServerConfig(json({ suwayomiUrl: 'https://tomo.home', suwayomiWebUiUrl: '/suwayomi/', authMode: 'basic_auth' }));
+    await loadServerConfig(json({ suwayomiUrl: 'https://tomo.home', suwayomiWebUiUrl: '/suwayomi/', webdavUrl: '/dav', authMode: 'basic_auth' }));
     expect(useSettings.getState().settings.server).toEqual({
       url: 'https://tomo.home',
       webUiUrl: '/suwayomi/',
+      webdavUrl: '/dav/',
       authMode: 'basic_auth',
       configured: true,
     });
@@ -82,4 +83,21 @@ it('resolves against an address saved without http://', () => {
 it('normalizes the address from the config file', async () => {
   await loadServerConfig(json({ suwayomiUrl: '192.168.1.10:4567' }));
   expect(useSettings.getState().settings.server.url).toBe('http://192.168.1.10:4567');
+});
+
+describe('normalizeDavUrl', () => {
+  it('keeps a path on the same address and ends it with a slash', () => {
+    expect(normalizeDavUrl('/dav')).toBe('/dav/');
+    expect(normalizeDavUrl(' /dav/// ')).toBe('/dav/');
+  });
+
+  it('normalises a full address', () => {
+    expect(normalizeDavUrl('nas.local:8080/dav')).toBe('http://nas.local:8080/dav/');
+  });
+
+  it('keeps empty empty and rejects junk', () => {
+    expect(normalizeDavUrl('')).toBe('');
+    expect(normalizeDavUrl('//')).toBeNull();
+    expect(normalizeDavUrl('ftp://nas')).toBeNull();
+  });
 });
