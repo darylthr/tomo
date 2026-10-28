@@ -112,8 +112,6 @@ export function TitlePage() {
     };
   }, [id]);
 
-  const back = () => (window.history.length > 1 ? navigate(-1) : navigate('/'));
-
   if (load.state === 'loading') {
     return (
       <section className={styles.page} aria-busy="true" aria-label="Title">
@@ -124,9 +122,6 @@ export function TitlePage() {
   if (load.state === 'error') {
     return (
       <section className={styles.page} aria-label="Title">
-        <button type="button" className={styles.back} aria-label="Back" onClick={back}>
-          <BackIcon />
-        </button>
         <p className={styles.error}>{load.message}</p>
       </section>
     );
@@ -224,9 +219,6 @@ export function TitlePage() {
   return (
     <section className={styles.page} aria-label={title.title}>
       <div className={styles.inner}>
-        <button type="button" className={styles.back} aria-label="Back" onClick={back}>
-          <BackIcon />
-        </button>
         <header className={styles.header}>
           <div className={styles.cover}>
             {title.coverUrl ? <img src={title.coverUrl} alt="" /> : <span>{title.title}</span>}
@@ -440,13 +432,5 @@ export function TitlePage() {
         )}
       </div>
     </section>
-  );
-}
-
-function BackIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="m15 6-6 6 6 6" />
-    </svg>
   );
 }

@@ -16,6 +16,11 @@
   justify-self: end;
 }
 
+.backBtn {
+  grid-column: 1;
+  justify-self: start;
+}
+
 .brand {
   grid-column: 2;
   justify-self: center;

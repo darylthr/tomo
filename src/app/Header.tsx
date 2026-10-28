@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { IconClose, IconSearch } from '../shared/ui/icons';
+import { IconBack, IconClose, IconSearch } from '../shared/ui/icons';
 import styles from './Header.module.css';
 
 const SEARCH_DEBOUNCE_MS = 280;
@@ -59,8 +59,17 @@ export function Header() {
     };
   }, []);
 
+  // A title's page sits below the tab it was opened from: Back lives in the bar, beside the logo.
+  const showBack = pathname.startsWith('/title/');
+  const back = () => (window.history.length > 1 ? navigate(-1) : navigate('/'));
+
   return (
     <header className={`${styles.header} ${open ? styles.open : ''}`} data-search-open={open}>
+      {showBack && (
+        <button type="button" className={`${styles.iconBtn} ${styles.backBtn}`} aria-label="Back" onClick={back}>
+          <IconBack />
+        </button>
+      )}
       <div className={styles.brand} role="img" aria-label="Tomo" />
       <button
         ref={buttonRef}

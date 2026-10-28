@@ -17,30 +17,6 @@
   padding: 4px 14px 32px;
 }
 
-.back {
-  width: 40px;
-  height: 40px;
-  display: grid;
-  place-items: center;
-  border: 0;
-  border-radius: 999px;
-  background: var(--glass);
-  box-shadow: var(--glass-ring);
-  color: var(--ink);
-  cursor: pointer;
-  transition: scale 150ms ease-out;
-}
-
-.back svg {
-  width: 20px;
-  height: 20px;
-  translate: -1px 0;
-}
-
-.back:not(:disabled):active {
-  scale: 0.96;
-}
-
 .header {
   display: grid;
   grid-template-columns: 112px 1fr;
