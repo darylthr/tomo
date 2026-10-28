@@ -79,6 +79,8 @@ const librarySchema = z.object({
   gridSize: z.enum(['s', 'm', 'l']).catch('m'),
   gridTitles: z.boolean().catch(true),
   gridProgress: z.boolean().catch(true),
+  /** The category the shelf opens on; null opens All, which stays in the bar either way. */
+  defaultCategory: z.number().int().nullable().catch(null),
 });
 
 const serverSchema = z.object({

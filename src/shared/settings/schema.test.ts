@@ -20,6 +20,7 @@ describe('parseSettings', () => {
       gridSize: 'm',
       gridTitles: true,
       gridProgress: true,
+      defaultCategory: null,
     });
   });
 

@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import type { Category } from '../../shared/model/types';
 import list from '../../shared/ui/List.module.css';
 import { Page } from '../../shared/ui/Page';
+import { useSettings } from '../../shared/settings/store';
 import { Sheet } from '../../shared/ui/Sheet';
 import sheet from '../../shared/ui/Sheet.module.css';
+import { Switch } from '../../shared/ui/Switch';
 import { useLibrary } from '../library/libraryStore';
 import { createCategory, deleteCategory, moveCategory, renameCategory } from '../server/api';
 import styles from './CategoriesPage.module.css';
@@ -23,6 +25,8 @@ export function CategoriesPage() {
   const counts = new Map<number, number>();
   for (const t of titles) for (const id of t.categoryIds) counts.set(id, (counts.get(id) ?? 0) + 1);
 
+  const defaultId = useSettings((s) => s.settings.library.defaultCategory);
+  const setDefault = (id: number | null) => useSettings.getState().update({ library: { defaultCategory: id } });
   const [editing, setEditing] = useState<Editing>(null);
   // While dragging, the order shown follows the finger; it's sent to the server on release.
   const [draft, setDraft] = useState<number[] | null>(null);
@@ -54,6 +58,7 @@ export function CategoriesPage() {
   const remove = (category: Category) => {
     setLocal(categories.filter((c) => c.id !== category.id));
     useLibrary.setState((s) => ({ titles: s.titles.map((t) => ({ ...t, categoryIds: t.categoryIds.filter((id) => id !== category.id) })) }));
+    if (category.id === defaultId) setDefault(null);
     sync(deleteCategory(category.id));
   };
 
@@ -61,7 +66,10 @@ export function CategoriesPage() {
 
   return (
     <Page title="Categories" onBack={back}>
-      <p className={styles.hint}>The order here is the order of the tabs on your shelf. A title can be in several categories.</p>
+      <p className={styles.hint}>
+        The order here is the order of the tabs on your shelf. A title can be in several categories. The default category is the tab your shelf opens on;
+        All stays in the bar.
+      </p>
       {categories.length === 0 ? (
         <div className={list.state}>No categories yet. Make one for each way you sort your shelf, like To Read, Reading or Paused.</div>
       ) : (
@@ -71,6 +79,7 @@ export function CategoriesPage() {
               key={c.id}
               category={c}
               count={counts.get(c.id) ?? 0}
+              isDefault={c.id === defaultId}
               index={i}
               total={shown.length}
               onDraft={(to) => {
@@ -96,6 +105,8 @@ export function CategoriesPage() {
         editing={editing}
         taken={(name, except) => categories.some((c) => c.id !== except && c.name.trim().toLowerCase() === name.toLowerCase())}
         count={editing?.kind === 'edit' ? (counts.get(editing.category.id) ?? 0) : 0}
+        isDefault={editing?.kind === 'edit' && editing.category.id === defaultId}
+        onDefault={(on) => editing?.kind === 'edit' && setDefault(on ? editing.category.id : null)}
         onCreate={create}
         onRename={rename}
         onDelete={remove}
@@ -109,6 +120,7 @@ export function CategoriesPage() {
 type RowProps = {
   category: Category;
   count: number;
+  isDefault: boolean;
   index: number;
   total: number;
   onDraft: (to: number) => void;
@@ -118,7 +130,7 @@ type RowProps = {
   onOptions: () => void;
 };
 
-function CategoryRow({ category, count, index, total, onDraft, onDrop, onMove, onOptions }: RowProps) {
+function CategoryRow({ category, count, isDefault, index, total, onDraft, onDrop, onMove, onOptions }: RowProps) {
   const drag = useRef<{ startY: number; startIndex: number; rowHeight: number; to: number } | null>(null);
   const handleRef = useRef<HTMLButtonElement>(null);
   const [held, setHeld] = useState(false);
@@ -174,7 +186,10 @@ function CategoryRow({ category, count, index, total, onDraft, onDrop, onMove, o
           {[6, 12, 18].map((y) => [9, 15].map((x) => <circle key={`${x}-${y}`} cx={x} cy={y} r={1.6} />))}
         </svg>
       </button>
-      <span className={styles.name}>{category.name}</span>
+      <span className={styles.name}>
+        {category.name}
+        {isDefault && <span className={styles.defaultTag}>Default</span>}
+      </span>
       <span className={styles.count}>{count}</span>
       <button type="button" className={styles.more} aria-label={`Options for ${category.name}`} onClick={onOptions}>
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -191,6 +206,8 @@ type SheetProps = {
   editing: Editing;
   taken: (name: string, except?: number) => boolean;
   count: number;
+  isDefault: boolean;
+  onDefault: (on: boolean) => void;
   onCreate: (name: string) => Promise<void>;
   onRename: (category: Category, name: string) => void;
   onDelete: (category: Category) => void;
@@ -199,7 +216,7 @@ type SheetProps = {
 };
 
 /** New category, or rename and delete one. */
-function NameSheet({ editing, taken, count, onCreate, onRename, onDelete, onConfirmDelete, onClose }: SheetProps) {
+function NameSheet({ editing, taken, count, isDefault, onDefault, onCreate, onRename, onDelete, onConfirmDelete, onClose }: SheetProps) {
   // Kept while the sheet animates out, so its content doesn't vanish mid-exit.
   const [last, setLast] = useState<Exclude<Editing, null>>({ kind: 'new' });
   const [name, setName] = useState('');
@@ -271,6 +288,15 @@ function NameSheet({ editing, taken, count, onCreate, onRename, onDelete, onConf
           </p>
         )}
       </form>
+      {current.kind === 'edit' && (
+        <div className={styles.defaultRow}>
+          <span>
+            <span className={styles.defaultTitle}>Default category</span>
+            <span className={styles.defaultNote}>Your shelf opens on this tab.</span>
+          </span>
+          <Switch label="Default category" checked={isDefault} onChange={onDefault} />
+        </div>
+      )}
       {current.kind === 'edit' && (
         <div className={styles.danger}>
           {current.confirmDelete ? (
