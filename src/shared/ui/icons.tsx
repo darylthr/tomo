@@ -149,6 +149,14 @@ export function IconRefresh(p: Omit<IconProps, "filled">) {
   );
 }
 
+export function IconFolder(p: Omit<IconProps, "filled">) {
+  return (
+    <Svg {...p}>
+      <path d="M3.5 7.5A2 2 0 0 1 5.5 5.5h3.6a2 2 0 0 1 1.5.7l1 1.1a2 2 0 0 0 1.5.7h5.4a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2Z" />
+    </Svg>
+  );
+}
+
 export function IconServer(p: Omit<IconProps, "filled">) {
   return (
     <Svg {...p}>

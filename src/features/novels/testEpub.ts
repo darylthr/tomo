@@ -7,10 +7,10 @@ const chapter = (title: string, body: string) =>
 
 const PNG = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82]);
 
-export type TestEpubOptions = { nav?: boolean; ncx?: boolean; title?: string };
+export type TestEpubOptions = { nav?: boolean; ncx?: boolean; title?: string; /** Extra paragraphs in chapter one, so it spans several pages. */ filler?: number };
 
 /** A small, valid EPUB 3 (nav) or EPUB 2 (NCX) for tests: a cover, three chapters, an image and a stylesheet. */
-export function makeEpub({ nav = true, ncx = false, title = 'The Test Book' }: TestEpubOptions = {}): Uint8Array {
+export function makeEpub({ nav = true, ncx = false, title = 'The Test Book', filler = 0 }: TestEpubOptions = {}): Uint8Array {
   const items = [
     `<item id="c1" href="text/c1.xhtml" media-type="application/xhtml+xml"/>`,
     `<item id="c2" href="text/c2.xhtml" media-type="application/xhtml+xml"/>`,
@@ -29,7 +29,7 @@ export function makeEpub({ nav = true, ncx = false, title = 'The Test Book' }: T
     'OEBPS/css/book.css': strToU8('body { color: red; background: url(../img/fig.png); } p { text-indent: 1em; }'),
     'OEBPS/img/cover.png': PNG,
     'OEBPS/img/fig.png': PNG,
-    'OEBPS/text/c1.xhtml': strToU8(chapter('One', '<p>First paragraph.</p><p id="mid">Middle.</p><img src="../img/fig.png" alt="figure"/><a href="c2.xhtml#start">next</a><a href="https://example.com/x">web</a>')),
+    'OEBPS/text/c1.xhtml': strToU8(chapter('One', `<p>First paragraph.</p>${Array.from({ length: filler }, (_, i) => `<p>Filler paragraph ${i + 1}. The quick brown fox jumps over the lazy dog, then thinks about it for a while before going home to rest.</p>`).join('')}<p id="mid">Middle.</p><img src="../img/fig.png" alt="figure"/><a href="c2.xhtml#start">next</a><a href="https://example.com/x">web</a>`)),
     'OEBPS/text/c2.xhtml': strToU8(chapter('Two', '<p id="start">Second chapter.</p>')),
     'OEBPS/text/c3.xhtml': strToU8(chapter('Three', '<p>Third chapter.</p>')),
   };

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import type { Title } from '../../shared/model/types';
 import { useSettings } from '../../shared/settings/store';
 import { IconSort } from '../../shared/ui/icons';
+import { useUi } from '../../shared/ui/uiStore';
+import { novelRowId, novelToTitle, useNovels } from '../novels/novelsStore';
 import { openBook } from '../reader/opening';
 import { CategoryBar, type CategoryFilter } from './CategoryBar';
 import barStyles from './CategoryBar.module.css';
@@ -25,7 +27,9 @@ function Message({ title, children }: { title: string; children?: React.ReactNod
 }
 
 export function LibraryPage() {
-  const { status, titles, categories, error, load, refresh, sortInfo, sortInfoState, loadSortInfo } = useLibrary();
+  const { status, titles: serverTitles, categories, error, load, refresh, sortInfo: serverSortInfo, sortInfoState, loadSortInfo } = useLibrary();
+  const novelRows = useNovels((s) => s.rows);
+  const novelCovers = useNovels((s) => s.covers);
   const update = useSettings((s) => s.update);
   const [sorting, setSorting] = useState(false);
   const library = useSettings((s) => s.settings.library);
@@ -37,7 +41,19 @@ export function LibraryPage() {
 
   useEffect(() => {
     void load();
+    void useNovels.getState().load();
   }, [load]);
+
+  // Novels from the WebDAV share stand on the same shelf, after Suwayomi's titles are sorted in with them.
+  const titles = useMemo(
+    () => [...serverTitles, ...novelRows.filter((n) => n.inLibrary).map((n) => novelToTitle(n, novelCovers[n.id] ?? null))],
+    [serverTitles, novelRows, novelCovers],
+  );
+  const sortInfo = useMemo(() => {
+    const info = new Map(serverSortInfo ?? []);
+    for (const n of novelRows) info.set(-n.id, { addedAt: n.addedAt, lastReadAt: n.lastReadAt, latestAt: n.addedAt });
+    return info;
+  }, [serverSortInfo, novelRows]);
 
   const counts = useMemo(() => {
     const map = new Map<CategoryFilter, number>([['all', titles.length]]);
@@ -64,6 +80,11 @@ export function LibraryPage() {
   const sortLabel = `${sort.label}, ${sort.directions[sortDescending ? 0 : 1]}`;
 
   const continueReading = async (title: Title, coverEl?: HTMLElement | null) => {
+    if (title.kind === 'novel') {
+      useUi.setState({ openingFrom: null });
+      navigate(`/novel/${novelRowId(title.id)}`);
+      return;
+    }
     const cover = coverEl ?? document.querySelector<HTMLElement>(`[data-title-id="${title.id}"] [data-cover]`);
     try {
       const chapter = pickContinueChapter(await loadChapters(title.id));

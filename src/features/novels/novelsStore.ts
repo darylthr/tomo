@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { db, type NovelRow } from '../../shared/db/db';
 import type { Title } from '../../shared/model/types';
-import { openEpub } from './epub';
+import { openEpub, type EpubBook } from './epub';
 import { fetchFile } from './webdav';
 
 /** Ids on the shelf: novels are the negative of their row id, so they never clash with Suwayomi's. */
@@ -67,6 +67,8 @@ type NovelsState = {
   load: () => Promise<void>;
   /** The row for a file of the share, made on first sight. */
   ensure: (file: { path: string; size: number }) => Promise<NovelRow>;
+  /** Takes the title, author and cover from a book that was just opened. */
+  describe: (id: number, book: EpubBook, data?: ArrayBuffer) => Promise<NovelRow>;
   /** Reads the book once for its title, author and cover (and keeps a copy when it's in the library). */
   hydrate: (id: number, signal?: AbortSignal) => Promise<NovelRow>;
   setInLibrary: (id: number, inLibrary: boolean) => Promise<void>;
@@ -131,28 +133,29 @@ export const useNovels = create<NovelsState>()((set, get) => {
       put(row);
       return row;
     },
-    hydrate: async (id, signal) => {
+    describe: async (id, book, data) => {
       const row = get().rows.find((r) => r.id === id) ?? (await db.novels.get(id));
       if (!row) throw new Error('Unknown novel');
-      const data = await fetchFile(row.path, signal);
-      const book = openEpub(data);
       const patch: Partial<NovelRow> = { spineCount: book.spine.length };
       if (book.title) patch.title = book.title;
       if (book.author) patch.author = book.author;
-      const cover = book.coverPath ? book.bytes(book.coverPath) : undefined;
+      const cover = book.coverPath && !row.hasCover ? book.bytes(book.coverPath) : undefined;
       if (cover && book.coverPath) {
         const type = coverType(book.coverPath);
         const bytes = cover.slice().buffer;
         await db.blobs.put({ key: coverKey(id), bytes, type, updatedAt: Date.now() });
         patch.hasCover = true;
         const url = URL.createObjectURL(new Blob([bytes], { type }));
-        set((s) => {
-          if (s.covers[id]) URL.revokeObjectURL(s.covers[id]);
-          return { covers: { ...s.covers, [id]: url } };
-        });
+        set((s) => ({ covers: { ...s.covers, [id]: url } }));
       }
-      if (row.inLibrary) await db.blobs.put({ key: bookKey(id), bytes: data, type: 'application/epub+zip', updatedAt: Date.now() });
+      if (row.inLibrary && data) await db.blobs.put({ key: bookKey(id), bytes: data, type: 'application/epub+zip', updatedAt: Date.now() });
       return (await update(id, patch)) ?? row;
+    },
+    hydrate: async (id, signal) => {
+      const row = get().rows.find((r) => r.id === id) ?? (await db.novels.get(id));
+      if (!row) throw new Error('Unknown novel');
+      const data = await fetchFile(row.path, signal);
+      return get().describe(id, openEpub(data), data);
     },
     setInLibrary: async (id, inLibrary) => {
       await update(id, inLibrary ? { inLibrary, addedAt: Date.now() } : { inLibrary });

@@ -3,6 +3,8 @@ import { CategoriesPage } from '../features/categories/CategoriesPage';
 import { HistoryPage } from '../features/history/HistoryPage';
 import { InsightsPage } from '../features/insights/InsightsPage';
 import { LibraryPage } from '../features/library/LibraryPage';
+import { NovelReaderPage } from '../features/novels/NovelReaderPage';
+import { FilesPage } from '../features/novels/FilesPage';
 import { ReaderPage } from '../features/reader/ReaderPage';
 import { SearchPage } from '../features/search/SearchPage';
 import { SourcePage } from '../features/search/SourcePage';
@@ -25,6 +27,7 @@ export const routes: RouteObject[] = [
       { path: 'insights', element: <InsightsPage /> },
       { path: 'search', element: <SearchPage /> },
       { path: 'search/source/:sourceId', element: <SourcePage /> },
+      { path: 'search/files', element: <FilesPage /> },
       { path: 'settings', element: <SettingsPage /> },
       { path: 'settings/server', element: <ServerSettings /> },
       { path: 'settings/library', element: <LibrarySettings /> },
@@ -37,4 +40,5 @@ export const routes: RouteObject[] = [
   },
   // The reader takes the whole screen, outside the app frame.
   { path: 'read/:chapterId', element: <ReaderPage /> },
+  { path: 'novel/:id', element: <NovelReaderPage /> },
 ];

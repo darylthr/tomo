@@ -1,0 +1,12 @@
+/* The shadow root inside draws the text; the host only gives it the screen. */
+.host {
+  position: absolute;
+  inset: 0;
+}
+
+/* a few more rows than the manga reader's options panel: keep it on screen */
+.options {
+  max-height: calc(100% - 140px - env(safe-area-inset-top));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}

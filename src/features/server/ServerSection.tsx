@@ -4,7 +4,7 @@ import { Segmented } from '../../shared/ui/Segmented';
 import styles from '../settings/Settings.module.css';
 import { getAbout } from './api';
 import { ServerError } from './client';
-import { normalizeServerUrl, resolveUrl } from './config';
+import { normalizeDavUrl, normalizeServerUrl, resolveUrl } from './config';
 
 type Check = { state: 'idle' | 'checking' } | { state: 'ok'; version: string } | { state: 'failed'; message: string; details?: string };
 
@@ -15,6 +15,16 @@ export function ServerSection({ heading = true }: { heading?: boolean } = {}) {
   const [draft, setDraft] = useState(server.url);
   const [check, setCheck] = useState<Check>({ state: 'idle' });
   const [invalid, setInvalid] = useState(false);
+  const [davDraft, setDavDraft] = useState(server.webdavUrl);
+  const [davInvalid, setDavInvalid] = useState(false);
+
+  const saveDav = (value: string) => {
+    const url = normalizeDavUrl(value);
+    setDavInvalid(url === null);
+    if (url === null) return;
+    setDavDraft(url);
+    if (url !== server.webdavUrl) update({ server: { webdavUrl: url } });
+  };
 
   /** Saves the address in its full form; returns false when it isn't a web address. */
   const saveUrl = (value: string) => {
@@ -67,6 +77,31 @@ export function ServerSection({ heading = true }: { heading?: boolean } = {}) {
       {invalid && (
         <p id="server-url-error" className={styles.error} role="alert">
           Enter an address like http://192.168.1.10:4567
+        </p>
+      )}
+      <div className={styles.row}>
+        <label className={styles.label} htmlFor="webdav-url">
+          Novels (WebDAV)
+        </label>
+        <input
+          id="webdav-url"
+          className={styles.field}
+          type="text"
+          inputMode="url"
+          autoComplete="off"
+          spellCheck={false}
+          placeholder="/dav/"
+          value={davDraft}
+          aria-invalid={davInvalid || undefined}
+          aria-describedby={davInvalid ? 'webdav-url-error' : undefined}
+          onChange={(e) => setDavDraft(e.target.value)}
+          onBlur={(e) => saveDav(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+        />
+      </div>
+      {davInvalid && (
+        <p id="webdav-url-error" className={styles.error} role="alert">
+          Enter a path like /dav/ or an address like http://192.168.1.10:8080/
         </p>
       )}
       <div className={styles.row}>

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useSettings } from '../../shared/settings/store';
-import { IconChevron, IconExtensions, IconExternal } from '../../shared/ui/icons';
+import { IconChevron, IconExtensions, IconExternal, IconFolder } from '../../shared/ui/icons';
 import { Page } from '../../shared/ui/Page';
 import { GlobalResults } from './GlobalResults';
 import list from '../../shared/ui/List.module.css';
@@ -66,6 +66,25 @@ function SourcesHome() {
           ))}
         </ul>
       )}
+
+      <div className={list.groupLabel}>
+        <span>Novels</span>
+        <span className={list.groupHint}>via WebDAV</span>
+      </div>
+      <div className={list.group}>
+        <Link to="/search/files" className={list.row}>
+          <span className={`${styles.icon} ${styles.letter} ${styles.neutral}`} aria-hidden="true">
+            <IconFolder />
+          </span>
+          <span className={list.rowText}>
+            <span className={list.rowTitle}>Home server files</span>
+            <span className={list.rowSub}>{server.webdavUrl ? 'EPUB books on your WebDAV share' : 'Add the WebDAV address in Settings first'}</span>
+          </span>
+          <span className={list.rowSide}>
+            <IconChevron className={list.chevron} />
+          </span>
+        </Link>
+      </div>
 
       <div className={list.groupLabel}>
         <span>Extensions</span>

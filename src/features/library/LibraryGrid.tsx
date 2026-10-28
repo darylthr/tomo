@@ -51,10 +51,14 @@ export function LibraryGrid({ titles, display, lite, size, showTitles, showProgr
             >
               <span className={display === 'books' ? styles.book : styles.cover} data-tile="" style={{ '--dim': 0 } as CSSProperties}>
                 <Book title={t} lite={lite} flat={display === 'covers'} fit="fill" />
-                {display === 'covers' && t.unread > 0 && <span className={styles.badge}>{t.unread}</span>}
+                {display === 'covers' && t.unread > 0 && t.kind !== 'novel' && <span className={styles.badge}>{t.unread}</span>}
               </span>
               {showTitles && <span className={styles.name}>{t.title}</span>}
-              {showProgress && <span className={styles.sub}>{t.unread ? `${t.unread} left` : 'Caught up'}</span>}
+              {showProgress && (
+                <span className={styles.sub}>
+                  {t.kind === 'novel' ? (t.unread ? `${t.unread}% left` : 'Finished') : t.unread ? `${t.unread} left` : 'Caught up'}
+                </span>
+              )}
             </button>
           </li>
         ))}
