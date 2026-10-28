@@ -27,6 +27,17 @@ test('moves between books with the keyboard', async ({ page }) => {
   await expect(selected(page).getByRole('heading', { name: 'Kintsugi' })).toBeVisible();
 });
 
+test('coming back from a title leaves the shelf on the book that was left', async ({ page }) => {
+  await mockSuwayomi(page);
+  await page.goto('/');
+  await page.getByRole('group', { name: /Library shelf/ }).focus();
+  for (let i = 0; i < 2; i++) await page.keyboard.press('ArrowRight');
+  await expect(page.getByText(/^3 \/ \d+$/)).toBeVisible();
+  await page.getByRole('button', { name: 'Chapters' }).click();
+  await page.getByRole('button', { name: 'Back' }).click();
+  await expect(page.getByText(/^3 \/ \d+$/)).toBeVisible();
+});
+
 test('asks to connect a server when the same address has no Suwayomi', async ({ page }) => {
   await mockSuwayomi(page, { LIBRARY: 502 });
   await page.goto('/');

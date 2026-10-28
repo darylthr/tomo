@@ -33,6 +33,8 @@ export function Shelf({ titles, display, lite, fadeSides, onCenterChange, onOpen
   // Everything the frame loop reads lives in refs so scrolling never re-renders React.
   const live = useRef({ layout, range, titles, display, lite, onCenterChange, onOpen, center: -1 });
   const motion = useRef({ target: null as number | null, raf: 0, lastT: 0, wheelTimer: 0 });
+  // The book to bring to the centre once the track has its new width (until then the browser clamps the scroll).
+  const restore = useRef<{ keep: number; timer?: number } | null>(null);
   const tilt = useRef({ i: -1, x: 0, y: 0, tx: 0, ty: 0 });
   useEffect(() => {
     Object.assign(live.current, { layout, range, titles, display, lite, onCenterChange, onOpen });
@@ -71,7 +73,8 @@ export function Shelf({ titles, display, lite, fadeSides, onCenterChange, onOpen
       slot.style.zIndex = String(m.z);
     });
     const center = n ? clamp(Math.round(sl / pitch), 0, n - 1) : -1;
-    if (center !== L.center) {
+    // Not while a restore is pending: the clamped scroll would report the first book as the centre.
+    if (center !== L.center && restore.current === null) {
       L.center = center;
       if (center >= 0) L.onCenterChange(center);
     }
@@ -140,11 +143,12 @@ export function Shelf({ titles, display, lite, fadeSides, onCenterChange, onOpen
     if (!el) return;
     let first = true;
     const measure = () => {
-      const keep = first ? initialIndex : Math.max(0, live.current.center);
+      // A restore the track couldn't hold yet (the panel is still being sized) stays the target.
+      const keep = restore.current?.keep ?? (first ? initialIndex : Math.max(0, live.current.center));
       const next = shelfLayout(el.clientWidth, Math.max(0, el.clientHeight - FLOOR - 18), display);
       live.current.layout = next;
+      restore.current = { keep, timer: restore.current?.timer };
       setLayout(next);
-      el.scrollLeft = keep * next.pitch;
       first = false;
       update();
     };
@@ -155,6 +159,27 @@ export function Shelf({ titles, display, lite, fadeSides, onCenterChange, onOpen
     // initialIndex only matters for the first measurement
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [display, update]);
+
+  // The track is as wide as the new layout says only after this render: now the centre can be scrolled to.
+  useLayoutEffect(() => {
+    const el = shelfRef.current;
+    const pending = restore.current;
+    if (!el || !pending) return;
+    clearTimeout(pending.timer);
+    el.scrollLeft = pending.keep * layout.pitch;
+    if (Math.abs(el.scrollLeft - pending.keep * layout.pitch) > 1) {
+      // Clamped: the track isn't wide enough yet. The next measure tries again; if none comes, take the scroll as it is.
+      pending.timer = window.setTimeout(() => {
+        restore.current = null;
+        live.current.center = -1;
+        update();
+      }, 500);
+      return;
+    }
+    restore.current = null;
+    live.current.center = -1;
+    update();
+  }, [layout, update]);
 
   // Newly mounted books need their transforms before paint.
   useLayoutEffect(() => {
