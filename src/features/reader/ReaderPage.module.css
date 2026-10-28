@@ -55,19 +55,20 @@
   }
 }
 
-.turnLayer[data-leaving] {
+.turnLayer[data-leaving],
+.turnLayer[data-peek] {
   pointer-events: none;
 }
 
 @keyframes turnInX {
   from {
-    translate: calc(var(--dir) * 100%) 0;
+    translate: calc(var(--dir) * 100% + var(--from, 0px)) 0;
   }
 }
 
 @keyframes turnInY {
   from {
-    translate: 0 calc(var(--dir) * 100%);
+    translate: 0 calc(var(--dir) * 100% + var(--from, 0px));
   }
 }
 

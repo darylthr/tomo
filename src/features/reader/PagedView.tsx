@@ -70,7 +70,25 @@ export function PagedView() {
     const t = setTimeout(() => setTurn(null), TURN_MS + 20);
     return () => clearTimeout(t);
   }, [turn]);
-  const follow = (px: number) => setDrag(px);
+  // While a finger drags, the page it is uncovering sits beside the current one, so it is there to see before the finger lifts.
+  const [peek, setPeek] = useState<{ view: number[]; dir: 1 | -1 } | null>(null);
+  const follow = (px: number) => {
+    setDrag(px);
+    if (px === 0) return;
+    const forward = forwardFrom(vertical ? 0 : px, vertical ? px : 0);
+    const target = layout[layout.findIndex((v) => v.includes(index)) + (forward ? 1 : -1)];
+    const dir = ((mode === 'rtl' ? -1 : 1) * (forward ? 1 : -1)) as 1 | -1;
+    setPeek((p) => (!target ? null : p && p.view === target && p.dir === dir ? p : { view: target, dir }));
+  };
+  // Let go: the peeked page goes with the turn, or slides back out with the settling page.
+  useEffect(() => {
+    if (!peek || drag !== 0) return;
+    const t = setTimeout(() => setPeek(null), turn ? 0 : TURN_MS + 20);
+    return () => clearTimeout(t);
+  }, [peek, drag, turn]);
+  useEffect(() => {
+    for (const i of peek?.view ?? []) if (pages[i]) preloadPage(pages[i]!);
+  }, [peek, pages]);
 
   // A centre tap waits this long for a second tap before showing or hiding the controls.
   const lastTap = useRef<{ x: number; y: number; t: number } | null>(null);
@@ -230,12 +248,28 @@ export function PagedView() {
           </div>
         </div>
       )}
+      {peek && !turn && (
+        <div
+          className={`${styles.turnLayer} ${drag === 0 ? styles.settle : ''}`}
+          data-peek=""
+          aria-hidden="true"
+          style={{ translate: `calc(${peek.dir * 100}% + ${vertical ? 0 : drag}px) calc(${vertical ? drag : 0}px)` } as CSSProperties}
+        >
+          <div className={styles.zoomLayer}>
+            <div className={peek.view.length > 1 ? styles.spread : styles.single}>
+              {(mode === 'rtl' ? [...peek.view].reverse() : peek.view).map((i) =>
+                pages[i] ? <PageImage key={pages[i]} src={pages[i]!} page={i} total={pages.length} crop={crop} /> : null,
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       <div
         className={`${styles.turnLayer} ${drag === 0 && !turn ? styles.settle : ''}`}
         data-turn-layer=""
         data-entering={turn ? '' : undefined}
         data-axis={vertical ? 'y' : 'x'}
-        style={{ '--dir': turn?.dir ?? 1, translate: vertical ? `0px ${drag}px` : `${drag}px 0px` } as CSSProperties}
+        style={{ '--dir': turn?.dir ?? 1, '--from': `${turn?.offset ?? 0}px`, translate: vertical ? `0px ${drag}px` : `${drag}px 0px` } as CSSProperties}
       >
       <div ref={layerRef} className={styles.zoomLayer} style={zoom.style} data-zoom-layer="">
         <div className={view.length > 1 ? styles.spread : styles.single}>

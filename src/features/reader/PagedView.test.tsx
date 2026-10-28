@@ -293,4 +293,15 @@ describe('page turns', () => {
     fireEvent.pointerMove(surface, { pointerId: 1, clientX: 540, clientY: 505 });
     expect(document.querySelector<HTMLElement>('[data-turn-layer]')!.style.translate).toBe('-60px 0px');
   });
+
+  it('shows the page being uncovered while the finger is still down', () => {
+    const surface = show('ltr', 1);
+    expect(screen.queryByRole('img', { name: 'Page 3 of 5' })).toBeNull();
+    fireEvent.pointerDown(surface, { pointerId: 1, clientX: 600, clientY: 500 });
+    fireEvent.pointerMove(surface, { pointerId: 1, clientX: 540, clientY: 505 });
+    // Dragging toward the reading start reveals the next page; dragging the other way, the previous one.
+    expect(document.querySelector('[data-peek] img')).toHaveAttribute('data-page', '2');
+    fireEvent.pointerMove(surface, { pointerId: 1, clientX: 660, clientY: 505 });
+    expect(document.querySelector('[data-peek] img')).toHaveAttribute('data-page', '0');
+  });
 });
