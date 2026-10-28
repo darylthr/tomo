@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { prefersReducedMotion } from '../../shared/ui/useReducedMotion';
-import { preloadPage } from './pagePreload';
+import { isPageReady, preloadPage, whenPagesReady } from './pagePreload';
 import { tapAction } from './tapZones';
 import { useCrop } from './useCrop';
 import { useLongPress } from './useLongPress';
@@ -17,6 +17,8 @@ const CHROME_DELAY_MS = 250;
 const FLICK_PX_PER_MS = 0.3;
 const TURN_MS = 250;
 const PAN_PX = 10;
+/** A turn waits this long for the next page to be decoded before showing it anyway. */
+const READY_WAIT_MS = 2500;
 
 function isTyping(target: EventTarget | null) {
   const el = target as HTMLElement | null;
@@ -25,7 +27,8 @@ function isTyping(target: EventTarget | null) {
 
 /** One page at a time: Manga (right to left), Comic (left to right) or Vertical paged. */
 export function PagedView() {
-  const { pages, index, view, layout, mode, next, prev, toggleChrome, openPageActions, bookmarkedPages, chromeVisible } = useReader();
+  const { pages, index, view: wanted, layout, mode, next, prev, toggleChrome, openPageActions, bookmarkedPages, chromeVisible } = useReader();
+  const view = useReadyView(pages, wanted, layout);
   const press = useLongPress(openPageActions, () => useReader.getState().view[0] ?? 0);
   const fit = useSettings((s) => s.settings.reader.fit);
   const animated = useSettings((s) => s.settings.reader.pageTransitions);
@@ -100,10 +103,10 @@ export function PagedView() {
   }, []);
 
   // Load and decode the pages around the view ahead of time (after a spread, the pages that follow it).
-  const last = Math.max(index, ...view);
-  const first = Math.min(index, ...view);
+  const last = Math.max(index, ...wanted);
+  const first = Math.min(index, ...wanted);
   useEffect(() => {
-    for (const i of [last + 1, last + 2, last + 3, first - 1, first - 2]) {
+    for (const i of [last + 1, last + 2, last + 3, last + 4, first - 1, first - 2]) {
       const src = pages[i];
       if (src) preloadPage(src);
     }
@@ -245,6 +248,31 @@ export function PagedView() {
       </div>
     </div>
   );
+}
+
+/**
+ * The view to draw. A turn to a page that isn't decoded yet waits for it, so the page slides in with its picture
+ * instead of arriving blank and filling in once the animation is over. A new chapter or layout isn't a turn.
+ */
+function useReadyView(pages: string[], wanted: number[], layout: unknown): number[] {
+  const [shown, setShown] = useState({ pages, layout, view: wanted });
+  const same = shown.pages === pages && shown.layout === layout;
+  const ready = wanted.every((i) => !pages[i] || isPageReady(pages[i]!));
+  const settled = shown.view === wanted || shown.view.join() === wanted.join();
+  if (!settled && (!same || ready)) setShown({ pages, layout, view: wanted });
+  const waiting = same && !ready && !settled;
+  useEffect(() => {
+    if (!waiting) return;
+    let current = true;
+    void whenPagesReady(
+      wanted.flatMap((i) => (pages[i] ? [pages[i]!] : [])),
+      READY_WAIT_MS,
+    ).then(() => current && setShown({ pages, layout, view: wanted }));
+    return () => {
+      current = false;
+    };
+  }, [waiting, pages, layout, wanted]);
+  return same ? shown.view : wanted;
 }
 
 /** One page image; with "Crop white borders" on it shows the cropped copy once it's ready. */

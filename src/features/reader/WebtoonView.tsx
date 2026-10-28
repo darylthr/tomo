@@ -3,7 +3,7 @@ import styles from './ReaderPage.module.css';
 import { useLongPress } from './useLongPress';
 import { useReader } from './readerStore';
 
-const NEAR = '300% 0px'; // mount images within about three screens of the viewport
+const NEAR = '500% 0px'; // mount images within about five screens of the viewport, so a fast scroll finds them loaded
 const CURRENT_LINE = 0.4; // the page crossing 40% of the viewport height is the current one
 const MAX_ZOOM = 3;
 const DOUBLE_TAP_ZOOM = 2;
@@ -124,7 +124,6 @@ export function WebtoonView({ end }: Props) {
               src={src}
               alt={`Page ${i + 1} of ${pages.length}`}
               draggable={false}
-              decoding="async"
               onLoad={(e) => {
                 const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
                 if (w && h) setRatios((r) => (r[i] ? r : { ...r, [i]: w / h }));

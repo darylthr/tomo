@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { preloadPage } from './pagePreload';
+import { isPageReady, preloadPage, whenPagesReady } from './pagePreload';
 
 describe('preloadPage', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -31,5 +31,35 @@ describe('preloadPage', () => {
     } as unknown as typeof Image);
     expect(() => preloadPage('/broken.jpg')).not.toThrow();
     await Promise.resolve();
+  });
+
+  it('reports a page ready only once it has decoded, and waits for it', async () => {
+    let finish!: () => void;
+    const Real = window.Image;
+    vi.spyOn(window, 'Image').mockImplementation(function () {
+      const img = new Real();
+      img.decode = () => new Promise<void>((resolve) => (finish = resolve));
+      return img;
+    } as unknown as typeof Image);
+    const waited = whenPagesReady(['/slow.jpg'], 5000);
+    expect(isPageReady('/slow.jpg')).toBe(false);
+    finish();
+    await waited;
+    expect(isPageReady('/slow.jpg')).toBe(true);
+  });
+
+  it('stops waiting after the timeout', async () => {
+    vi.useFakeTimers();
+    const Real = window.Image;
+    vi.spyOn(window, 'Image').mockImplementation(function () {
+      const img = new Real();
+      img.decode = () => new Promise<void>(() => {});
+      return img;
+    } as unknown as typeof Image);
+    const waited = whenPagesReady(['/never.jpg'], 1000);
+    await vi.advanceTimersByTimeAsync(1000);
+    await waited;
+    expect(isPageReady('/never.jpg')).toBe(false);
+    vi.useRealTimers();
   });
 });
