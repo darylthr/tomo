@@ -13,6 +13,7 @@ import { CategoryBar, type CategoryFilter } from './CategoryBar';
 import barStyles from './CategoryBar.module.css';
 import { loadChapters, pickContinueChapter } from './continueReading';
 import { LibraryGrid } from './LibraryGrid';
+import { libraryView } from './libraryView';
 import styles from './LibraryPage.module.css';
 import { useLibrary } from './libraryStore';
 import { needsInfo, SORTS, sortTitles } from './librarySort';
@@ -40,7 +41,8 @@ export function LibraryPage() {
   const serverUrl = useSettings((s) => s.settings.server.url);
   const navigate = useNavigate();
   const openSettings = () => navigate('/settings');
-  const [filter, setFilter] = useState<CategoryFilter>('all');
+  // The tab the reader picked, or the one left when they went into a title; until then the default category.
+  const [chosen, setChosen] = useState<CategoryFilter | null>(libraryView.filter);
   const [center, setCenter] = useState(0);
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<ReadonlySet<number>>(new Set());
@@ -63,6 +65,21 @@ export function LibraryPage() {
     for (const n of novelRows) info.set(-n.id, { addedAt: n.addedAt, lastReadAt: n.lastReadAt, latestAt: n.addedAt });
     return info;
   }, [serverSortInfo, novelRows]);
+
+  const fallback: CategoryFilter = categories.some((c) => c.id === library.defaultCategory) ? library.defaultCategory! : 'all';
+  const filter: CategoryFilter = chosen !== null && (chosen === 'all' || categories.some((c) => c.id === chosen)) ? chosen : fallback;
+  const selectFilter = (f: CategoryFilter) => {
+    setChosen(f);
+    libraryView.filter = f;
+    libraryView.titleId = null;
+    setCenter(0);
+  };
+  // Sliding the grid sideways moves between the tabs, in the bar's order.
+  const tabs: CategoryFilter[] = ['all', ...categories.map((c) => c.id)];
+  const slideTab = (step: 1 | -1) => {
+    const to = tabs[tabs.indexOf(filter) + step];
+    if (to !== undefined) selectFilter(to);
+  };
 
   const counts = useMemo(() => {
     const map = new Map<CategoryFilter, number>([['all', titles.length]]);
@@ -88,6 +105,7 @@ export function LibraryPage() {
   const sortLabel = `${sort.label}, ${sort.directions[sortDescending ? 0 : 1]}`;
 
   const continueReading = async (title: Title, coverEl?: HTMLElement | null) => {
+    libraryView.titleId = title.id;
     if (title.kind === 'novel') {
       useUi.setState({ openingFrom: null });
       navigate(`/novel/${novelRowId(title.id)}`);
@@ -101,6 +119,13 @@ export function LibraryPage() {
     } catch {
       navigate(`/title/${title.id}`);
     }
+  };
+
+  // In the grid a tap opens the title's page; novels have none, so they open to read.
+  const openFromGrid = (title: Title, coverEl: HTMLElement) => {
+    if (title.kind === 'novel') return void continueReading(title, coverEl);
+    libraryView.titleId = title.id;
+    navigate(`/title/${title.id}`);
   };
 
   const stopSelecting = () => {
@@ -195,10 +220,7 @@ export function LibraryPage() {
         categories={categories}
         counts={counts}
         value={filter}
-        onChange={(f) => {
-          setFilter(f);
-          setCenter(0);
-        }}
+        onChange={selectFilter}
         action={
           <>
             <button type="button" className={barStyles.action} aria-label={`Sort library: ${sortLabel}`} onClick={() => setSorting(true)}>
@@ -236,6 +258,7 @@ export function LibraryPage() {
         unsupported={sortInfoState === 'unsupported'}
         onChange={(by, descending) => {
           update({ library: { sortBy: by, sortDescending: descending } });
+          libraryView.titleId = null;
           setCenter(0);
         }}
         onClose={() => setSorting(false)}
@@ -248,8 +271,10 @@ export function LibraryPage() {
           size={library.gridSize}
           showTitles={library.gridTitles}
           showProgress={library.gridProgress}
-          onOpen={(t, el) => void continueReading(t, el)}
-          onDetails={(t) => navigate(`/title/${t.id}`)}
+          onOpen={openFromGrid}
+          focusId={libraryView.titleId}
+          filterKey={String(filter)}
+          onSlide={selecting ? undefined : slideTab}
           selecting={selecting}
           selected={selected}
           onSelect={toggleSelected}
@@ -263,7 +288,11 @@ export function LibraryPage() {
               display={library.display}
               lite={lite}
               fadeSides={library.fadeSides}
-              onCenterChange={setCenter}
+              initialIndex={Math.max(0, shown.findIndex((t) => t.id === libraryView.titleId))}
+              onCenterChange={(i) => {
+                setCenter(i);
+                if (shown[i]) libraryView.titleId = shown[i].id;
+              }}
               onOpen={(t, el) => void continueReading(t, el)}
             />
             <div className={styles.position} aria-live="off">

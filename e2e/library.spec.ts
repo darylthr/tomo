@@ -57,13 +57,19 @@ test('removes several titles at once from the library, starting with a long pres
   await expect(page.getByRole('navigation', { name: 'Selection' })).toBeHidden();
 });
 
-test('the vertical grid has a way into a title page, and no Default category', async ({ page }) => {
+test('in the vertical grid a tap opens the title page, whose Back is in the top bar, and the grid returns to that title', async ({ page }) => {
   await seedSettings(page, { library: { scroll: 'vertical' } });
   await mockSuwayomi(page);
   await page.goto('/');
   await expect(page.getByRole('tab', { name: /^Default/ })).toHaveCount(0);
-  await page.getByRole('list', { name: 'Library' }).getByRole('button', { name: /^Details and chapters of/ }).first().click();
+  await expect(page.getByRole('button', { name: /^Details and chapters of/ })).toHaveCount(0);
+  const tiles = page.getByRole('list', { name: 'Library' }).getByRole('button');
+  const name = await tiles.last().getAttribute('aria-label');
+  await tiles.last().click();
   await expect(page).toHaveURL(/\/title\/\d+$/);
+  await page.getByRole('button', { name: 'Back' }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('list', { name: 'Library' }).getByRole('button', { name: name! })).toBeInViewport();
 });
 
 test('opening a sheet never scrolls its dialog (the sheet used to show at the top, then slide down)', async ({ page }) => {

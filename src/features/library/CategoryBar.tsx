@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { Category } from '../../shared/model/types';
 import { useSlidingPill } from '../../shared/ui/useSlidingPill';
 import styles from './CategoryBar.module.css';
@@ -32,6 +32,13 @@ export function CategoryBar({ categories, counts, value, onChange, action }: Pro
   };
   useLayoutEffect(measure, [categories.length]);
 
+  // The tab changes by swipe too: keep it in sight.
+  useEffect(() => {
+    tabsRef.current
+      ?.querySelector<HTMLElement>('[aria-selected="true"]')
+      ?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+  }, [value]);
+
   return (
     <nav className={styles.bar} aria-label="Category bar">
       <div
@@ -50,10 +57,7 @@ export function CategoryBar({ categories, counts, value, onChange, action }: Pro
             aria-selected={key === value}
             data-pill-key={String(key)}
             className={styles.tab}
-            onClick={(e) => {
-              onChange(key);
-              e.currentTarget.scrollIntoView({ inline: 'nearest', block: 'nearest' });
-            }}
+            onClick={() => onChange(key)}
           >
             {name}
             <span className={styles.count}>{(counts.get(key) ?? 0).toLocaleString()}</span>

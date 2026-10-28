@@ -8,6 +8,7 @@ import { ServerError } from '../server/client';
 import { pickContinueChapter } from './continueReading';
 import { LibraryPage } from './LibraryPage';
 import { useLibrary } from './libraryStore';
+import { libraryView } from './libraryView';
 import { TitleInfo } from './TitleInfo';
 
 const title = (id: number, patch: Partial<Title> = {}): Title => ({
@@ -38,6 +39,7 @@ function showLibrary(state: Partial<ReturnType<typeof useLibrary.getState>>) {
       <Routes>
         <Route path="/" element={<LibraryPage />} />
         <Route path="/settings" element={<p>Settings page</p>} />
+        <Route path="/title/:id" element={<p>Title page</p>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -49,6 +51,8 @@ vi.mock('../server/api', async (importOriginal) => ({
 }));
 
 beforeEach(() => {
+  libraryView.filter = null;
+  libraryView.titleId = null;
   useSettings.getState().reset();
   useLibrary.setState({ sortInfo: null, sortInfoState: 'idle' });
   vi.mocked(api.getLibrarySortInfo).mockReset();
@@ -99,8 +103,7 @@ describe('sorting', () => {
   const gridNames = () =>
     within(screen.getByRole('list', { name: 'Library' }))
       .getAllByRole('button')
-      .map((b) => b.getAttribute('aria-label'))
-      .filter((name) => !name?.startsWith('Details and chapters'));
+      .map((b) => b.getAttribute('aria-label'));
   beforeEach(() => act(() => useSettings.getState().update({ library: { scroll: 'vertical' } })));
   const titles = [title(1, { unread: 0, chapterCount: 50 }), title(2, { unread: 7, chapterCount: 9 }), title(3, { unread: 2, chapterCount: 30 })];
 
@@ -244,11 +247,34 @@ describe('choosing several titles', () => {
     expect(tabs.map((t) => t.textContent)).toEqual(['All2', 'Reading1']);
   });
 
-  it('opens a title page from the grid with its details button', async () => {
+  it('opens the title page when a grid tile is tapped, with no separate details button', async () => {
     showLibrary({ titles: three });
-    await userEvent.click(screen.getByRole('button', { name: 'Details and chapters of Title 2' }));
-    // The memory router has no title route, so the library is gone.
-    expect(screen.queryByRole('list', { name: 'Library' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Details and chapters/ })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Title 2' }));
+    expect(screen.getByText('Title page')).toBeInTheDocument();
+    expect(libraryView.titleId).toBe(2);
+  });
+
+  it('scrolls back to the title just left', () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    libraryView.titleId = 3;
+    showLibrary({ titles: three });
+    expect(scrollIntoView).toHaveBeenCalled();
+    expect(scrollIntoView.mock.contexts.some((el) => (el as HTMLElement).getAttribute('data-title-id') === '3')).toBe(true);
+  });
+
+  it('moves between category tabs when the grid is swiped sideways', () => {
+    showLibrary({ titles: [title(1, { categoryIds: [1] }), title(2)], categories: [{ id: 1, name: 'Reading', order: 1 }] });
+    const grid = () => screen.getByRole('list', { name: 'Library' }).parentElement!;
+    const swipe = (from: number, to: number) => {
+      fireEvent.pointerDown(grid(), { pointerType: 'touch', clientX: from, clientY: 100 });
+      fireEvent.pointerUp(grid(), { pointerType: 'touch', clientX: to, clientY: 104 });
+    };
+    swipe(300, 100);
+    expect(screen.getByRole('tab', { name: /Reading/ })).toHaveAttribute('aria-selected', 'true');
+    swipe(100, 300);
+    expect(screen.getByRole('tab', { name: /All/ })).toHaveAttribute('aria-selected', 'true');
   });
 
   /** Long-presses a tile, which is the only way into selecting. */
@@ -327,5 +353,33 @@ describe('choosing several titles', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('default category', () => {
+  const categories = [
+    { id: 1, name: 'Reading', order: 1 },
+    { id: 2, name: 'Paused', order: 2 },
+  ];
+  const titles = [title(1, { categoryIds: [1] }), title(2, { categoryIds: [2] })];
+
+  it('opens on the default category and keeps All in the bar', () => {
+    useSettings.getState().update({ library: { defaultCategory: 2 } });
+    showLibrary({ titles, categories });
+    expect(screen.getByRole('tab', { name: /Paused/ })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: /All/ })).toHaveAttribute('aria-selected', 'false');
+  });
+
+  it('opens on All when the default category no longer exists', () => {
+    useSettings.getState().update({ library: { defaultCategory: 9 } });
+    showLibrary({ titles, categories });
+    expect(screen.getByRole('tab', { name: /All/ })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('comes back to the tab that was left, not the default', () => {
+    useSettings.getState().update({ library: { defaultCategory: 2 } });
+    libraryView.filter = 'all';
+    showLibrary({ titles, categories });
+    expect(screen.getByRole('tab', { name: /All/ })).toHaveAttribute('aria-selected', 'true');
   });
 });
