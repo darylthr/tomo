@@ -33,7 +33,7 @@ test('coming back from a title leaves the shelf on the book that was left', asyn
   await page.getByRole('group', { name: /Library shelf/ }).focus();
   for (let i = 0; i < 2; i++) await page.keyboard.press('ArrowRight');
   await expect(page.getByText(/^3 \/ \d+$/)).toBeVisible();
-  await page.getByRole('button', { name: 'Chapters' }).click();
+  await page.getByRole('button', { name: 'Chapters', exact: true }).click();
   await page.getByRole('button', { name: 'Back' }).click();
   await expect(page.getByText(/^3 \/ \d+$/)).toBeVisible();
 });
