@@ -104,3 +104,51 @@ test('opening a sheet never scrolls its dialog (the sheet used to show at the to
   expect(scrolls.length).toBeGreaterThan(5);
   expect(scrolls.every((n) => n === 0)).toBe(true);
 });
+
+// Playwright has no touch drag for a page, so the finger is fed in as touch events.
+async function drag(page: import('@playwright/test').Page, selector: string, from: [number, number], to: [number, number]) {
+  await page.evaluate(
+    ([sel, a, b]) => {
+      const el = document.querySelector(sel as string)!;
+      const touch = (x: number, y: number) => new Touch({ identifier: 1, target: el, clientX: x, clientY: y });
+      const fire = (type: string, x: number, y: number, list = true) =>
+        el.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true, touches: list ? [touch(x, y)] : [], changedTouches: [touch(x, y)] }));
+      const [x0, y0] = a as [number, number];
+      const [x1, y1] = b as [number, number];
+      fire('touchstart', x0, y0);
+      fire('touchmove', x0 + (x1 - x0) / 2, y0 + (y1 - y0) / 2);
+      fire('touchmove', x1, y1);
+      fire('touchend', x1, y1, false);
+    },
+    [selector, from, to] as const,
+  );
+}
+
+test('pulling the shelf down checks the library for new chapters', async ({ page, browserName }) => {
+  test.skip(browserName === 'webkit', 'WebKit cannot build synthetic touches');
+  const { calls } = await mockSuwayomi(page);
+  await page.goto('/');
+  await expect(page.getByText('1 / 3')).toBeVisible();
+  await drag(page, '[class*="shelfWrap"]', [200, 200], [200, 500]);
+  await expect.poll(() => calls.some((c) => c.op === 'UPDATE_LIBRARY')).toBe(true);
+});
+
+test('pulling down on a category checks just that category', async ({ page, browserName }) => {
+  test.skip(browserName === 'webkit', 'WebKit cannot build synthetic touches');
+  const { calls } = await mockSuwayomi(page);
+  await page.goto('/');
+  await page.getByRole('tab', { name: /Reading/ }).click();
+  await expect(page.getByText('1 / 1')).toBeVisible();
+  await drag(page, '[class*="shelfWrap"]', [200, 200], [200, 500]);
+  await expect.poll(() => calls.some((c) => c.op === 'UPDATE_CATEGORY')).toBe(true);
+});
+
+test('a sideways swipe on the shelf does not check for new chapters', async ({ page, browserName }) => {
+  test.skip(browserName === 'webkit', 'WebKit cannot build synthetic touches');
+  const { calls } = await mockSuwayomi(page);
+  await page.goto('/');
+  await expect(page.getByText('1 / 3')).toBeVisible();
+  await drag(page, '[class*="shelfWrap"]', [300, 200], [100, 260]);
+  await page.waitForTimeout(400);
+  expect(calls.some((c) => c.op === 'UPDATE_LIBRARY')).toBe(false);
+});

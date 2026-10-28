@@ -97,6 +97,7 @@ export function LibraryGrid({ titles, display, lite, size, showTitles, onOpen, f
     <div
       key={filterKey}
       className={styles.scroller}
+      data-scroller=""
       ref={scrollerRef}
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}

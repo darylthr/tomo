@@ -36,3 +36,16 @@ it('ignores short pulls', async () => {
   await act(async () => pull(getByTestId('scroller'), 80));
   expect(onRefresh).not.toHaveBeenCalled();
 });
+
+it('ignores a drag that starts out sideways', async () => {
+  const onRefresh = vi.fn(async () => {});
+  const { getByTestId } = render(<Scroller onRefresh={onRefresh} />);
+  const el = getByTestId('scroller');
+  await act(async () => {
+    fireEvent.touchStart(el, { touches: [{ clientX: 0, clientY: 100 }] });
+    fireEvent.touchMove(el, { touches: [{ clientX: 40, clientY: 110 }] });
+    fireEvent.touchMove(el, { touches: [{ clientX: 60, clientY: 300 }] });
+    fireEvent.touchEnd(el, { touches: [] });
+  });
+  expect(onRefresh).not.toHaveBeenCalled();
+});

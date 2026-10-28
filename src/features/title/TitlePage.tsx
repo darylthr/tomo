@@ -1,3 +1,5 @@
+import { PullIndicator } from '../../shared/ui/PullIndicator';
+import { usePullToRefresh } from '../../shared/ui/usePullToRefresh';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { Chapter, Title, TitleStatus } from '../../shared/model/types';
@@ -7,7 +9,7 @@ import { ServerError } from '../server/client';
 import { loadChapters, pickContinueChapter } from '../library/continueReading';
 import { useLibrary } from '../library/libraryStore';
 import styles from './TitlePage.module.css';
-import { IconBookmark, IconCheck, IconClose, IconFilter, IconHeart, IconRefresh } from '../../shared/ui/icons';
+import { IconBookmark, IconCheck, IconClose, IconFilter, IconHeart } from '../../shared/ui/icons';
 import { useLongPress } from '../reader/useLongPress';
 import { TitleName } from '../../shared/ui/TitleName';
 import { prefersReducedMotion } from '../../shared/ui/useReducedMotion';
@@ -44,7 +46,6 @@ export function TitlePage() {
   const [anchor, setAnchor] = useState<number | null>(null);
   const [selectError, setSelectError] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState(false);
   const order = useMemo(() => (load.state === 'ready' ? arrangeChapters(load.chapters, view).map((c) => c.id) : []), [load, view]);
   const pick = (id: number) => {
@@ -113,6 +114,27 @@ export function TitlePage() {
       cancelled = true;
     };
   }, [id]);
+
+  // Pulling the page down from its top asks the source for this title's details and chapters, and shows what came back.
+  const refreshTitle = async () => {
+    if (load.state !== 'ready') return;
+    const { inLibrary, id: titleId } = load.title;
+    setRefreshError(false);
+    try {
+      const [full, fresh] = await Promise.all([fetchTitle(id), fetchChapters(id)]);
+      setLoad((s) =>
+        s.state === 'ready' ? { state: 'ready', title: { ...full, inLibrary: s.title.inLibrary, categoryIds: s.title.categoryIds }, chapters: fresh } : s,
+      );
+      if (inLibrary) {
+        useLibrary.getState().patchTitle(titleId, { unread: full.unread });
+        if (useUpdates.getState().status !== 'idle') void useUpdates.getState().load();
+      }
+    } catch {
+      setRefreshError(true);
+    }
+  };
+  const pageRef = useRef<HTMLElement>(null);
+  const { pull, refreshing } = usePullToRefresh(pageRef, load.state === 'ready' && !selected ? refreshTitle : undefined);
 
   if (load.state === 'loading') {
     return (
@@ -200,23 +222,6 @@ export function TitlePage() {
     if (done.length < ids.length) setSelected(new Set(ids.filter((id) => !took.has(id))));
   };
 
-  // Asks the source for this title's details and chapters, and shows what came back.
-  const refreshTitle = async () => {
-    setRefreshing(true);
-    setRefreshError(false);
-    try {
-      const [full, fresh] = await Promise.all([fetchTitle(id), fetchChapters(id)]);
-      update((s) => ({ title: { ...full, inLibrary: s.title.inLibrary, categoryIds: s.title.categoryIds }, chapters: fresh }));
-      if (title.inLibrary) {
-        useLibrary.getState().patchTitle(title.id, { unread: full.unread });
-        if (useUpdates.getState().status !== 'idle') void useUpdates.getState().load();
-      }
-    } catch {
-      setRefreshError(true);
-    }
-    setRefreshing(false);
-  };
-
   const toggleLibrary = () => {
     if (title.inLibrary) setLibrary(false);
     else if (categories.length > 0) setPicking(true);
@@ -236,7 +241,8 @@ export function TitlePage() {
   };
 
   return (
-    <section className={styles.page} aria-label={title.title}>
+    <section className={styles.page} aria-label={title.title} ref={pageRef}>
+      <PullIndicator pull={pull} refreshing={refreshing} />
       <div className={styles.inner}>
         <header className={styles.header}>
           <div className={styles.cover}>
@@ -274,16 +280,6 @@ export function TitlePage() {
             onClick={toggleLibrary}
           >
             <IconHeart filled={title.inLibrary} />
-          </button>
-          <button
-            type="button"
-            className={`${styles.heart} ${refreshing ? styles.spinning : ''}`}
-            aria-label={refreshing ? 'Checking for new chapters' : 'Check for new chapters'}
-            aria-busy={refreshing}
-            disabled={refreshing}
-            onClick={() => void refreshTitle()}
-          >
-            <IconRefresh />
           </button>
         </div>
         {refreshError && (

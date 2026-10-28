@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Title } from '../../shared/model/types';
 import { useSettings } from '../../shared/settings/store';
-import { IconRefresh, IconSort } from '../../shared/ui/icons';
+import { IconSort } from '../../shared/ui/icons';
+import { PullIndicator } from '../../shared/ui/PullIndicator';
 import { Sheet } from '../../shared/ui/Sheet';
 import sheetStyles from '../../shared/ui/Sheet.module.css';
 import { setInLibrary as setTitleInLibrary } from '../server/api';
+import { usePullToRefresh } from '../../shared/ui/usePullToRefresh';
 import { useUi } from '../../shared/ui/uiStore';
 import { novelRowId, novelToTitle, useNovels } from '../novels/novelsStore';
 import { openBook } from '../reader/opening';
@@ -38,7 +40,6 @@ export function LibraryPage() {
   const novelCovers = useNovels((s) => s.covers);
   const update = useSettings((s) => s.update);
   const [sorting, setSorting] = useState(false);
-  const checking = useUpdates((s) => s.checking);
   const library = useSettings((s) => s.settings.library);
   const serverUrl = useSettings((s) => s.settings.server.url);
   const navigate = useNavigate();
@@ -73,6 +74,15 @@ export function LibraryPage() {
   const tabs: CategoryFilter[] = [...(showAll ? (['all'] as const) : []), ...categories.map((c) => c.id)];
   const fallback: CategoryFilter = categories.some((c) => c.id === library.defaultCategory) ? library.defaultCategory! : tabs[0]!;
   const filter: CategoryFilter = chosen !== null && tabs.includes(chosen) ? chosen : fallback;
+  // Pulling down from the top checks the sources for new chapters: the category on view, or everything on All.
+  // The shelf never scrolls vertically; the grid does, so it must be at its top.
+  const pageRef = useRef<HTMLDivElement>(null);
+  const canPull = status === 'ready' && titles.length > 0 && !selecting;
+  const { pull, refreshing } = usePullToRefresh(
+    pageRef,
+    canPull ? () => useUpdates.getState().check(filter === 'all' ? { force: true } : { category: filter }) : undefined,
+    (el) => (el.querySelector<HTMLElement>('[data-scroller]')?.scrollTop ?? 0) <= 0,
+  );
   const selectFilter = (f: CategoryFilter) => {
     setChosen(f);
     libraryView.filter = f;
@@ -216,7 +226,8 @@ export function LibraryPage() {
   const current = shown[Math.min(center, shown.length - 1)];
 
   return (
-    <div className={`${styles.page} ${vertical ? styles.vertical : ''}`}>
+    <div className={`${styles.page} ${vertical ? styles.vertical : ''}`} ref={pageRef}>
+      {canPull && <PullIndicator pull={pull} refreshing={refreshing} top={56} />}
       {selecting ? (
         <SelectionBar count={selected.size} total={shown.length} onCancel={stopSelecting} onToggleAll={toggleAll} onRemove={() => setConfirming(true)} />
       ) : (
@@ -228,16 +239,6 @@ export function LibraryPage() {
         onChange={selectFilter}
         action={
           <>
-            <button
-              type="button"
-              className={`${barStyles.action} ${checking ? barStyles.spinning : ''}`}
-              aria-label={checking ? 'Checking for new chapters' : `Check ${filter === 'all' ? 'the library' : (categories.find((c) => c.id === filter)?.name ?? 'this category')} for new chapters`}
-              aria-busy={checking}
-              disabled={checking}
-              onClick={() => void useUpdates.getState().check(filter === 'all' ? { force: true } : { category: filter })}
-            >
-              <IconRefresh />
-            </button>
             <button type="button" className={barStyles.action} aria-label={`Sort library: ${sortLabel}`} onClick={() => setSorting(true)}>
               <IconSort />
             </button>

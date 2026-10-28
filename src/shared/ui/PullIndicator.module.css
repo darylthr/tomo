@@ -1,0 +1,46 @@
+.indicator {
+  position: absolute;
+  left: 50%;
+  z-index: 6;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--glass-strong);
+  box-shadow: var(--glass-ring);
+  pointer-events: none;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid color-mix(in oklch, var(--ink) 20%, transparent);
+  border-top-color: var(--ink);
+  transition: rotate 150ms ease-out;
+}
+
+.indicator[data-armed] .spinner {
+  rotate: 180deg;
+}
+
+.spinner[data-spinning] {
+  animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    transition: none;
+  }
+
+  .spinner[data-spinning] {
+    animation-duration: 2400ms;
+  }
+}
