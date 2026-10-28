@@ -95,6 +95,12 @@ export const UPDATE_CHAPTER = `
   }
 `;
 
+export const UPDATE_CHAPTERS = `
+  mutation UPDATE_CHAPTERS($ids: [Int!]!, $patch: UpdateChapterPatchInput!) {
+    updateChapters(input: { ids: $ids, patch: $patch }) { chapters { id isRead isBookmarked } }
+  }
+`;
+
 export const UPDATE_MANGA = `
   mutation UPDATE_MANGA($id: Int!, $inLibrary: Boolean!) {
     updateManga(input: { id: $id, patch: { inLibrary: $inLibrary } }) { manga { id inLibrary } }

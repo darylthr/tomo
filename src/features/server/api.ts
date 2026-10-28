@@ -1,5 +1,5 @@
 import type { BrowseMode, BrowsePage, Category, Chapter, FeedEntry, SortInfo, Source, SourceFilter, Title } from '../../shared/model/types';
-import { gql } from './client';
+import { gql, ServerError } from './client';
 import { resolveUrl } from './config';
 import {
   epochMs,
@@ -96,6 +96,28 @@ export async function setProgress(chapterId: number, patch: { lastPage?: number;
 /** Suwayomi's own chapter bookmark: syncs everywhere and drives "Bookmarked only". */
 export async function setChapterBookmark(chapterId: number, bookmarked: boolean): Promise<void> {
   await gql(op.UPDATE_CHAPTER, { id: chapterId, patch: { isBookmarked: bookmarked } });
+}
+
+/** Marks several chapters read or unread, or bookmarks them, in one request. Returns the ids that were updated. */
+export async function updateChapters(ids: number[], patch: { read?: boolean; bookmarked?: boolean }): Promise<number[]> {
+  if (!ids.length) return [];
+  const body: { isRead?: boolean; isBookmarked?: boolean } = {};
+  if (patch.read !== undefined) body.isRead = patch.read;
+  if (patch.bookmarked !== undefined) body.isBookmarked = patch.bookmarked;
+  try {
+    await gql(op.UPDATE_CHAPTERS, { ids, patch: body });
+    return ids;
+  } catch (e) {
+    // A server without the bulk mutation is asked one chapter at a time.
+    if (!(e instanceof ServerError) || e.kind !== 'version') throw e;
+  }
+  const done: number[] = [];
+  for (let i = 0; i < ids.length; i += 6) {
+    const batch = ids.slice(i, i + 6);
+    const results = await Promise.allSettled(batch.map((id) => gql(op.UPDATE_CHAPTER, { id, patch: body })));
+    results.forEach((r, j) => r.status === 'fulfilled' && done.push(batch[j]!));
+  }
+  return done;
 }
 
 export async function setInLibrary(titleId: number, inLibrary: boolean): Promise<void> {

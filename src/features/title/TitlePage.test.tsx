@@ -15,7 +15,7 @@ vi.mock('../server/api', () => ({
   setProgress: vi.fn(async () => {}),
   setInLibrary: vi.fn(async () => {}),
   setTitleCategories: vi.fn(async () => {}),
-  setChapterBookmark: vi.fn(async () => {}),
+  updateChapters: vi.fn(async (ids: number[]) => ids),
   getMangaMeta: vi.fn(async () => ({})),
   setMangaMeta: vi.fn(async () => {}),
   deleteMangaMeta: vi.fn(async () => {}),
@@ -261,19 +261,93 @@ describe('chapter bookmarks', () => {
     expect(within(rows[1]!).queryByLabelText('Bookmarked')).toBeNull();
   });
 
-  it('long-pressing a chapter offers bookmark and read actions', async () => {
-    open();
-    const name = await screen.findByText('Chapter 3');
+});
+
+describe('selecting chapters', () => {
+  const five = [chapter(14, 5), chapter(13, 4), chapter(12, 3), chapter(11, 2), chapter(10, 1)];
+  beforeEach(() => {
+    vi.mocked(api.getChapters).mockResolvedValue(five);
+    vi.mocked(api.fetchChapters).mockResolvedValue(five);
+    vi.mocked(api.updateChapters).mockReset();
+    vi.mocked(api.updateChapters).mockImplementation(async (ids) => ids);
+  });
+
+  /** Long-presses the row of a chapter (the row's own button carries the chapter id). */
+  const hold = (label: string) => {
+    const row = screen.getByText(label);
     vi.useFakeTimers();
-    fireEvent.pointerDown(name, { pointerId: 1, clientX: 10, clientY: 10 });
-    act(() => vi.advanceTimersByTime(500));
-    fireEvent.pointerUp(name, { pointerId: 1, clientX: 10, clientY: 10 });
-    vi.useRealTimers();
-    const sheet = screen.getByRole('dialog', { name: 'Chapter 3' });
-    await userEvent.click(within(sheet).getByRole('button', { name: 'Bookmark chapter' }));
-    expect(api.setChapterBookmark).toHaveBeenCalledWith(12, true);
-    const rows = within(screen.getByRole('list', { name: 'Chapters' })).getAllByRole('listitem');
-    expect(within(rows[0]!).getByLabelText('Bookmarked')).toBeInTheDocument();
+    try {
+      fireEvent.pointerDown(row, { pointerId: 1, clientX: 10, clientY: 10 });
+      act(() => void vi.advanceTimersByTime(600));
+      fireEvent.pointerUp(row, { pointerId: 1, clientX: 10, clientY: 10 });
+      fireEvent.click(row);
+    } finally {
+      vi.useRealTimers();
+    }
+  };
+  const status = () => screen.getByRole('status');
+
+  it('a long press starts selecting, and taps then pick rows instead of opening them', async () => {
+    open();
+    await screen.findByText('Chapter 3');
+    hold('Chapter 3');
+    expect(status()).toHaveTextContent('1 selected');
+    await userEvent.click(screen.getByText('Chapter 1'));
+    expect(status()).toHaveTextContent('2 selected');
+    expect(screen.queryByText('reader')).toBeNull();
+    await userEvent.click(screen.getByText('Chapter 1'));
+    expect(status()).toHaveTextContent('1 selected');
+  });
+
+  it('a long press on another row picks everything between it and the last row picked', async () => {
+    open();
+    await screen.findByText('Chapter 5');
+    hold('Chapter 4');
+    hold('Chapter 1');
+    expect(status()).toHaveTextContent('4 selected');
+  });
+
+  it('Select range fills the gap between the first and last picked rows', async () => {
+    open();
+    await screen.findByText('Chapter 5');
+    hold('Chapter 5');
+    await userEvent.click(screen.getByText('Chapter 2'));
+    await userEvent.click(screen.getByRole('button', { name: 'Select range' }));
+    expect(status()).toHaveTextContent('4 selected');
+  });
+
+  it('marks the selected chapters read in one request and leaves selecting', async () => {
+    open();
+    await screen.findByText('Chapter 5');
+    hold('Chapter 4');
+    hold('Chapter 2');
+    await userEvent.click(screen.getByRole('button', { name: 'Mark read' }));
+    expect(api.updateChapters).toHaveBeenCalledWith([13, 12, 11], { read: true });
+    await vi.waitFor(() => expect(screen.queryByRole('toolbar', { name: 'Selected chapters' })).toBeNull());
+    expect(screen.getAllByRole('button', { name: /^Mark Chapter [234] as unread$/ })).toHaveLength(3);
+  });
+
+  it('bookmarks the selection, and keeps the rows selected when the server refuses some', async () => {
+    vi.mocked(api.updateChapters).mockImplementation(async (ids) => ids.slice(0, 1));
+    open();
+    await screen.findByText('Chapter 5');
+    hold('Chapter 4');
+    hold('Chapter 3');
+    await userEvent.click(screen.getByRole('button', { name: 'Bookmark' }));
+    expect(api.updateChapters).toHaveBeenCalledWith([13, 12], { bookmarked: true });
+    expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't update 1 of 2 chapters");
+    expect(status()).toHaveTextContent('1 selected');
+  });
+
+  it('Escape and the close button end selecting', async () => {
+    open();
+    await screen.findByText('Chapter 3');
+    hold('Chapter 3');
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('toolbar', { name: 'Selected chapters' })).toBeNull();
+    hold('Chapter 3');
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel selection' }));
+    expect(screen.queryByRole('toolbar', { name: 'Selected chapters' })).toBeNull();
   });
 });
 

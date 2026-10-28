@@ -39,6 +39,7 @@ import {
   setInLibrary,
   setTitleCategories,
   setProgress,
+  updateChapters,
 } from './api';
 
 type Call = { query: string; variables: Record<string, unknown> };
@@ -350,6 +351,35 @@ it('bookmarks a chapter', async () => {
   await setChapterBookmark(11, true);
   expect(calls[0]!.variables).toEqual({ id: 11, patch: { isBookmarked: true } });
   expect(calls[0]!.query).toMatch(/UPDATE_CHAPTER/);
+});
+
+it('updates several chapters in one request', async () => {
+  serve({});
+  await expect(updateChapters([11, 12], { read: true })).resolves.toEqual([11, 12]);
+  expect(calls).toHaveLength(1);
+  expect(calls[0]!.query).toMatch(/UPDATE_CHAPTERS/);
+  expect(calls[0]!.variables).toEqual({ ids: [11, 12], patch: { isRead: true } });
+});
+
+it('asks a server without the bulk mutation one chapter at a time, and reports which were updated', async () => {
+  calls = [];
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (_url: string, init: RequestInit) => {
+      const body = JSON.parse(init.body as string) as Call;
+      calls.push(body);
+      if (/UPDATE_CHAPTERS/.test(body.query)) {
+        return new Response(JSON.stringify({ errors: [{ message: "Field 'updateChapters' in type 'Mutation' is undefined" }] }));
+      }
+      return body.variables.id === 12 ? new Response('nope', { status: 500 }) : new Response(JSON.stringify({ data: {} }));
+    }),
+  );
+  await expect(updateChapters([11, 12, 13], { bookmarked: true })).resolves.toEqual([11, 13]);
+  expect(calls.filter((c) => /UPDATE_CHAPTER\b/.test(c.query)).map((c) => c.variables)).toEqual([
+    { id: 11, patch: { isBookmarked: true } },
+    { id: 12, patch: { isBookmarked: true } },
+    { id: 13, patch: { isBookmarked: true } },
+  ]);
 });
 
 it("reads, writes and deletes a title's meta", async () => {

@@ -1,20 +1,19 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { Chapter, Title, TitleStatus } from '../../shared/model/types';
 import { markTitleSeen, useUpdates } from '../updates/updatesStore';
-import { createCategory, fetchTitle, getTitle, setChapterBookmark, setInLibrary, setProgress, setTitleCategories } from '../server/api';
+import { createCategory, fetchTitle, getTitle, setInLibrary, setProgress, setTitleCategories, updateChapters } from '../server/api';
 import { ServerError } from '../server/client';
 import { loadChapters, pickContinueChapter } from '../library/continueReading';
 import { useLibrary } from '../library/libraryStore';
 import styles from './TitlePage.module.css';
-import { IconBookmark, IconFilter, IconHeart } from '../../shared/ui/icons';
-import { Sheet } from '../../shared/ui/Sheet';
-import sheet from '../../shared/ui/Sheet.module.css';
+import { IconBookmark, IconCheck, IconClose, IconFilter, IconHeart } from '../../shared/ui/icons';
 import { useLongPress } from '../reader/useLongPress';
 import { TitleName } from '../../shared/ui/TitleName';
 import { prefersReducedMotion } from '../../shared/ui/useReducedMotion';
 import { arrangeChapters, isDefaultView } from './chapterList';
 import { BookmarksSection } from './BookmarksSection';
+import { fillRange, idsBetween } from './chapterSelection';
 import { CategorySheet } from './CategorySheet';
 import { ChapterViewPanel } from './ChapterViewPanel';
 import { useChapterView, useChapterViews } from './chapterViewStore';
@@ -39,9 +38,44 @@ export function TitlePage() {
   const view = useChapterView(id);
   const setView = useChapterViews((s) => s.setView);
   const [picking, setPicking] = useState(false);
-  // Long-press a chapter row for its actions (rows carry the chapter id in data-page).
-  const [actionsFor, setActionsFor] = useState<number | null>(null);
-  const press = useLongPress(setActionsFor, () => -1);
+  // Selecting chapters: a long press starts it (rows carry the chapter id in data-page), taps then pick rows,
+  // and a long press on another row picks everything between it and the last row picked.
+  const [selected, setSelected] = useState<ReadonlySet<number> | null>(null);
+  const [anchor, setAnchor] = useState<number | null>(null);
+  const [selectError, setSelectError] = useState<string | null>(null);
+  const [working, setWorking] = useState(false);
+  const order = useMemo(() => (load.state === 'ready' ? arrangeChapters(load.chapters, view).map((c) => c.id) : []), [load, view]);
+  const pick = (id: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
+    setAnchor(id);
+    setSelectError(null);
+  };
+  const press = useLongPress((id) => {
+    if (id < 0) return;
+    if (selected && anchor !== null && anchor !== id) {
+      setSelected(new Set([...selected, ...idsBetween(order, anchor, id)]));
+      setAnchor(id);
+    } else if (selected) pick(id);
+    else {
+      setSelected(new Set([id]));
+      setAnchor(id);
+    }
+  }, () => -1);
+  const stopSelecting = () => {
+    setSelected(null);
+    setAnchor(null);
+    setSelectError(null);
+  };
+  useEffect(() => {
+    if (!selected) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && stopSelecting();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selected]);
   const allCategories = useLibrary((s) => s.categories);
   const libraryTitles = useLibrary((s) => s.titles);
   useEffect(() => {
@@ -136,10 +170,37 @@ export function TitlePage() {
   };
 
   // With categories set up, adding asks where the title goes (as in Mihon); without, it just adds.
-  const toggleBookmark = (c: Chapter) => {
-    const bookmarked = !c.bookmarked;
-    void setChapterBookmark(c.id, bookmarked);
-    update((s) => ({ title: s.title, chapters: s.chapters.map((x) => (x.id === c.id ? { ...x, bookmarked } : x)) }));
+  const chosen = chapters.filter((c) => selected?.has(c.id));
+  const allBookmarked = chosen.length > 0 && chosen.every((c) => c.bookmarked);
+  const shownIds = shown.map((c) => c.id);
+
+  // Marks the chosen chapters read or unread, or bookmarks them, in one request; what the server took is what changes.
+  const applyToChosen = async (patch: { read?: boolean; bookmarked?: boolean }) => {
+    const ids = chosen
+      .filter((c) => (patch.read !== undefined ? c.read !== patch.read : c.bookmarked !== patch.bookmarked))
+      .map((c) => c.id);
+    if (!ids.length) return stopSelecting();
+    setWorking(true);
+    setSelectError(null);
+    let done: number[] = [];
+    try {
+      done = await updateChapters(ids, patch);
+    } catch {
+      /* reported below */
+    }
+    setWorking(false);
+    const took = new Set(done);
+    update((s) => ({
+      title: patch.read === undefined ? s.title : { ...s.title, unread: Math.max(0, s.title.unread + (patch.read ? -done.length : done.length)) },
+      chapters: s.chapters.map((x) => (took.has(x.id) ? { ...x, read: patch.read ?? x.read, bookmarked: patch.bookmarked ?? x.bookmarked } : x)),
+    }));
+    if (patch.read !== undefined && done.length) {
+      useLibrary.getState().patchTitle(title.id, { unread: Math.max(0, title.unread + (patch.read ? -done.length : done.length)) });
+      if (useUpdates.getState().status !== 'idle') void useUpdates.getState().load();
+    }
+    if (done.length === ids.length) stopSelecting();
+    else setSelectError(`Couldn't update ${ids.length - done.length} of ${ids.length} chapters. They're still selected.`);
+    if (done.length < ids.length) setSelected(new Set(ids.filter((id) => !took.has(id))));
   };
 
   const toggleLibrary = () => {
@@ -281,13 +342,19 @@ export function TitlePage() {
           <ul className={styles.chapters} aria-label="Chapters">
             {shown.map((c) => {
               const name = c.name || `Chapter ${c.number}`;
+              const picked = selected?.has(c.id) ?? false;
               return (
-                <li key={c.id} className={`${styles.chapter} ${c.read ? styles.read : ''}`}>
+                <li key={c.id} className={`${styles.chapter} ${c.read ? styles.read : ''}`} data-selected={picked || undefined}>
                   <button
                     type="button"
                     className={styles.open}
                     data-page={c.id}
-                    onClick={() => !press.consumeClick() && navigate(`/read/${c.id}`)}
+                    aria-pressed={selected ? picked : undefined}
+                    onClick={() => {
+                      if (press.consumeClick()) return;
+                      if (selected) pick(c.id);
+                      else navigate(`/read/${c.id}`);
+                    }}
                     onPointerDown={press.onPointerDown}
                     onPointerMove={press.onPointerMove}
                     onPointerUp={press.onPointerUp}
@@ -306,73 +373,73 @@ export function TitlePage() {
                       {!c.read && c.lastPage > 0 && <span className={styles.resume}>Page {c.lastPage + 1}</span>}
                     </span>
                   </button>
-                  <button
-                    type="button"
-                    className={styles.toggle}
-                    aria-label={`Mark ${name} as ${c.read ? 'unread' : 'read'}`}
-                    aria-pressed={c.read}
-                    onClick={() => toggleRead(c)}
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="m5 12.5 4.5 4.5L19 7.5" />
-                    </svg>
-                  </button>
+                  {selected ? (
+                    <span className={styles.pick} data-on={picked || undefined} aria-hidden="true">
+                      <IconCheck />
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      className={styles.toggle}
+                      aria-label={`Mark ${name} as ${c.read ? 'unread' : 'read'}`}
+                      aria-pressed={c.read}
+                      onClick={() => toggleRead(c)}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="m5 12.5 4.5 4.5L19 7.5" />
+                      </svg>
+                    </button>
+                  )}
                 </li>
               );
             })}
           </ul>
         )}
-        <ChapterActions
-          chapter={chapters.find((c) => c.id === actionsFor) ?? null}
-          onBookmark={toggleBookmark}
-          onRead={toggleRead}
-          onClose={() => setActionsFor(null)}
-        />
+        {selected && (
+          <div className={styles.selectBar} role="toolbar" aria-label="Selected chapters">
+            <div className={styles.selectTop}>
+              <button type="button" className={styles.selectIcon} aria-label="Cancel selection" onClick={stopSelecting}>
+                <IconClose />
+              </button>
+              <span className={styles.selectCount} role="status">
+                {selected.size === 0 ? 'Select chapters' : `${selected.size} selected`}
+              </span>
+              <button type="button" className={styles.selectText} disabled={selected.size < 2} onClick={() => setSelected(fillRange(shownIds, selected))}>
+                Select range
+              </button>
+              <button
+                type="button"
+                className={styles.selectText}
+                onClick={() => setSelected(selected.size === shownIds.length ? new Set() : new Set(shownIds))}
+              >
+                {selected.size === shownIds.length ? 'None' : 'All'}
+              </button>
+            </div>
+            {selectError && (
+              <p className={styles.selectError} role="alert">
+                {selectError}
+              </p>
+            )}
+            <div className={styles.selectActions}>
+              <button type="button" className={styles.selectAction} disabled={working || chosen.length === 0} onClick={() => void applyToChosen({ read: true })}>
+                Mark read
+              </button>
+              <button type="button" className={styles.selectAction} disabled={working || chosen.length === 0} onClick={() => void applyToChosen({ read: false })}>
+                Mark unread
+              </button>
+              <button
+                type="button"
+                className={styles.selectAction}
+                disabled={working || chosen.length === 0}
+                onClick={() => void applyToChosen({ bookmarked: !allBookmarked })}
+              >
+                {allBookmarked ? 'Remove bookmark' : 'Bookmark'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </section>
-  );
-}
-
-/** A long-pressed chapter's actions: bookmark it, or mark it read. */
-function ChapterActions({
-  chapter,
-  onBookmark,
-  onRead,
-  onClose,
-}: {
-  chapter: Chapter | null;
-  onBookmark: (c: Chapter) => void;
-  onRead: (c: Chapter) => void;
-  onClose: () => void;
-}) {
-  const name = chapter ? chapter.name || `Chapter ${chapter.number}` : 'Chapter';
-  return (
-    <Sheet open={chapter !== null} label={name} title={name} closeLabel="Close chapter actions" onClose={onClose}>
-      {chapter && (
-        <div className={styles.chapterActions}>
-          <button
-            type="button"
-            className={sheet.apply}
-            onClick={() => {
-              onBookmark(chapter);
-              onClose();
-            }}
-          >
-            {chapter.bookmarked ? 'Remove bookmark' : 'Bookmark chapter'}
-          </button>
-          <button
-            type="button"
-            className={`${sheet.ghost} ${styles.wideGhost}`}
-            onClick={() => {
-              onRead(chapter);
-              onClose();
-            }}
-          >
-            {chapter.read ? 'Mark as unread' : 'Mark as read'}
-          </button>
-        </div>
-      )}
-    </Sheet>
   );
 }
 
