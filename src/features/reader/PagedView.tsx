@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { prefersReducedMotion } from '../../shared/ui/useReducedMotion';
+import { preloadPage } from './pagePreload';
 import { tapAction } from './tapZones';
 import { useCrop } from './useCrop';
 import { useLongPress } from './useLongPress';
@@ -98,13 +99,15 @@ export function PagedView() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  // Preload the next two pages and the previous one.
+  // Load and decode the pages around the view ahead of time (after a spread, the pages that follow it).
+  const last = Math.max(index, ...view);
+  const first = Math.min(index, ...view);
   useEffect(() => {
-    for (const i of [index + 1, index + 2, index - 1]) {
+    for (const i of [last + 1, last + 2, last + 3, first - 1, first - 2]) {
       const src = pages[i];
-      if (src) new Image().src = src;
+      if (src) preloadPage(src);
     }
-  }, [pages, index]);
+  }, [pages, first, last]);
 
   const onClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (press.consumeClick()) return;
@@ -254,7 +257,6 @@ function PageImage({ src, page, total, crop }: { src: string; page: number; tota
       alt={`Page ${page + 1} of ${total}`}
       data-page={page}
       draggable={false}
-      decoding="async"
     />
   );
 }
