@@ -42,12 +42,13 @@ test('explains an unreachable configured server and retries', async ({ page }) =
   await expect.poll(() => mock.calls.filter((c) => c.op === 'LIBRARY').length).toBeGreaterThanOrEqual(2);
 });
 
-test('removes several titles at once from the library', async ({ page }) => {
+test('removes several titles at once from the library, starting with a long press', async ({ page }) => {
+  await seedSettings(page, { library: { scroll: 'vertical' } });
   const mock = await mockSuwayomi(page);
   await page.goto('/');
-  await page.getByRole('button', { name: 'Select titles' }).click();
+  await expect(page.getByRole('button', { name: 'Select titles' })).toHaveCount(0);
   const grid = page.getByRole('list', { name: 'Library' });
-  await grid.getByRole('button').first().click();
+  await grid.getByRole('button').first().click({ delay: 700 });
   await grid.getByRole('button').nth(1).click();
   await expect(page.getByRole('status').filter({ hasText: 'selected' })).toHaveText('2 selected');
   await page.getByRole('button', { name: 'Remove selected from library' }).click();

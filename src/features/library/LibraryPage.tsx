@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Title } from '../../shared/model/types';
 import { useSettings } from '../../shared/settings/store';
-import { IconSelect, IconSort } from '../../shared/ui/icons';
+import { IconSort } from '../../shared/ui/icons';
 import { Sheet } from '../../shared/ui/Sheet';
 import sheetStyles from '../../shared/ui/Sheet.module.css';
 import { setInLibrary as setTitleInLibrary } from '../server/api';
@@ -201,9 +201,6 @@ export function LibraryPage() {
         }}
         action={
           <>
-            <button type="button" className={barStyles.action} aria-label="Select titles" onClick={() => setSelecting(true)}>
-              <IconSelect />
-            </button>
             <button type="button" className={barStyles.action} aria-label={`Sort library: ${sortLabel}`} onClick={() => setSorting(true)}>
               <IconSort />
             </button>

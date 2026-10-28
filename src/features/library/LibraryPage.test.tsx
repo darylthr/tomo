@@ -251,13 +251,31 @@ describe('choosing several titles', () => {
     expect(screen.queryByRole('list', { name: 'Library' })).toBeNull();
   });
 
-  it('selects with the Select button, removes the chosen titles after a confirmation, then reloads', async () => {
+  /** Long-presses a tile, which is the only way into selecting. */
+  const longPress = (name: string) => {
+    vi.useFakeTimers();
+    try {
+      const tile = screen.getByRole('button', { name });
+      fireEvent.pointerDown(tile, { clientX: 5, clientY: 5 });
+      act(() => void vi.advanceTimersByTime(600));
+      fireEvent.pointerUp(tile);
+      fireEvent.click(tile);
+    } finally {
+      vi.useRealTimers();
+    }
+  };
+
+  it('has no Select button on the category bar', () => {
+    showLibrary({ titles: three });
+    expect(screen.queryByRole('button', { name: 'Select titles' })).toBeNull();
+  });
+
+  it('removes the chosen titles after a confirmation, then reloads', async () => {
     const set = vi.spyOn(api, 'setInLibrary').mockResolvedValue();
     const refresh = vi.fn(async () => {});
     showLibrary({ titles: three, refresh });
-    await userEvent.click(screen.getByRole('button', { name: 'Select titles' }));
-    expect(screen.getByRole('status')).toHaveTextContent('Select titles');
-    await userEvent.click(screen.getByRole('button', { name: 'Title 1' }));
+    longPress('Title 1');
+    expect(screen.getByRole('status')).toHaveTextContent('1 selected');
     await userEvent.click(screen.getByRole('button', { name: 'Title 3' }));
     expect(screen.getByRole('status')).toHaveTextContent('2 selected');
     expect(screen.getByRole('button', { name: 'Title 1' })).toHaveAttribute('aria-pressed', 'true');
@@ -274,7 +292,7 @@ describe('choosing several titles', () => {
 
   it('selects all, clears, and cancels with Escape', async () => {
     showLibrary({ titles: three });
-    await userEvent.click(screen.getByRole('button', { name: 'Select titles' }));
+    longPress('Title 1');
     await userEvent.click(screen.getByRole('button', { name: 'All' }));
     expect(screen.getByRole('status')).toHaveTextContent('3 selected');
     await userEvent.click(screen.getByRole('button', { name: 'None' }));
@@ -288,8 +306,7 @@ describe('choosing several titles', () => {
       if (id === 2) throw new ServerError('unreachable');
     });
     showLibrary({ titles: three, refresh: async () => {} });
-    await userEvent.click(screen.getByRole('button', { name: 'Select titles' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Title 1' }));
+    longPress('Title 1');
     await userEvent.click(screen.getByRole('button', { name: 'Title 2' }));
     await userEvent.click(screen.getByRole('button', { name: 'Remove selected from library' }));
     await userEvent.click(screen.getByRole('button', { name: 'Remove from library' }));
