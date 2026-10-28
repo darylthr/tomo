@@ -28,6 +28,8 @@
   --hover: color-mix(in oklch, var(--ink) 6%, transparent);
   --press: color-mix(in oklch, var(--ink) 8%, transparent);
   --glass: color-mix(in oklch, var(--surface-base) 66%, transparent);
+  /* floating bars: no backdrop blur (costly on phones), so a denser fill instead */
+  --glass-strong: color-mix(in oklch, var(--surface-base) 88%, transparent);
   --glass-ring: 0 0 0 1px var(--line);
 
   /* Status colours: fixed, with darker steps for light themes below. */

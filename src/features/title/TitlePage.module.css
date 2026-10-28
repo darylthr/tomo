@@ -460,8 +460,6 @@
   padding: 4px;
   border-radius: 22px;
   background: var(--glass);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
   box-shadow: var(--glass-ring);
 }
 

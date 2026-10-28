@@ -84,9 +84,7 @@
   gap: 6px;
   padding: 0 4px 0 12px;
   border-radius: 999px;
-  background: var(--glass);
-  backdrop-filter: blur(14px) saturate(1.2);
-  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  background: var(--glass-strong);
   border: 1px solid transparent;
   box-shadow:
     var(--glass-ring),

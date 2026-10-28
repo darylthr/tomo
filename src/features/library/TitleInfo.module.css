@@ -173,8 +173,6 @@
   border-radius: 16px;
   border: 1px solid transparent;
   background: var(--glass);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   box-shadow: var(--glass-ring);
   cursor: pointer;
   display: grid;
