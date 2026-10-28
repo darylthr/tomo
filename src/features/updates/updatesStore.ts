@@ -4,7 +4,7 @@ import { useUi } from '../../shared/ui/uiStore';
 import { useLibrary } from '../library/libraryStore';
 import { collapseBatches, unreadCount } from './batches';
 import { useUpdatesSeen } from './updatesSeen';
-import { getLastUpdateTime, getUpdates, isLibraryUpdateRunning, startLibraryUpdate, updateChapters } from '../server/api';
+import { getLastUpdateTime, getUpdates, isLibraryUpdateRunning, startCategoryUpdate, startLibraryUpdate, updateChapters } from '../server/api';
 
 /** How far back Updates looks. */
 export const UPDATES_WINDOW_MS = 90 * 86_400_000;
@@ -24,7 +24,7 @@ type UpdatesState = {
   /** Refetches the list; an older request still running is ignored. */
   load: () => Promise<void>;
   /** Spec §10: checks on app open (when stale) and on pull-to-refresh (forced). Never throws. */
-  check: (opts?: { force?: boolean }) => Promise<void>;
+  check: (opts?: { force?: boolean; category?: number }) => Promise<void>;
   /** Marks every unread chapter in the list as read, on the server. Resolves to how many it couldn't mark. */
   markAllRead: () => Promise<number>;
 };
@@ -50,7 +50,7 @@ async function waitWhileUpdating() {
 }
 
 export const useUpdates = create<UpdatesState>()((set, get) => {
-  const runCheck = async (force: boolean) => {
+  const runCheck = async (force: boolean, category?: number) => {
     try {
       if (!force) {
         let last: number;
@@ -69,7 +69,7 @@ export const useUpdates = create<UpdatesState>()((set, get) => {
       set({ checking: true });
       let updated = false;
       try {
-        const { running: started } = await startLibraryUpdate();
+        const { running: started } = await (category === undefined ? startLibraryUpdate() : startCategoryUpdate([category]));
         if (started) await waitWhileUpdating();
         updated = true;
       } finally {
@@ -113,8 +113,8 @@ export const useUpdates = create<UpdatesState>()((set, get) => {
       if (done.length && useLibrary.getState().status !== 'idle') void useLibrary.getState().refresh();
       return ids.length - done.length;
     },
-    check: ({ force = false } = {}) => {
-      running ??= runCheck(force).finally(() => {
+    check: ({ force = false, category } = {}) => {
+      running ??= runCheck(force || category !== undefined, category).finally(() => {
         running = null;
       });
       return running;

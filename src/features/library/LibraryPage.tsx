@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Title } from '../../shared/model/types';
 import { useSettings } from '../../shared/settings/store';
-import { IconSort } from '../../shared/ui/icons';
+import { IconRefresh, IconSort } from '../../shared/ui/icons';
 import { Sheet } from '../../shared/ui/Sheet';
 import sheetStyles from '../../shared/ui/Sheet.module.css';
 import { setInLibrary as setTitleInLibrary } from '../server/api';
 import { useUi } from '../../shared/ui/uiStore';
 import { novelRowId, novelToTitle, useNovels } from '../novels/novelsStore';
 import { openBook } from '../reader/opening';
+import { useUpdates } from '../updates/updatesStore';
 import { CategoryBar, type CategoryFilter } from './CategoryBar';
 import barStyles from './CategoryBar.module.css';
 import { loadChapters, pickContinueChapter } from './continueReading';
@@ -37,6 +38,7 @@ export function LibraryPage() {
   const novelCovers = useNovels((s) => s.covers);
   const update = useSettings((s) => s.update);
   const [sorting, setSorting] = useState(false);
+  const checking = useUpdates((s) => s.checking);
   const library = useSettings((s) => s.settings.library);
   const serverUrl = useSettings((s) => s.settings.server.url);
   const navigate = useNavigate();
@@ -226,6 +228,16 @@ export function LibraryPage() {
         onChange={selectFilter}
         action={
           <>
+            <button
+              type="button"
+              className={`${barStyles.action} ${checking ? barStyles.spinning : ''}`}
+              aria-label={checking ? 'Checking for new chapters' : `Check ${filter === 'all' ? 'the library' : (categories.find((c) => c.id === filter)?.name ?? 'this category')} for new chapters`}
+              aria-busy={checking}
+              disabled={checking}
+              onClick={() => void useUpdates.getState().check(filter === 'all' ? { force: true } : { category: filter })}
+            >
+              <IconRefresh />
+            </button>
             <button type="button" className={barStyles.action} aria-label={`Sort library: ${sortLabel}`} onClick={() => setSorting(true)}>
               <IconSort />
             </button>

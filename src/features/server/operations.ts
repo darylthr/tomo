@@ -241,6 +241,8 @@ export const LAST_UPDATE = `query LAST_UPDATE { lastUpdateTimestamp { timestamp 
 // updateLibraryManga and updateStatus exist in old and new servers (newer ones deprecate them).
 export const UPDATE_LIBRARY = `mutation UPDATE_LIBRARY { updateLibraryManga(input: {}) { updateStatus { isRunning } } }`;
 
+export const UPDATE_CATEGORY = `mutation UPDATE_CATEGORY($categories: [Int!]!) { updateCategoryManga(input: { categories: $categories }) { updateStatus { isRunning } } }`;
+
 export const UPDATE_STATUS = `query UPDATE_STATUS { updateStatus { isRunning } }`;
 
 // Server-wide key/value store: Tomo keeps each device's reading time here (`tomo.time.<device>`).

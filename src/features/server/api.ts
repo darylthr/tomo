@@ -285,6 +285,12 @@ export async function startLibraryUpdate(): Promise<{ running: boolean }> {
   return { running: data.updateLibraryManga.updateStatus.isRunning };
 }
 
+/** Asks Suwayomi to check only the titles in these categories. */
+export async function startCategoryUpdate(categories: number[]): Promise<{ running: boolean }> {
+  const data = await gql<{ updateCategoryManga: { updateStatus: { isRunning: boolean } } }>(op.UPDATE_CATEGORY, { categories });
+  return { running: data.updateCategoryManga.updateStatus.isRunning };
+}
+
 export async function isLibraryUpdateRunning(): Promise<boolean> {
   const data = await gql<{ updateStatus: { isRunning: boolean } }>(op.UPDATE_STATUS);
   return data.updateStatus.isRunning;

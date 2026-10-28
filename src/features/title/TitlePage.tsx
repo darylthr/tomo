@@ -2,12 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { Chapter, Title, TitleStatus } from '../../shared/model/types';
 import { markTitleSeen, useUpdates } from '../updates/updatesStore';
-import { createCategory, fetchTitle, getTitle, setInLibrary, setProgress, setTitleCategories, updateChapters } from '../server/api';
+import { createCategory, fetchChapters, fetchTitle, getTitle, setInLibrary, setProgress, setTitleCategories, updateChapters } from '../server/api';
 import { ServerError } from '../server/client';
 import { loadChapters, pickContinueChapter } from '../library/continueReading';
 import { useLibrary } from '../library/libraryStore';
 import styles from './TitlePage.module.css';
-import { IconBookmark, IconCheck, IconClose, IconFilter, IconHeart } from '../../shared/ui/icons';
+import { IconBookmark, IconCheck, IconClose, IconFilter, IconHeart, IconRefresh } from '../../shared/ui/icons';
 import { useLongPress } from '../reader/useLongPress';
 import { TitleName } from '../../shared/ui/TitleName';
 import { prefersReducedMotion } from '../../shared/ui/useReducedMotion';
@@ -44,6 +44,8 @@ export function TitlePage() {
   const [anchor, setAnchor] = useState<number | null>(null);
   const [selectError, setSelectError] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState(false);
   const order = useMemo(() => (load.state === 'ready' ? arrangeChapters(load.chapters, view).map((c) => c.id) : []), [load, view]);
   const pick = (id: number) => {
     setSelected((prev) => {
@@ -198,6 +200,23 @@ export function TitlePage() {
     if (done.length < ids.length) setSelected(new Set(ids.filter((id) => !took.has(id))));
   };
 
+  // Asks the source for this title's details and chapters, and shows what came back.
+  const refreshTitle = async () => {
+    setRefreshing(true);
+    setRefreshError(false);
+    try {
+      const [full, fresh] = await Promise.all([fetchTitle(id), fetchChapters(id)]);
+      update((s) => ({ title: { ...full, inLibrary: s.title.inLibrary, categoryIds: s.title.categoryIds }, chapters: fresh }));
+      if (title.inLibrary) {
+        useLibrary.getState().patchTitle(title.id, { unread: full.unread });
+        if (useUpdates.getState().status !== 'idle') void useUpdates.getState().load();
+      }
+    } catch {
+      setRefreshError(true);
+    }
+    setRefreshing(false);
+  };
+
   const toggleLibrary = () => {
     if (title.inLibrary) setLibrary(false);
     else if (categories.length > 0) setPicking(true);
@@ -256,7 +275,22 @@ export function TitlePage() {
           >
             <IconHeart filled={title.inLibrary} />
           </button>
+          <button
+            type="button"
+            className={`${styles.heart} ${refreshing ? styles.spinning : ''}`}
+            aria-label={refreshing ? 'Checking for new chapters' : 'Check for new chapters'}
+            aria-busy={refreshing}
+            disabled={refreshing}
+            onClick={() => void refreshTitle()}
+          >
+            <IconRefresh />
+          </button>
         </div>
+        {refreshError && (
+          <p className={styles.error} role="alert">
+            Couldn't check for new chapters.
+          </p>
+        )}
         {title.inLibrary && (
           <div className={styles.categories}>
             {ownCategories.length > 0 && (

@@ -7,6 +7,7 @@ vi.mock('../server/api', () => ({
   getUpdates: vi.fn(),
   getLastUpdateTime: vi.fn(),
   startLibraryUpdate: vi.fn(),
+  startCategoryUpdate: vi.fn(),
   isLibraryUpdateRunning: vi.fn(),
   getLibrary: vi.fn(async () => ({ titles: [], categories: [] })),
 }));
@@ -30,6 +31,7 @@ beforeEach(() => {
   vi.mocked(api.getUpdates).mockReset().mockResolvedValue(ENTRIES);
   vi.mocked(api.getLastUpdateTime).mockReset();
   vi.mocked(api.startLibraryUpdate).mockReset().mockResolvedValue({ running: true });
+  vi.mocked(api.startCategoryUpdate).mockReset().mockResolvedValue({ running: false });
   vi.mocked(api.isLibraryUpdateRunning).mockReset().mockResolvedValue(false);
   useUpdates.setState({ status: 'idle', entries: [], checking: false });
   useUi.setState({ updatesBadge: 0 });
@@ -65,6 +67,13 @@ it('always checks when forced', async () => {
   vi.mocked(api.startLibraryUpdate).mockResolvedValue({ running: false });
   await useUpdates.getState().check({ force: true });
   expect(api.startLibraryUpdate).toHaveBeenCalledTimes(1);
+});
+
+it('checks only one category when asked, without looking at the last check time', async () => {
+  await useUpdates.getState().check({ category: 7 });
+  expect(api.startCategoryUpdate).toHaveBeenCalledWith([7]);
+  expect(api.startLibraryUpdate).not.toHaveBeenCalled();
+  expect(api.getLastUpdateTime).not.toHaveBeenCalled();
 });
 
 it('gives up quietly when the server cannot say when it last checked', async () => {

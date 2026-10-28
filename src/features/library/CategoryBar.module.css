@@ -143,8 +143,28 @@
   height: 18px;
 }
 
-.action:active {
+.action:not(:disabled):active {
   scale: 0.96;
+}
+
+.action:disabled {
+  cursor: default;
+}
+
+.spinning svg {
+  animation: spin 1000ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinning svg {
+    animation-duration: 3s;
+  }
 }
 
 @media (hover: hover) {

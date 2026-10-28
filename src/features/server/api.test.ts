@@ -20,6 +20,7 @@ import {
   getUpdates,
   isLibraryUpdateRunning,
   startLibraryUpdate,
+  startCategoryUpdate,
   getLibrary,
   getGlobalMetas,
   getLibrarySortInfo,
@@ -290,6 +291,12 @@ describe('updates, history and library update checks', () => {
     });
     await expect(startLibraryUpdate()).resolves.toEqual({ running: true });
     await expect(isLibraryUpdateRunning()).resolves.toBe(false);
+  });
+
+  it('starts an update of just the given categories', async () => {
+    serve({ UPDATE_CATEGORY: { data: { updateCategoryManga: { updateStatus: { isRunning: true } } } } });
+    await expect(startCategoryUpdate([3, 5])).resolves.toEqual({ running: true });
+    expect(calls[0]!.variables).toEqual({ categories: [3, 5] });
   });
 
   it('never sends order arguments, which older servers reject', () => {
