@@ -4,6 +4,7 @@ import type { Mock } from 'vitest';
 import { renderWithRouter } from '../../app/testRouter';
 import type { FeedEntry } from '../../shared/model/types';
 import { UpdatesPage } from './UpdatesPage';
+import * as api from '../server/api';
 import { useUpdates } from './updatesStore';
 
 const NOW = new Date(2026, 9, 26, 12, 0).getTime();
@@ -111,4 +112,24 @@ it('shows a back catalogue fetched in one go as one row that opens the title', a
   expect(within(row).getByText('142 chapters added')).toBeInTheDocument();
   await userEvent.click(row);
   expect(screen.getByTestId('location')).toHaveTextContent('/title/77');
+});
+
+describe('marking all as read', () => {
+  it('marks every unread chapter read and then disables the button', async () => {
+    const spy = vi.spyOn(api, 'updateChapters').mockResolvedValue([12, 21]);
+    renderWithRouter(<UpdatesPage />, '/updates');
+    await userEvent.click(screen.getByRole('button', { name: 'Mark all updates as read' }));
+    expect(spy).toHaveBeenCalledWith([12, 21], { read: true });
+    expect(useUpdates.getState().entries.every((e) => e.chapter.read)).toBe(true);
+    expect(await screen.findByRole('button', { name: 'Mark all updates as read' })).toBeDisabled();
+    spy.mockRestore();
+  });
+
+  it('says how many could not be marked', async () => {
+    const spy = vi.spyOn(api, 'updateChapters').mockResolvedValue([12]);
+    renderWithRouter(<UpdatesPage />, '/updates');
+    await userEvent.click(screen.getByRole('button', { name: 'Mark all updates as read' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't mark 1 chapter as read.");
+    spy.mockRestore();
+  });
 });

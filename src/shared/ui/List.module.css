@@ -418,6 +418,11 @@
   scale: 0.96;
 }
 
+.refreshButton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 @media (hover: hover) {
   .refreshButton:hover {
     background: color-mix(in oklch, var(--ink) 16%, transparent);

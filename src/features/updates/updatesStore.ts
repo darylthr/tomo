@@ -4,7 +4,7 @@ import { useUi } from '../../shared/ui/uiStore';
 import { useLibrary } from '../library/libraryStore';
 import { collapseBatches, unreadCount } from './batches';
 import { useUpdatesSeen } from './updatesSeen';
-import { getLastUpdateTime, getUpdates, isLibraryUpdateRunning, startLibraryUpdate } from '../server/api';
+import { getLastUpdateTime, getUpdates, isLibraryUpdateRunning, startLibraryUpdate, updateChapters } from '../server/api';
 
 /** How far back Updates looks. */
 export const UPDATES_WINDOW_MS = 90 * 86_400_000;
@@ -25,6 +25,8 @@ type UpdatesState = {
   load: () => Promise<void>;
   /** Spec §10: checks on app open (when stale) and on pull-to-refresh (forced). Never throws. */
   check: (opts?: { force?: boolean }) => Promise<void>;
+  /** Marks every unread chapter in the list as read, on the server. Resolves to how many it couldn't mark. */
+  markAllRead: () => Promise<number>;
 };
 
 let generation = 0;
@@ -96,6 +98,20 @@ export const useUpdates = create<UpdatesState>()((set, get) => {
       } catch {
         if (gen === generation) set({ status: 'error' });
       }
+    },
+    markAllRead: async () => {
+      const ids = get().entries.filter((e) => !e.chapter.read).map((e) => e.chapter.id);
+      let done: number[] = [];
+      try {
+        done = await updateChapters(ids, { read: true });
+      } catch {
+        // Nothing was marked.
+      }
+      const marked = new Set(done);
+      set((s) => ({ entries: s.entries.map((e) => (marked.has(e.chapter.id) ? { ...e, chapter: { ...e.chapter, read: true } } : e)) }));
+      // Unread counts on the shelf changed too.
+      if (done.length && useLibrary.getState().status !== 'idle') void useLibrary.getState().refresh();
+      return ids.length - done.length;
     },
     check: ({ force = false } = {}) => {
       running ??= runCheck(force).finally(() => {

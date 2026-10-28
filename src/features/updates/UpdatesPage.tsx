@@ -1,9 +1,9 @@
-import { useEffect, useMemo, type MouseEvent } from 'react';
+import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { FeedEntry } from '../../shared/model/types';
 import { dayLabel, groupByDay, relativeTime } from '../../shared/time/days';
 import { useNow } from '../../shared/time/useNow';
-import { IconRefresh } from '../../shared/ui/icons';
+import { IconCheck, IconRefresh } from '../../shared/ui/icons';
 import list from '../../shared/ui/List.module.css';
 import { chapterLabel, rowThumb, Thumb } from '../../shared/ui/ListRow';
 import { Page } from '../../shared/ui/Page';
@@ -17,6 +17,9 @@ export function UpdatesPage() {
   const { status, entries, checking, load, check } = useUpdates();
   const navigate = useNavigate();
   const now = useNow();
+  const [marking, setMarking] = useState(false);
+  const [markFailed, setMarkFailed] = useState(0);
+  const hasUnread = entries.some((e) => !e.chapter.read);
   const items = useMemo(() => collapseBatches(entries), [entries]);
 
   useEffect(() => {
@@ -24,26 +27,48 @@ export function UpdatesPage() {
   }, []);
 
   const refresh = () => check({ force: true });
+  const markAllRead = async () => {
+    setMarking(true);
+    setMarkFailed(0);
+    setMarkFailed(await useUpdates.getState().markAllRead());
+    setMarking(false);
+  };
 
   return (
     <Page
       title="Updates"
       onRefresh={refresh}
       action={
-        <button
-          type="button"
-          className={`${list.refreshButton} ${checking ? styles.spinning : ''}`}
-          aria-label="Check for updates"
-          onClick={() => void refresh()}
-        >
-          <IconRefresh />
-        </button>
+        <>
+          <button
+            type="button"
+            className={list.refreshButton}
+            aria-label="Mark all updates as read"
+            disabled={!hasUnread || marking}
+            onClick={() => void markAllRead()}
+          >
+            <IconCheck />
+          </button>
+          <button
+            type="button"
+            className={`${list.refreshButton} ${checking ? styles.spinning : ''}`}
+            aria-label="Check for updates"
+            onClick={() => void refresh()}
+          >
+            <IconRefresh />
+          </button>
+        </>
       }
     >
       {checking && (
         <div className={`${list.state} ${styles.checking}`} role="status">
           <span className={list.spinner} aria-hidden="true" />
           Checking sources for new chapters…
+        </div>
+      )}
+      {markFailed > 0 && (
+        <div className={`${list.state} ${list.stateError}`} role="alert">
+          Couldn't mark {markFailed} {markFailed === 1 ? 'chapter' : 'chapters'} as read.
         </div>
       )}
       {status === 'error' && entries.length === 0 ? (
