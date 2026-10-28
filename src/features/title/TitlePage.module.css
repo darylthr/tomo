@@ -143,7 +143,7 @@
 }
 
 .primary,
-.secondary {
+.heart {
   height: 50px;
   padding: 0 18px;
   border-radius: 16px;
@@ -166,18 +166,27 @@
   cursor: default;
 }
 
-.secondary {
+.heart {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  padding: 0;
   background: var(--glass);
   box-shadow: var(--glass-ring);
   color: var(--ink);
 }
 
-.secondary[aria-pressed='true'] {
-  color: var(--muted);
+.heart svg {
+  width: 24px;
+  height: 24px;
+}
+
+.heart[aria-pressed='true'] {
+  color: var(--accent);
 }
 
 .primary:not(:disabled):active,
-.secondary:not(:disabled):active {
+.heart:not(:disabled):active {
   scale: 0.96;
 }
 

@@ -184,11 +184,10 @@ export function IconSort(p: Omit<IconProps, "filled">) {
   );
 }
 
-export function IconSelect(p: Omit<IconProps, "filled">) {
+export function IconHeart({ filled, ...p }: IconProps) {
   return (
     <Svg {...p}>
-      <rect x="4" y="4" width="16" height="16" rx="4.5" />
-      <path d="m8.5 12.2 2.4 2.4 4.6-5" />
+      <path d="M12 19.8s-7.5-4.6-7.5-10.3a4.3 4.3 0 0 1 7.5-2.8 4.3 4.3 0 0 1 7.5 2.8c0 5.7-7.5 10.3-7.5 10.3Z" fill={fill(filled)} />
     </Svg>
   );
 }

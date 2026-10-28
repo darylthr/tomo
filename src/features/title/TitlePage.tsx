@@ -7,7 +7,7 @@ import { ServerError } from '../server/client';
 import { loadChapters, pickContinueChapter } from '../library/continueReading';
 import { useLibrary } from '../library/libraryStore';
 import styles from './TitlePage.module.css';
-import { IconBookmark, IconFilter } from '../../shared/ui/icons';
+import { IconBookmark, IconFilter, IconHeart } from '../../shared/ui/icons';
 import { Sheet } from '../../shared/ui/Sheet';
 import sheet from '../../shared/ui/Sheet.module.css';
 import { useLongPress } from '../reader/useLongPress';
@@ -194,8 +194,14 @@ export function TitlePage() {
           >
             {action}
           </button>
-          <button type="button" className={styles.secondary} aria-pressed={title.inLibrary} onClick={toggleLibrary}>
-            {title.inLibrary ? 'In library' : 'Add to library'}
+          <button
+            type="button"
+            className={styles.heart}
+            aria-pressed={title.inLibrary}
+            aria-label={title.inLibrary ? 'In library' : 'Add to library'}
+            onClick={toggleLibrary}
+          >
+            <IconHeart filled={title.inLibrary} />
           </button>
         </div>
         {title.inLibrary && (
