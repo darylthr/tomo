@@ -1,4 +1,5 @@
 import type { RouteObject } from 'react-router-dom';
+import { RestorePage } from '../features/backup/RestorePage';
 import { CategoriesPage } from '../features/categories/CategoriesPage';
 import { HistoryPage } from '../features/history/HistoryPage';
 import { InsightsPage } from '../features/insights/InsightsPage';
@@ -34,6 +35,7 @@ export const routes: RouteObject[] = [
       { path: 'settings/reader', element: <ReaderSettings /> },
       { path: 'settings/appearance', element: <AppearanceSettings /> },
       { path: 'settings/categories', element: <CategoriesPage /> },
+      { path: 'settings/restore', element: <RestorePage /> },
       { path: 'title/:id', element: <TitlePage /> },
       { path: '*', element: <LibraryPage /> },
     ],

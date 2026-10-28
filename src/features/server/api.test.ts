@@ -39,7 +39,10 @@ import {
   setInLibrary,
   setTitleCategories,
   setProgress,
+  getRestoreStatus,
+  restoreBackup,
   updateChapters,
+  validateBackup,
 } from './api';
 
 type Call = { query: string; variables: Record<string, unknown> };
@@ -380,6 +383,48 @@ it('asks a server without the bulk mutation one chapter at a time, and reports w
     { id: 12, patch: { isBookmarked: true } },
     { id: 13, patch: { isBookmarked: true } },
   ]);
+});
+
+describe('backups', () => {
+  /** Answers with `reply` and keeps the multipart form the request carried. */
+  function serveUpload(reply: unknown) {
+    const sent: { form?: FormData; headers?: HeadersInit } = {};
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: RequestInit) => {
+        sent.form = init.body as FormData;
+        sent.headers = init.headers;
+        return new Response(JSON.stringify(reply));
+      }),
+    );
+    return sent;
+  }
+  const backup = new File(['bytes'], 'mihon.tachibk');
+
+  it('sends a backup to check as a GraphQL multipart request and lists the missing sources', async () => {
+    const sent = serveUpload({ data: { validateBackup: { missingSources: [{ id: '2499283573021220255', name: 'MangaDex' }, { id: 7, name: null }] } } });
+    await expect(validateBackup(backup)).resolves.toEqual([
+      { id: '2499283573021220255', name: 'MangaDex' },
+      { id: '7', name: 'Source 7' },
+    ]);
+    expect(JSON.parse(sent.form!.get('operations') as string).query).toMatch(/VALIDATE_BACKUP/);
+    expect(JSON.parse(sent.form!.get('map') as string)).toEqual({ '0': ['variables.backup'] });
+    expect((sent.form!.get('0') as File).name).toBe('mihon.tachibk');
+    // The browser must set the multipart boundary itself.
+    expect(JSON.stringify(sent.headers)).not.toMatch(/content-type/i);
+  });
+
+  it('starts a restore and reads its progress', async () => {
+    serveUpload({ data: { restoreBackup: { id: 'abc', status: { state: 'RESTORING_MANGA', totalManga: 40, mangaProgress: 5 } } } });
+    await expect(restoreBackup(backup)).resolves.toEqual({ id: 'abc', status: { state: 'restoring', done: 5, total: 40 } });
+
+    serve({ RESTORE_STATUS: { data: { restoreStatus: { state: 'SUCCESS', totalManga: 40, mangaProgress: 40 } } } });
+    await expect(getRestoreStatus('abc')).resolves.toEqual({ state: 'success', done: 40, total: 40 });
+    expect(calls[0]!.variables).toEqual({ id: 'abc' });
+
+    serve({ RESTORE_STATUS: { data: { restoreStatus: { state: 'FAILURE', totalManga: 40, mangaProgress: 9 } } } });
+    await expect(getRestoreStatus('abc')).resolves.toMatchObject({ state: 'failure' });
+  });
 });
 
 it("reads, writes and deletes a title's meta", async () => {

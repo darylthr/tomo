@@ -1,5 +1,5 @@
 import type { BrowseMode, BrowsePage, Category, Chapter, FeedEntry, SortInfo, Source, SourceFilter, Title } from '../../shared/model/types';
-import { gql, ServerError } from './client';
+import { gql, gqlUpload, ServerError } from './client';
 import { resolveUrl } from './config';
 import {
   epochMs,
@@ -118,6 +118,38 @@ export async function updateChapters(ids: number[], patch: { read?: boolean; boo
     results.forEach((r, j) => r.status === 'fulfilled' && done.push(batch[j]!));
   }
   return done;
+}
+
+export type RestoreState = 'idle' | 'restoring' | 'success' | 'failure';
+export type RestoreStatus = { state: RestoreState; done: number; total: number };
+
+type RawRestoreStatus = { state: string; totalManga: number; mangaProgress: number } | null;
+
+function toRestoreStatus(raw: RawRestoreStatus): RestoreStatus {
+  if (!raw) return { state: 'idle', done: 0, total: 0 };
+  const state: RestoreState = raw.state === 'SUCCESS' ? 'success' : raw.state === 'FAILURE' ? 'failure' : raw.state === 'IDLE' ? 'idle' : 'restoring';
+  return { state, done: raw.mangaProgress ?? 0, total: raw.totalManga ?? 0 };
+}
+
+/** Sources a Mihon, Tachiyomi or Suwayomi backup uses that this server doesn't have installed. */
+export async function validateBackup(file: File): Promise<{ id: string; name: string }[]> {
+  const data = await gqlUpload<{ validateBackup: { missingSources: { id: string | number; name: string | null }[] } }>(
+    op.VALIDATE_BACKUP,
+    'backup',
+    file,
+  );
+  return data.validateBackup.missingSources.map((s) => ({ id: String(s.id), name: s.name || `Source ${s.id}` }));
+}
+
+/** Starts restoring a backup on the server; follow it with `getRestoreStatus`. */
+export async function restoreBackup(file: File): Promise<{ id: string; status: RestoreStatus }> {
+  const data = await gqlUpload<{ restoreBackup: { id: string; status: RawRestoreStatus } }>(op.RESTORE_BACKUP, 'backup', file);
+  return { id: data.restoreBackup.id, status: toRestoreStatus(data.restoreBackup.status) };
+}
+
+export async function getRestoreStatus(id: string): Promise<RestoreStatus> {
+  const data = await gql<{ restoreStatus: RawRestoreStatus }>(op.RESTORE_STATUS, { id });
+  return toRestoreStatus(data.restoreStatus);
 }
 
 export async function setInLibrary(titleId: number, inLibrary: boolean): Promise<void> {

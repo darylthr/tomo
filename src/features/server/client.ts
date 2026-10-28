@@ -28,13 +28,29 @@ export async function gql<T>(
   variables?: Record<string, unknown>,
   opts: { signal?: AbortSignal; keepalive?: boolean } = {},
 ): Promise<T> {
+  return send<T>(JSON.stringify({ query, variables }), { 'Content-Type': 'application/json' }, opts);
+}
+
+/**
+ * Runs an operation that takes one file (Suwayomi's `UploadedFile`) as a GraphQL multipart request.
+ * `variable` names the operation's file variable; the browser sets the multipart boundary itself.
+ */
+export async function gqlUpload<T>(query: string, variable: string, file: File, opts: { signal?: AbortSignal } = {}): Promise<T> {
+  const form = new FormData();
+  form.append('operations', JSON.stringify({ query, variables: { [variable]: null } }));
+  form.append('map', JSON.stringify({ '0': [`variables.${variable}`] }));
+  form.append('0', file, file.name);
+  return send<T>(form, {}, opts);
+}
+
+async function send<T>(payload: BodyInit, headers: Record<string, string>, opts: { signal?: AbortSignal; keepalive?: boolean }): Promise<T> {
   let res: Response;
   try {
     res = await fetch(resolveUrl('/api/graphql'), {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ query, variables }),
+      headers: { ...headers, Accept: 'application/json' },
+      body: payload,
       signal: opts.signal,
       keepalive: opts.keepalive,
     });

@@ -1,0 +1,126 @@
+.hint {
+  margin: -4px 4px 14px;
+  color: var(--muted);
+  font-size: 13.5px;
+  text-wrap: pretty;
+}
+
+/* the picker is opened by the button; the input itself stays out of sight */
+.file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.card {
+  margin-bottom: 12px;
+  padding: 14px 16px;
+  border-radius: 22px;
+  background: var(--glass);
+  box-shadow: var(--glass-ring);
+}
+
+.fileName {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.fileSize {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13.5px;
+  text-wrap: pretty;
+}
+
+.warn {
+  margin: 0 4px 12px;
+  color: var(--warning);
+  font-size: 13.5px;
+}
+
+.warnTitle {
+  margin: 0;
+  color: var(--warning);
+  font-weight: 600;
+}
+
+.sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sources li {
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--ink) 8%, transparent);
+  font-size: 13px;
+}
+
+.progress {
+  display: block;
+  width: 100%;
+  height: 6px;
+  margin: 12px 0 10px;
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in oklch, var(--ink) 10%, transparent);
+}
+
+.progress::-webkit-progress-bar {
+  background: transparent;
+}
+
+.progress::-webkit-progress-value {
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 300ms var(--ease);
+}
+
+.progress::-moz-progress-bar {
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.primary,
+.secondary {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 50px;
+  margin-bottom: 8px;
+  border: 0;
+  border-radius: 16px;
+  font: inherit;
+  font-size: 15.5px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    scale 150ms ease-out,
+    background-color 150ms ease-out;
+}
+
+.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.secondary {
+  background: var(--glass);
+  box-shadow: var(--glass-ring);
+  color: var(--ink);
+}
+
+.primary:not(:disabled):active,
+.secondary:not(:disabled):active {
+  scale: 0.96;
+}

@@ -30,6 +30,12 @@ export function LibrarySettings() {
             <IconChevron className={styles.chevron} />
           </span>
         </Link>
+        <Link to="/settings/restore" className={`${styles.row} ${styles.link}`}>
+          <span className={styles.label}>Restore from backup</span>
+          <span className={styles.linkSide}>
+            <IconChevron className={styles.chevron} />
+          </span>
+        </Link>
         <Row label="Show titles as">
           <Segmented
             label="Show titles as"

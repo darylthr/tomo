@@ -95,6 +95,24 @@ export const UPDATE_CHAPTER = `
   }
 `;
 
+export const VALIDATE_BACKUP = `
+  query VALIDATE_BACKUP($backup: UploadedFile!) {
+    validateBackup(input: { backup: $backup }) { missingSources { id name } }
+  }
+`;
+
+export const RESTORE_BACKUP = `
+  mutation RESTORE_BACKUP($backup: UploadedFile!) {
+    restoreBackup(input: { backup: $backup }) { id status { state totalManga mangaProgress } }
+  }
+`;
+
+export const RESTORE_STATUS = `
+  query RESTORE_STATUS($id: String!) {
+    restoreStatus(id: $id) { state totalManga mangaProgress }
+  }
+`;
+
 export const UPDATE_CHAPTERS = `
   mutation UPDATE_CHAPTERS($ids: [Int!]!, $patch: UpdateChapterPatchInput!) {
     updateChapters(input: { ids: $ids, patch: $patch }) { chapters { id isRead isBookmarked } }
