@@ -11,8 +11,6 @@
   --ease: cubic-bezier(0.2, 0, 0, 1);
   --top-h: 56px;
   --nav-h: 68px;
-  --gap: 6px;
-  --frame-radius: 16px;
 
   color-scheme: dark;
 }
@@ -31,7 +29,6 @@
   --press: color-mix(in oklch, var(--ink) 8%, transparent);
   --glass: color-mix(in oklch, var(--surface-base) 66%, transparent);
   --glass-ring: 0 0 0 1px var(--line);
-  --frame-ring: 0 0 0 1px var(--line);
 
   /* Status colours: fixed, with darker steps for light themes below. */
   --status-ongoing: #8fe3a5;
@@ -46,12 +43,6 @@
   --text-glow: oklch(0 0 0 / 0.5);
   /* the shadow the books stand on */
   --floor-shadow: oklch(0 0 0 / 0.75);
-}
-
-@media (min-width: 760px) {
-  :root {
-    --gap: 8px;
-  }
 }
 
 [data-scheme='light'] {

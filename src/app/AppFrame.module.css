@@ -5,15 +5,13 @@
 
 .frame {
   position: fixed;
-  top: calc(env(safe-area-inset-top) + var(--gap));
+  top: env(safe-area-inset-top);
   bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
-  left: var(--gap);
-  right: var(--gap);
-  border-radius: var(--frame-radius);
+  left: 0;
+  right: 0;
   overflow: hidden;
   background: var(--bg);
   color: var(--ink);
-  box-shadow: var(--frame-ring);
   isolation: isolate;
 }
 
