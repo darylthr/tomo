@@ -12,6 +12,9 @@
   background: transparent;
   color: var(--ink);
   overflow: hidden;
+  /* clip, not hidden: focusing the (still off-screen) sheet must not scroll the dialog, which made
+     the sheet show at the top for a moment and then slide down */
+  overflow: clip;
 }
 
 .dialog::backdrop {
